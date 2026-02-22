@@ -2,6 +2,7 @@
 
 ## Group Formation
 
+- **Group Name:** The Outliers
 - Group formed with 4 members
 - Leader: Sandun
 
@@ -46,7 +47,9 @@
 
 ### Viva Details (Mid-Evaluation)
 
-- Starts: Monday Feb 23, 2026 (during lab session time)
+- **Date:** Friday, Feb 28, 2026
+- **Time:** 8:40 AM - 8:50 AM
+- **Room:** G1305
 - Duration: 5-10 minutes
 - Format: Questions asked randomly to any team member
 - Assessment: Common group mark based on answers

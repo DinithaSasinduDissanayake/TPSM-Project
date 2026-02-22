@@ -2,7 +2,7 @@
 
 > **Topic:** "Ensemble models perform better than single models in many prediction tasks."
 > **Module:** IT3011 - Theory and Practices in Statistical Modelling
-> **Group:** Y3S2 TPSM & PAF
+> **Group:** The Outliers
 
 ---
 
@@ -34,7 +34,7 @@
 | 27/01/2026 | Group formed |
 | 30/01/2026 | Registration completed |
 | 12/02/2026 | Topic selected |
-| 23/02/2026 | Mid-evaluation (Viva) |
+| 28/02/2026 | Mid-evaluation (Viva) - 8:40 AM, Room G1305 |
 
 ---
 
