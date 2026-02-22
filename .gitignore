@@ -1,0 +1,27 @@
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Temp files
+*.tmp
+*.temp
+~$*
+
+# IDE
+.idea/
+.vscode/
+*.code-workspace
+
+# Secrets
+.env
+.env.*
+
+# Obsidian
+.obsidian/
+
+# Python
+__pycache__/
+*.pyc
+.venv*/
+.ruff_cache/
