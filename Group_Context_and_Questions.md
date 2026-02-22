@@ -11,8 +11,8 @@
 |------|------------|------|
 | Dinitha Sasindu Dissanayake | IT23373952 | Member |
 | Sithmini Thennakoon | IT23232990 | Member |
-| Sandun | *Please add your Student ID* | Leader |
-| Lihini | *Please add your Student ID* | Member |
+| _TODO: Full Name_ | _TODO: Student ID_ | Leader |
+| _TODO: Full Name_ | _TODO: Student ID_ | Member |
 
 ---
 
