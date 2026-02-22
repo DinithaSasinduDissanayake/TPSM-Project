@@ -11,8 +11,8 @@
 |------|------------|------|
 | Dinitha Sasindu Dissanayake | IT23373952 | Member |
 | Sithmini Thennakoon | IT23232990 | Member |
-| Sandun | - | Leader |
-| Lihini | - | Member |
+| Sandun | *Please add your Student ID* | Leader |
+| Lihini | *Please add your Student ID* | Member |
 
 ---
 
@@ -20,7 +20,6 @@
 
 > "Ensemble models perform better than single models in many prediction tasks."
 
-- Selected by group leader
 - Topic ID: AI/Data Science/Software Engineering – Technical #9
 
 ---
