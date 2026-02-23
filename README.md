@@ -2,8 +2,7 @@
 
 > A statistical analysis comparing ensemble and single model performance on prediction tasks
 
-[![Python](https://img.shields.io/badge/Python-3.x-blue.svg)](https://www.python.org/)
-[![scikit-learn](https://img.shields.io/badge/scikit--learn-1.x-orange.svg)](https://scikit-learn.org/)
+[![R](https://img.shields.io/badge/R-4.x-blue.svg)](https://www.r-project.org/)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
 ---
@@ -55,11 +54,16 @@ See [methodology](docs/methodology.md) for detailed approach.
 
 ### Tools
 
-- **Python** — primary language
-- **scikit-learn** — ML models and validation
-- **pandas/numpy** — data manipulation
-- **scipy.stats** — hypothesis testing
-- **Jupyter Notebooks** — documentation
+- **R** — primary language (recommended by lecturer)
+- **caret** — ML model training and cross-validation
+- **randomForest** — ensemble models
+- **tidyverse** — data manipulation and visualization
+- **RMarkdown** — documentation
+
+> "I don't restrict you to use the R. You can go with any analysis tool but I recommend you to use the R. R is having the most powerful statistical repositories."
+>
+> — Mr. Samadhi Chathuranga Rathnayake
+> Week 1 Assignment Briefing
 
 ### Statistical Validation
 

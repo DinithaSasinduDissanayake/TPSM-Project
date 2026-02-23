@@ -53,9 +53,20 @@
 
 ## Tool Freedom
 
-- Any tool allowed (not restricted to R)
-- Focus is on **interpretation**, not prediction accuracy
-- Must show how you reach your conclusion
+Any tool allowed (not restricted to R).
+
+> "I don't restrict you to use the R. You can go with any analysis tool but I recommend you to use the R. R is having the most powerful statistical repositories."
+>
+> — Mr. Samadhi Chathuranga Rathnayake
+> Week 1 Assignment Briefing
+
+**Lecturer's recommendation:** Use R for statistical analysis.
+
+**Why R?**
+- Most powerful statistical repositories
+- Easy to use for hypothesis testing
+- Built-in datasets for ML (MASS, mlbench)
+- Final exam will use R for hypothesis testing
 
 ---
 

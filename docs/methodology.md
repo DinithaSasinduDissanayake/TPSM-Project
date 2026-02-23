@@ -68,9 +68,23 @@ We compare ensemble models against single models across classification and regre
 
 ## Tools
 
-- Python (scikit-learn, pandas, numpy)
-- Jupyter Notebooks
-- Statistical analysis (scipy.stats)
+**Primary:** R
+
+> "I don't restrict you to use the R. You can go with any analysis tool but I recommend you to use the R. R is having the most powerful statistical repositories."
+>
+> — Mr. Samadhi Chathuranga Rathnayake
+> Week 1 Assignment Briefing
+
+### R Packages
+
+| Package | Purpose |
+|---------|---------|
+| `caret` | Model training and cross-validation |
+| `randomForest` | Ensemble models |
+| `MASS` | Boston housing dataset |
+| `mlbench` | Breast Cancer dataset |
+| `t.test()` | Hypothesis testing (built-in) |
+| `tidyverse` | Data manipulation and visualization |
 
 ---
 
