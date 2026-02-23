@@ -31,8 +31,26 @@ We compare ensemble models against single models across classification and regre
 ## Approach (8 Steps)
 
 ### Step 1 – Dataset Selection
+
+> "I always recommend you to go with the secondary data set."
+>
+> — Mr. Samadhi Chathuranga Rathnayake
+> Week 1 Assignment Briefing
+
+> "To get a good result from the data at least you should be having around 300 observations."
+>
+> — Mr. Samadhi Chathuranga Rathnayake
+> Week 1 Assignment Briefing
+
+> "Is it okay to use two data sets? Completely fine. You can even go with multiple data sets. That's completely allowed."
+>
+> — Mr. Samadhi Chathuranga Rathnayake
+> Week 1 Assignment Briefing
+
 - **Classification:** Breast Cancer / Heart Disease (binary target → Binomial distribution)
 - **Regression:** Housing Price dataset (continuous target → Normal distribution)
+- **Minimum observations:** 300
+- **Multiple datasets:** Allowed
 
 ### Step 2 – Descriptive Analysis
 - Analyze target variable distributions

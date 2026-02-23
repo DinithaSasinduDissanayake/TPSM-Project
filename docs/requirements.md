@@ -21,6 +21,17 @@
 
 ---
 
+## Focus of Analysis
+
+> "Keep in your mind here in this particular analysis we mainly focus about not the prediction, but the interpretation. I'm not actually expecting you to build very accurate model for the prediction. We want to identify the interpretation part."
+>
+> — Mr. Samadhi Chathuranga Rathnayake
+> Week 5 Mid-Evaluation Briefing
+
+**Key point:** Interpretation > Prediction accuracy
+
+---
+
 ## Mid-Evaluation (Viva)
 
 | Detail | Info |
@@ -72,10 +83,27 @@ Any tool allowed (not restricted to R).
 
 ## If Using Black-Box Models
 
+> "If you go with some kind of a black box models like support vector machine or neural network, you can go with those advanced models as well, but then you have to interpret it. You can go with some explainable AI techniques like feature importance mechanism, LIME technique and SHAP technique."
+>
+> — Mr. Samadhi Chathuranga Rathnayake
+> Week 5 Mid-Evaluation Briefing
+
 Allowed, but must interpret using:
 - Feature importance
 - LIME
 - SHAP
+
+---
+
+## AI Tools Policy
+
+> "AI tools may be used only for the purpose of understanding or defining things. I'm not allowing you to use AI for data analysis, statistical modeling, code generation, and report writing."
+>
+> — Mr. Samadhi Chathuranga Rathnayake
+> Week 1 Assignment Briefing
+
+**Allowed:** Understanding concepts, defining problems, brainstorming
+**Not allowed:** Data analysis, statistical modeling, code generation, report writing
 
 ---
 
