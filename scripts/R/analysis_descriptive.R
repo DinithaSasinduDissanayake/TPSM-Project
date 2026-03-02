@@ -4,8 +4,12 @@ library(dplyr)
 library(ggplot2)
 library(tidyr)
 
-OUTPUT_DIR <- "~/Desktop/TPSM_Analysis"
-DATA_PATH <- "/home/sasindu/Documents/SLIIT Materials/TPSM-Project/outputs/combined_pairwise_differences.csv"
+args <- commandArgs(trailingOnly = TRUE)
+OUTPUT_DIR <- if (length(args) >= 1) args[1] else "outputs/analysis"
+DATA_PATH <- if (length(args) >= 2) args[2] else "outputs/combined_pairwise_differences.csv"
+
+if (!dir.exists(OUTPUT_DIR)) dir.create(OUTPUT_DIR, recursive = TRUE)
+if (!dir.exists(file.path(OUTPUT_DIR, "plots"))) dir.create(file.path(OUTPUT_DIR, "plots"), recursive = TRUE)
 
 df <- read.csv(DATA_PATH)
 
@@ -132,7 +136,7 @@ write.csv(overall, file.path(OUTPUT_DIR, "overall_summary.csv"), row.names = FAL
 # Plot 1: Boxplot by Metric
 p1 <- ggplot(df, aes(x = metric_name, y = difference_value, fill = metric_name)) +
   geom_boxplot(alpha = 0.7) +
-  geom_hline(yintercept = 0, linetype = "dashed", color = "red", size = 1) +
+  geom_hline(yintercept = 0, linetype = "dashed", color = "red", linewidth = 1) +
   labs(
     title = "Ensemble vs Single Model: Difference by Metric",
     subtitle = "Positive = Ensemble Better | Red line = No difference",
@@ -183,7 +187,7 @@ ggsave(file.path(OUTPUT_DIR, "plots", "heatmap_model_pair.png"), p3, width = 10,
 # Plot 4: Histogram of all differences
 p4 <- ggplot(df, aes(x = difference_value, fill = ensemble_better)) +
   geom_histogram(bins = 50, alpha = 0.7, color = "white") +
-  geom_vline(xintercept = 0, linetype = "dashed", color = "red", size = 1) +
+  geom_vline(xintercept = 0, linetype = "dashed", color = "red", linewidth = 1) +
   labs(
     title = "Distribution of All Differences",
     subtitle = "Blue = Ensemble Wins | Orange = Single Wins",

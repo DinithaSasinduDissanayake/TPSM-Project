@@ -38,15 +38,12 @@ classification_metrics <- function(y_true, y_pred, y_prob = NULL) {
       eps <- 1e-15
       p <- pmin(pmax(y_prob, eps), 1 - eps)
       out$logloss <- -mean(y_true_int * log(p) + (1 - y_true_int) * log(1 - p))
+      out$roc_auc <- NA_real_
       if (requireNamespace("pROC", quietly = TRUE)) {
         tryCatch({
           roc_obj <- pROC::roc(y_true_int, y_prob, quiet = TRUE)
           out$roc_auc <- as.numeric(pROC::auc(roc_obj))
-        }, error = function(e) {
-          out$roc_auc <- NA_real_
-        })
-      } else {
-        out$roc_auc <- NA_real_
+        }, error = function(e) {})
       }
     } else {
       out$logloss <- NA_real_
@@ -82,15 +79,12 @@ classification_metrics <- function(y_true, y_pred, y_prob = NULL) {
       y_prob <- pmin(pmax(y_prob, eps), 1 - eps)
       true_matrix <- model.matrix(~ factor(y_true_int) - 1)
       out$logloss <- -mean(rowSums(true_matrix * log(y_prob)))
+      out$roc_auc <- NA_real_
       if (requireNamespace("pROC", quietly = TRUE)) {
         tryCatch({
           roc_obj <- pROC::multiclass.roc(y_true_int, y_prob, quiet = TRUE)
           out$roc_auc <- as.numeric(pROC::auc(roc_obj))
-        }, error = function(e) {
-          out$roc_auc <- NA_real_
-        })
-      } else {
-        out$roc_auc <- NA_real_
+        }, error = function(e) {})
       }
     } else {
       out$logloss <- NA_real_

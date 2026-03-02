@@ -66,8 +66,8 @@ train_predict_timeseries <- function(model_name, y_train, y_test, lag = 12, exog
     for (a in c(0.1, 0.2, 0.3, 0.4, 0.5)) {
       tryCatch({
         fit <- stats::HoltWinters(y_ts, alpha = a, beta = FALSE, gamma = FALSE, opt.crit = "rmse")
-        fc <- stats::predict(fit, n.ahead = length(y_test))
-        sse <- sum((fc - y_test)^2, na.rm = TRUE)
+        fitted_vals <- stats::fitted(fit)
+        sse <- sum((fitted_vals - y_train)^2, na.rm = TRUE)
         if (sse < best_sse) {
           best_sse <- sse
           alpha <- a
