@@ -70,7 +70,16 @@ train_predict_classification <- function(model_name, train_df, test_df, target_c
 
   if (model_name == "adaboost") {
     if (!requireNamespace("ada", quietly = TRUE)) stop("Package 'ada' required")
-    if (!is_binary) stop("adaboost package only supports binary classification")
+    if (!is_binary) {
+      warning("adaboost does not support multiclass, substituting with gradient_boosting")
+      if (!requireNamespace("gbm", quietly = TRUE)) stop("Package 'gbm' required")
+      train_tmp <- train_df
+      train_tmp[[target_col]] <- as.numeric(as.factor(train_tmp[[target_col]])) - 1
+      fit <- gbm::gbm(as.formula(paste(target_col, "~ .")), data = train_tmp, distribution = "multinomial", n.trees = 100, interaction.depth = 3, shrinkage = 0.05, n.minobsinnode = 10, verbose = FALSE)
+      prob <- stats::predict(fit, newdata = test_df, n.trees = 100, type = "response")
+      pred <- levels(y_train)[max.col(prob)]
+      return(list(pred = pred, prob = prob))
+    }
     fit <- ada::ada(as.formula(paste(target_col, "~ .")), data = train_df, iter = 50, type = "real")
     prob <- as.numeric(stats::predict(fit, newdata = test_df, type = "probs")[, 2])
     pred <- ifelse(prob >= 0.5, levels(y_train)[2], levels(y_train)[1])

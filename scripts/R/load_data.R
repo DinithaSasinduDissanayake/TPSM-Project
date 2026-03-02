@@ -14,11 +14,36 @@ load_dataset <- function(ds_cfg, run_ctx) {
       utils::download.file(ds_cfg$url, zip_path, mode = "wb", quiet = TRUE)
       utils::unzip(zip_path, exdir = temp_dir)
       files <- list.files(temp_dir, recursive = TRUE, full.names = TRUE)
-      csv_files <- files[grepl("\\.csv$", files, ignore.case = TRUE)]
-      if (length(csv_files) > 0) {
-        file.copy(csv_files[1], ds_cfg$path)
+      
+      target_file <- NULL
+      if (!is.null(ds_cfg$zip_file)) {
+        target_file <- files[basename(files) == ds_cfg$zip_file][1]
+      }
+      
+      if (is.null(target_file)) {
+        csv_files <- files[grepl("\\.csv$", files, ignore.case = TRUE)]
+        if (length(csv_files) > 0) {
+          target_file <- csv_files[1]
+        } else {
+          txt_files <- files[grepl("\\.txt$", files, ignore.case = TRUE)]
+          if (length(txt_files) > 0) {
+            target_file <- txt_files[1]
+          }
+        }
+      }
+      
+      if (!is.null(target_file)) {
+        if (grepl("\\.txt$", target_file, ignore.case = TRUE)) {
+          df <- utils::read.table(target_file, header = FALSE, stringsAsFactors = FALSE, sep = ",")
+          if (!is.null(ds_cfg$header_names)) {
+            colnames(df) <- ds_cfg$header_names
+          }
+          write.csv(df, ds_cfg$path, row.names = FALSE)
+        } else {
+          file.copy(target_file, ds_cfg$path)
+        }
       } else {
-        stop(sprintf("No CSV found in ZIP for dataset: %s", ds_cfg$id))
+        stop(sprintf("No suitable file found in ZIP for dataset: %s", ds_cfg$id))
       }
     } else if (ext == "gz") {
       temp_file <- tempfile(fileext = ".gz")
