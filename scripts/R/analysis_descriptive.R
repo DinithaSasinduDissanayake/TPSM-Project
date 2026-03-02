@@ -5,7 +5,7 @@ library(ggplot2)
 library(tidyr)
 
 OUTPUT_DIR <- "~/Desktop/TPSM_Analysis"
-DATA_PATH <- "/home/sasindu/Documents/SLIIT Materials/TPSM-Project/outputs/20260302T161119/pairwise_differences.csv"
+DATA_PATH <- "/home/sasindu/Documents/SLIIT Materials/TPSM-Project/outputs/combined_pairwise_differences.csv"
 
 df <- read.csv(DATA_PATH)
 

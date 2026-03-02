@@ -49,16 +49,18 @@ See [methodology](docs/methodology.md) for detailed approach.
 
 | Task | Single Model | Ensemble Model |
 |------|--------------|----------------|
-| Classification | Logistic Regression | Random Forest |
-| Regression | Linear Regression | Random Forest Regressor |
+| Classification | Logistic Regression, Decision Tree, Naive Bayes | Gradient Boosting, AdaBoost |
+| Regression | Linear Regression, Decision Tree, SVR | Gradient Boosting Regressor |
+| Time Series | ARIMA, Exponential Smoothing | GBM with Lag Features |
 
 ### Tools
 
 - **R** — primary language (recommended by lecturer)
-- **caret** — ML model training and cross-validation
-- **randomForest** — ensemble models
+- **gbm** — gradient boosting for classification and regression
+- **rpart** — decision trees
+- **e1071** — SVR, Naive Bayes
+- **forecast** — time series (ARIMA, Exponential Smoothing)
 - **tidyverse** — data manipulation and visualization
-- **RMarkdown** — documentation
 
 > "I don't restrict you to use the R. You can go with any analysis tool but I recommend you to use the R. R is having the most powerful statistical repositories."
 >
@@ -92,7 +94,33 @@ TPSM-Project/
 
 ## Key Findings
 
-*Project in progress — results to be updated*
+*Generated 3,160 model comparisons across classification, regression, and time series tasks.*
+
+### Summary Results
+
+| Task | Comparisons | Ensemble Win Rate |
+|------|-------------|-------------------|
+| Time Series | 160 | **100%** |
+| Regression | 1,200 | **85.5%** |
+| Classification | 1,800 | **54.7%** |
+| **Overall** | **3,160** | **68.7%** |
+
+### Key Insights
+
+1. **Time Series**: GBM with lag features (gbm_lag) dominates traditional methods — 100% win rate
+2. **Regression**: Gradient Boosting Regressor outperforms all single models — 85.5% win rate
+3. **Classification**: Results vary by dataset; ensembles win 71.7% on breast_cancer but only 37.8% on heart_disease
+4. **Best metric for ensembles**: ROC-AUC (65.3% win), R² (91.3% win), RMSE (92.4% win)
+
+### Best Model Pairings
+
+| Pairing | Win Rate |
+|---------|----------|
+| arima → gbm_lag | 100% |
+| decision_tree_regressor → gradient_boosting_regressor | 100% |
+| exp_smoothing → gbm_lag | 100% |
+| svr → gradient_boosting_regressor | 82.8% |
+| linear_regression → gradient_boosting_regressor | 73.8% |
 
 ---
 
@@ -104,8 +132,8 @@ TPSM-Project/
 |--------|------|
 | Dinitha Sasindu Dissanayake | Member |
 | Sithmini Thennakoon | Member |
-| [Team Member] | Leader |
-| [Team Member] | Member |
+| Piyumika Hansika | Leader |
+| Tharindu Kavinda | Member |
 
 *Sri Lanka Institute of Information Technology (SLIIT)*
 

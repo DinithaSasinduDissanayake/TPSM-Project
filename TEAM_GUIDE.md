@@ -65,7 +65,7 @@
 
 - [x] Topic selected
 - [x] Methodology defined
-- [ ] Dataset finalized
-- [ ] Models trained
-- [ ] Hypothesis testing completed
-- [ ] Results documented
+- [x] Dataset finalized (6 datasets across 3 tasks)
+- [x] Models trained (3,160 comparisons)
+- [x] Hypothesis testing completed
+- [x] Results documented

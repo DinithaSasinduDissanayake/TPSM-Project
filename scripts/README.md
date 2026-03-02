@@ -33,10 +33,10 @@ Rscript scripts/main.R --output-dir outputs
 
 - `jsonlite`
 - `dplyr`
+- `ggplot2`
+- `tidyr`
 - `rpart`
-- `randomForest`
 - `gbm`
-- `xgboost`
 - `e1071`
 - `forecast`
 - `pROC`

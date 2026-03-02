@@ -19,6 +19,15 @@ prepare_dataset_for_task <- function(task_name, df, ds_cfg) {
     }
   }
 
+  # Encode categorical variables as numeric for regression/time series
+  if (task_name %in% c("regression", "timeseries")) {
+    for (col in names(df)) {
+      if (!is.numeric(df[[col]]) && !is.integer(df[[col]])) {
+        df[[col]] <- as.numeric(factor(df[[col]]))
+      }
+    }
+  }
+
   if (task_name == "classification") {
     y <- df[[ds_cfg$target]]
     if (is.numeric(y) || is.integer(y)) {

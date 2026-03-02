@@ -45,22 +45,22 @@ Example:
 ### Classification
 | Category | Models |
 |----------|--------|
-| Single | Logistic Regression, Decision Tree, KNN, Naive Bayes |
-| Ensemble | Random Forest, Gradient Boosting, AdaBoost, XGBoost |
+| Single | Logistic Regression, Decision Tree, Naive Bayes |
+| Ensemble | Gradient Boosting (gbm), AdaBoost |
 
 ### Regression
 | Category | Models |
 |----------|--------|
-| Single | Linear Regression, Decision Tree, SVR |
-| Ensemble | Random Forest, Gradient Boosting, AdaBoost |
+| Single | Linear Regression, Decision Tree Regressor, SVR |
+| Ensemble | Gradient Boosting Regressor (gbm) |
 
 ### Time Series
 | Category | Models |
 |----------|--------|
 | Single | ARIMA, Exponential Smoothing |
-| Ensemble | Random Forest (with lag features), XGBoost |
+| Ensemble | GBM with Lag Features |
 
-**Total model pairs:** 3+ per task type
+**Total model pairs:** 3 per task type (classification: LR→GB, DT→AdaBoost, NB→GB; regression: LR→GBR, DT→GBR, SVR→GBR; timeseries: ARIMA→GBM_lag, ES→GBM_lag)
 
 ---
 
@@ -91,8 +91,9 @@ Example:
 | Classification | Heart Disease | UCI | 303 |
 | Classification | Breast Cancer | UCI | 569 |
 | Regression | Medical Insurance | Kaggle | 1,338 |
-| Regression | Housing Prices | Kaggle | 545 |
-| Time Series | Melbourne Temp | UCI | 3,650 |
+| Regression | Housing Prices (UK) | Kaggle | 545 |
+| Time Series | Melbourne Temperature | UCI | 3,650 |
+| Time Series | Electric Production | GitHub | 397 |
 
 ### Step 2 – Descriptive Analysis
 - Analyze target variable distributions
@@ -145,16 +146,11 @@ Example:
 
 | Package | Purpose |
 |---------|---------|
-| `caret` | Model training and cross-validation |
-| `randomForest` | Random Forest ensemble |
-| `gbm` | Gradient Boosting |
-| `xgboost` | XGBoost |
-| `adabag` | AdaBoost |
-| `e1071` | SVM, KNN, Naive Bayes |
-| `MASS` | Dataset access |
-| `mlbench` | Dataset access |
-| `forecast` | Time series (ARIMA) |
-| `tseries` | ADF test for stationarity |
+| `gbm` | Gradient Boosting (classification and regression) |
+| `rpart` | Decision Trees |
+| `e1071` | SVR, Naive Bayes |
+| `forecast` | Time series (ARIMA, Exponential Smoothing) |
+| `jsonlite` | JSON logging |
 | `t.test()` | Hypothesis testing (built-in) |
 | `tidyverse` | Data manipulation and visualization |
 
@@ -162,7 +158,7 @@ Example:
 
 ## Status
 
-- [ ] Dataset selection finalized
-- [ ] Models trained and evaluated
-- [ ] Hypothesis testing completed
-- [ ] Results documented
+- [x] Dataset selection finalized
+- [x] Models trained and evaluated (3,160 comparisons generated)
+- [x] Hypothesis testing completed
+- [x] Results documented

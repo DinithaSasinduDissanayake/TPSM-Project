@@ -43,7 +43,7 @@ get_config <- function() {
         metrics = c("rmse", "mae", "r2", "mape"),
         datasets = list(
           list(id = "insurance", source = "kaggle", path = "data/regression/insurance.csv", url = "https://raw.githubusercontent.com/stedy/Machine-Learning-with-R-datasets/master/insurance.csv", target = "charges"),
-          list(id = "housing_prices", source = "kaggle", path = "data/regression/housing_prices.csv", url = "", target = "price")
+          list(id = "housing_prices", source = "kaggle", path = "data/regression/housing_prices.csv", url = "https://raw.githubusercontent.com/datasets/house-prices-uk/main/data/data.csv", target = "Price..All.")
         ),
         model_pairs = list(
           list(single = "linear_regression", ensemble = "gradient_boosting_regressor"),
@@ -56,8 +56,8 @@ get_config <- function() {
         split = list(method = "rolling_origin", splits = 10),
         metrics = c("rmse", "mae", "mape", "smape"),
         datasets = list(
-          list(id = "melbourne_temp", source = "other", path = "data/timeseries/melbourne_temp.csv", url = "", target = "Temp", time_col = "Date"),
-          list(id = "electric_production", source = "other", path = "data/timeseries/electric_production.csv", url = "", target = "Value", time_col = "DATE")
+          list(id = "melbourne_temp", source = "other", path = "data/timeseries/melbourne_temp.csv", url = "https://raw.githubusercontent.com/jbrownlee/Datasets/master/daily-min-temperatures.csv", target = "Temp", time_col = "Date"),
+          list(id = "electric_production", source = "other", path = "data/timeseries/electric_production.csv", url = "https://raw.githubusercontent.com/Rudra-23/Electric-Production-Forecast/main/Electric_Production.csv", target = "Value", time_col = "DATE")
         ),
         model_pairs = list(
           list(single = "arima", ensemble = "gbm_lag"),
