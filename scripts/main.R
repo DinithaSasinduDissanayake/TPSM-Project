@@ -46,7 +46,7 @@ for (task in cfg$tasks) {
       stop_with_report(dataset$message, list(task = task$name, dataset = ds$id, stage = "prepare"))
     }
 
-    splits <- tryCatch(make_splits(task$name, dataset, task$split), error = function(e) e)
+    splits <- tryCatch(make_splits(task$name, dataset, task$split, ds$target), error = function(e) e)
     if (inherits(splits, "error")) {
       stop_with_report(splits$message, list(task = task$name, dataset = ds$id, stage = "split"))
     }

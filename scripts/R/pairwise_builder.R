@@ -3,35 +3,13 @@ make_row_id <- function(prefix, ...) {
 }
 
 prepare_dataset_for_task <- function(task_name, df, ds_cfg) {
-  # Basic missing value handling
-  for (col in names(df)) {
-    if (all(is.na(df[[col]]))) next
-    if (is.numeric(df[[col]]) || is.integer(df[[col]])) {
-      med <- stats::median(df[[col]], na.rm = TRUE)
-      df[[col]][is.na(df[[col]])] <- med
-      df[[col]][is.nan(df[[col]])] <- med
-    } else {
-      vals <- df[[col]][!is.na(df[[col]])]
-      if (length(vals) > 0) {
-        mode_val <- names(sort(table(vals), decreasing = TRUE))[1]
-        df[[col]][is.na(df[[col]])] <- mode_val
-      }
-    }
+  if (task_name == "timeseries" && !is.null(ds_cfg$time_col)) {
+    df <- parse_time_column(df, ds_cfg$time_col)
   }
-
-  # Encode categorical variables as numeric for regression/time series
-  if (task_name %in% c("regression", "timeseries")) {
-    for (col in names(df)) {
-      if (!is.numeric(df[[col]]) && !is.integer(df[[col]])) {
-        df[[col]] <- as.numeric(factor(df[[col]]))
-      }
-    }
-  }
-
+  
   if (task_name == "classification") {
     y <- df[[ds_cfg$target]]
     if (is.numeric(y) || is.integer(y)) {
-      # Heart disease style: 0 = no disease, 1..4 = disease
       y_bin <- ifelse(y > 0, 1, 0)
     } else {
       y_chr <- tolower(as.character(y))
@@ -42,140 +20,154 @@ prepare_dataset_for_task <- function(task_name, df, ds_cfg) {
   df
 }
 
-evaluate_pair_on_split <- function(task, dataset_df, ds_cfg, pair, split, run_ctx) {
-  train_df <- dataset_df[split$train_idx, , drop = FALSE]
-  test_df <- dataset_df[split$test_idx, , drop = FALSE]
-
-  warning_ctx_base <- list(
-    task = task$name,
-    dataset = ds_cfg$id,
-    single = pair$single,
-    ensemble = pair$ensemble,
-    fold = split$fold,
-    repeat_id = split$repeat_id
-  )
-
-  single_out <- list()
-  ensemble_out <- list()
-  single_time <- system.time({
-    single_out <- withCallingHandlers(
-      run_model(task$name, pair$single, train_df, test_df, ds_cfg$target, ds_cfg),
-      warning = function(w) {
-        log_warning(run_ctx, conditionMessage(w), c(warning_ctx_base, list(stage = "model_train_predict", model_name = pair$single)))
-        invokeRestart("muffleWarning")
-      }
-    )
-  })[["elapsed"]]
-  ensemble_time <- system.time({
-    ensemble_out <- withCallingHandlers(
-      run_model(task$name, pair$ensemble, train_df, test_df, ds_cfg$target, ds_cfg),
-      warning = function(w) {
-        log_warning(run_ctx, conditionMessage(w), c(warning_ctx_base, list(stage = "model_train_predict", model_name = pair$ensemble)))
-        invokeRestart("muffleWarning")
-      }
-    )
-  })[["elapsed"]]
-
-  metric_single <- withCallingHandlers(
-    calc_metrics(task$name, test_df[[ds_cfg$target]], single_out$pred, single_out$prob),
-    warning = function(w) {
-      log_warning(run_ctx, conditionMessage(w), c(warning_ctx_base, list(stage = "metrics", model_name = pair$single)))
-      invokeRestart("muffleWarning")
+infer_id_columns <- function(df, target_col) {
+  out <- character(0)
+  for (col in names(df)) {
+    if (col == target_col) next
+    if (tolower(col) %in% c("id", "identifier", "uid")) {
+      out <- c(out, col)
+      next
     }
-  )
-  metric_ensemble <- withCallingHandlers(
-    calc_metrics(task$name, test_df[[ds_cfg$target]], ensemble_out$pred, ensemble_out$prob),
-    warning = function(w) {
-      log_warning(run_ctx, conditionMessage(w), c(warning_ctx_base, list(stage = "metrics", model_name = pair$ensemble)))
-      invokeRestart("muffleWarning")
+    if (length(unique(df[[col]])) == nrow(df)) {
+      out <- c(out, col)
     }
-  )
+  }
+  unique(out)
+}
 
-  metric_names <- intersect(names(metric_single), names(metric_ensemble))
-  metric_names <- metric_names[metric_names %in% task$metrics]
+fit_imputer <- function(train_df) {
+  num_medians <- list()
+  cat_modes <- list()
+  for (col in names(train_df)) {
+    if (is.numeric(train_df[[col]]) || is.integer(train_df[[col]])) {
+      num_medians[[col]] <- stats::median(train_df[[col]], na.rm = TRUE)
+    } else {
+      vals <- train_df[[col]][!is.na(train_df[[col]])]
+      if (length(vals) > 0) {
+        cat_modes[[col]] <- names(sort(table(vals), decreasing = TRUE))[1]
+      }
+    }
+  }
+  list(num_medians = num_medians, cat_modes = cat_modes)
+}
 
-  model_rows <- list()
-  pair_rows <- list()
+apply_imputer <- function(df, imputer) {
+  for (col in names(df)) {
+    if (is.numeric(df[[col]]) || is.integer(df[[col]])) {
+      med <- imputer$num_medians[[col]]
+      if (!is.null(med)) {
+        df[[col]][is.na(df[[col]])] <- med
+        df[[col]][is.nan(df[[col]])] <- med
+      }
+    } else {
+      mode_val <- imputer$cat_modes[[col]]
+      if (!is.null(mode_val)) {
+        df[[col]][is.na(df[[col]])] <- mode_val
+      }
+    }
+  }
+  df
+}
 
-  for (m in metric_names) {
-    run_id_single <- make_row_id("run", run_ctx$run_id, task$name, ds_cfg$id, pair$single, split$fold, split$repeat_id, m)
-    run_id_ens <- make_row_id("run", run_ctx$run_id, task$name, ds_cfg$id, pair$ensemble, split$fold, split$repeat_id, m)
+fit_categorical_encoder <- function(train_df, target_col) {
+  levels_map <- list()
+  for (col in names(train_df)) {
+    if (col == target_col) next
+    if (!is.numeric(train_df[[col]]) && !is.integer(train_df[[col]])) {
+      levels_map[[col]] <- unique(as.character(train_df[[col]]))
+    }
+  }
+  list(levels_map = levels_map)
+}
 
-    model_rows[[length(model_rows) + 1]] <- list(
-      run_id = run_id_single,
-      task_type = task$name,
-      dataset_id = ds_cfg$id,
-      dataset_source = ds_cfg$source,
-      model_family = "single",
-      model_name = pair$single,
-      split_method = split$split_method,
-      fold = split$fold,
-      repeat_id = split$repeat_id,
-      n_folds = split$n_folds,
-      train_rows = nrow(train_df),
-      test_rows = nrow(test_df),
-      train_time_sec = single_time,
-      predict_time_sec = NA_real_,
-      metric_name = m,
-      metric_value = metric_single[[m]],
-      timestamp_utc = format(as.POSIXct(Sys.time(), tz = "UTC"), "%Y-%m-%dT%H:%M:%SZ"),
-      status = "ok",
-      error_message = NA_character_
-    )
+apply_categorical_encoder <- function(df, encoder, imputer, target_col) {
+  for (col in names(encoder$levels_map)) {
+    if (col == target_col || !col %in% names(df)) next
+    lvls <- encoder$levels_map[[col]]
+    df[[col]] <- as.numeric(factor(df[[col]], levels = lvls))
+    if (is.null(imputer$num_medians[[col]])) {
+      med <- stats::median(df[[col]], na.rm = TRUE)
+      df[[col]][is.na(df[[col]])] <- med
+      df[[col]][is.nan(df[[col]])] <- med
+    }
+  }
+  df
+}
 
-    model_rows[[length(model_rows) + 1]] <- list(
-      run_id = run_id_ens,
-      task_type = task$name,
-      dataset_id = ds_cfg$id,
-      dataset_source = ds_cfg$source,
-      model_family = "ensemble",
-      model_name = pair$ensemble,
-      split_method = split$split_method,
-      fold = split$fold,
-      repeat_id = split$repeat_id,
-      n_folds = split$n_folds,
-      train_rows = nrow(train_df),
-      test_rows = nrow(test_df),
-      train_time_sec = ensemble_time,
-      predict_time_sec = NA_real_,
-      metric_name = m,
-      metric_value = metric_ensemble[[m]],
-      timestamp_utc = format(as.POSIXct(Sys.time(), tz = "UTC"), "%Y-%m-%dT%H:%M:%SZ"),
-      status = "ok",
-      error_message = NA_character_
-    )
+fit_scaler <- function(train_df, target_col) {
+  means <- list()
+  sds <- list()
+  for (col in names(train_df)) {
+    if (col == target_col) next
+    if (is.numeric(train_df[[col]]) || is.integer(train_df[[col]])) {
+      means[[col]] <- mean(train_df[[col]], na.rm = TRUE)
+      sds_col <- sd(train_df[[col]], na.rm = TRUE)
+      sds[[col]] <- ifelse(sds_col == 0, 1, sds_col)
+    }
+  }
+  list(means = means, sds = sds)
+}
 
-    higher <- is_higher_better(m)
-    d <- if (higher) metric_ensemble[[m]] - metric_single[[m]] else metric_single[[m]] - metric_ensemble[[m]]
-    def <- if (higher) paste0("ensemble_minus_single_", m) else paste0("single_minus_ensemble_", m)
+apply_scaler <- function(df, scaler, target_col) {
+  for (col in names(scaler$means)) {
+    if (!col %in% names(df)) next
+    df[[col]] <- (df[[col]] - scaler$means[[col]]) / scaler$sds[[col]]
+  }
+  df
+}
 
-    pair_rows[[length(pair_rows) + 1]] <- list(
-      comparison_id = make_row_id("cmp", run_ctx$run_id, task$name, ds_cfg$id, pair$single, pair$ensemble, split$fold, split$repeat_id, m),
-      run_id = run_ctx$run_id,
-      task_type = task$name,
-      dataset_id = ds_cfg$id,
-      split_method = split$split_method,
-      fold = split$fold,
-      repeat_id = split$repeat_id,
-      metric_name = m,
-      single_model_name = pair$single,
-      ensemble_model_name = pair$ensemble,
-      single_metric_value = metric_single[[m]],
-      ensemble_metric_value = metric_ensemble[[m]],
-      difference_definition = def,
-      difference_value = d,
-      ensemble_better = isTRUE(d > 0),
-      valid_pair = !is.na(d),
-      notes = NA_character_
-    )
+preprocess_split <- function(task_name, train_df, test_df, ds_cfg) {
+  drop_cols <- character(0)
+  if (!is.null(ds_cfg$exclude_cols)) {
+    drop_cols <- c(drop_cols, ds_cfg$exclude_cols)
+  }
+  drop_cols <- c(drop_cols, infer_id_columns(train_df, ds_cfg$target))
+  if (!is.null(ds_cfg$time_col)) {
+    drop_cols <- c(drop_cols, ds_cfg$time_col)
+  }
+  drop_cols <- unique(drop_cols)
+
+  if (length(drop_cols) > 0) {
+    train_df <- train_df[, setdiff(names(train_df), drop_cols), drop = FALSE]
+    test_df <- test_df[, setdiff(names(test_df), drop_cols), drop = FALSE]
   }
 
-  list(model_rows = model_rows, pair_rows = pair_rows)
+  imputer <- fit_imputer(train_df)
+  train_df <- apply_imputer(train_df, imputer)
+  test_df <- apply_imputer(test_df, imputer)
+
+  if (task_name == "classification") {
+    encoder <- fit_categorical_encoder(train_df, ds_cfg$target)
+    train_df <- apply_categorical_encoder(train_df, encoder, imputer, ds_cfg$target)
+    test_df <- apply_categorical_encoder(test_df, encoder, imputer, ds_cfg$target)
+  }
+  
+  if (task_name == "regression") {
+    encoder <- fit_categorical_encoder(train_df, ds_cfg$target)
+    train_df <- apply_categorical_encoder(train_df, encoder, imputer, ds_cfg$target)
+    test_df <- apply_categorical_encoder(test_df, encoder, imputer, ds_cfg$target)
+    
+    scaler <- fit_scaler(train_df, ds_cfg$target)
+    train_df <- apply_scaler(train_df, scaler, ds_cfg$target)
+    test_df <- apply_scaler(test_df, scaler, ds_cfg$target)
+  }
+  
+  if (task_name == "timeseries") {
+    encoder <- fit_categorical_encoder(train_df, ds_cfg$target)
+    train_df <- apply_categorical_encoder(train_df, encoder, imputer, ds_cfg$target)
+    test_df <- apply_categorical_encoder(test_df, encoder, imputer, ds_cfg$target)
+  }
+
+  list(train_df = train_df, test_df = test_df)
 }
 
 evaluate_models_on_split <- function(task, dataset_df, ds_cfg, split, model_names, run_ctx) {
   train_df <- dataset_df[split$train_idx, , drop = FALSE]
   test_df <- dataset_df[split$test_idx, , drop = FALSE]
+
+  prepped <- preprocess_split(task$name, train_df, test_df, ds_cfg)
+  train_df <- prepped$train_df
+  test_df <- prepped$test_df
 
   model_cache <- list()
   model_rows <- list()
@@ -297,7 +289,19 @@ run_model <- function(task_name, model_name, train_df, test_df, target_col, ds_c
   if (task_name == "timeseries") {
     y_train <- train_df[[target_col]]
     y_test <- test_df[[target_col]]
-    pred <- train_predict_timeseries(model_name, y_train, y_test, lag = 12)
+    
+    exog_train <- NULL
+    exog_test <- NULL
+    if (!is.null(ds_cfg$exog_cols)) {
+      exog_cols <- ds_cfg$exog_cols
+      valid_exog <- intersect(exog_cols, names(train_df))
+      if (length(valid_exog) > 0) {
+        exog_train <- train_df[, valid_exog, drop = FALSE]
+        exog_test <- test_df[, valid_exog, drop = FALSE]
+      }
+    }
+    
+    pred <- train_predict_timeseries(model_name, y_train, y_test, lag = 12, exog_train = exog_train, exog_test = exog_test)
     return(list(pred = pred, prob = NULL))
   }
   stop(sprintf("Unsupported task: %s", task_name))
