@@ -9,13 +9,30 @@ prepare_dataset_for_task <- function(task_name, df, ds_cfg) {
   
   if (task_name == "classification") {
     y <- df[[ds_cfg$target]]
-    if (is.numeric(y) || is.integer(y)) {
-      y_bin <- ifelse(y > 0, 1, 0)
-    } else {
+    y_unique <- unique(y[!is.na(y)])
+    n_classes <- length(y_unique)
+    
+    is_binary_forced <- !is.null(ds_cfg$force_binary) && ds_cfg$force_binary
+    
+    if (is_binary_forced && n_classes > 2) {
+      if (!is.null(ds_cfg$binary_positive_vals)) {
+        y_chr <- as.character(y)
+        y_bin <- ifelse(tolower(y_chr) %in% tolower(ds_cfg$binary_positive_vals), 1, 0)
+        df[[ds_cfg$target]] <- factor(y_bin, levels = c(0, 1), labels = c("0", "1"))
+      } else if (!is.null(ds_cfg$binary_threshold)) {
+        y_num <- as.numeric(y)
+        y_bin <- ifelse(y_num > ds_cfg$binary_threshold, 1, 0)
+        df[[ds_cfg$target]] <- factor(y_bin, levels = c(0, 1), labels = c("0", "1"))
+      } else {
+        df[[ds_cfg$target]] <- as.factor(y)
+      }
+    } else if (n_classes == 2) {
       y_chr <- tolower(as.character(y))
-      y_bin <- ifelse(y_chr %in% c("m", "malignant", "yes", "true", "1", "positive"), 1, 0)
+      y_bin <- ifelse(y_chr %in% c("m", "malignant", "yes", "true", "1", "positive", "good", "1"), 1, 0)
+      df[[ds_cfg$target]] <- factor(y_bin, levels = c(0, 1), labels = c("0", "1"))
+    } else {
+      df[[ds_cfg$target]] <- as.factor(y)
     }
-    df[[ds_cfg$target]] <- factor(y_bin, levels = c(0, 1), labels = c("0", "1"))
   }
   df
 }
