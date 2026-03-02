@@ -101,7 +101,10 @@ regression_metrics <- function(y_true, y_pred) {
   ss_res <- sum(err^2, na.rm = TRUE)
   ss_tot <- sum((y_true - mean(y_true, na.rm = TRUE))^2, na.rm = TRUE)
   r2 <- ifelse(ss_tot == 0, NA_real_, 1 - ss_res / ss_tot)
-  mape <- mean(abs(safe_div(err, y_true)), na.rm = TRUE) * 100
+  
+  mape_vals <- abs(err / y_true)
+  mape_vals <- mape_vals[!is.na(mape_vals) & is.finite(mape_vals) & abs(y_true) > 1e-6]
+  mape <- mean(pmin(mape_vals, 10), na.rm = TRUE) * 100
   list(rmse = rmse, mae = mae, r2 = r2, mape = mape)
 }
 
