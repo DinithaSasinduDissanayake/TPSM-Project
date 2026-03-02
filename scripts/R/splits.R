@@ -1,6 +1,8 @@
-make_splits <- function(task_name, df, split_cfg) {
+make_splits <- function(task_name, df, split_cfg, target_col = NULL) {
+  set.seed(42)
   if (split_cfg$method == "repeated_kfold") {
-    return(make_repeated_kfold_splits(nrow(df), split_cfg$folds, split_cfg$repeats))
+    use_stratify <- task_name == "classification" && !is.null(target_col) && target_col %in% names(df)
+    return(make_repeated_kfold_splits(df, target_col, split_cfg$folds, split_cfg$repeats, use_stratify))
   }
   if (split_cfg$method == "rolling_origin") {
     return(make_rolling_splits(nrow(df), split_cfg$splits))
@@ -8,11 +10,28 @@ make_splits <- function(task_name, df, split_cfg) {
   stop(sprintf("Unsupported split method: %s", split_cfg$method))
 }
 
-make_repeated_kfold_splits <- function(n, k, repeats) {
+make_repeated_kfold_splits <- function(df, target_col, k, repeats, use_stratify = FALSE) {
   splits <- list()
   idx <- 1
+  n <- nrow(df)
+  y <- NULL
+  if (use_stratify && !is.null(target_col) && target_col %in% names(df)) {
+    y <- df[[target_col]]
+    if (length(unique(y)) > 20) {
+      y <- NULL
+    }
+  }
   for (r in seq_len(repeats)) {
-    fold_ids <- sample(rep(seq_len(k), length.out = n))
+    if (is.null(y)) {
+      fold_ids <- sample(rep(seq_len(k), length.out = n))
+    } else {
+      fold_ids <- integer(n)
+      classes <- unique(y)
+      for (cls in classes) {
+        idxs <- which(y == cls)
+        fold_ids[idxs] <- sample(rep(seq_len(k), length.out = length(idxs)))
+      }
+    }
     for (f in seq_len(k)) {
       test_idx <- which(fold_ids == f)
       train_idx <- setdiff(seq_len(n), test_idx)
@@ -39,7 +58,7 @@ make_rolling_splits <- function(n, n_splits) {
       test_idx = seq(test_start, test_end),
       fold = i,
       repeat_id = 1,
-      n_folds = length(splits) + 1,
+      n_folds = n_splits,
       split_method = "rolling_origin"
     )
   }

@@ -54,9 +54,11 @@ print(by_metric)
 
 cat("\n>>> KEY INSIGHT: Metrics where ensembles consistently win:\n")
 winners <- by_metric %>% filter(mean_diff > 0 & ensemble_win_pct > 50)
-for (i in 1:nrow(winners)) {
-  cat("   -", winners$metric_name[i], ":", round(winners$ensemble_win_pct[i], 1), 
-      "% win rate, avg +", round(winners$mean_diff[i], 4), " gain\n")
+if (nrow(winners) > 0) {
+  for (i in seq_len(nrow(winners))) {
+    cat("   -", winners$metric_name[i], ":", round(winners$ensemble_win_pct[i], 1), 
+        "% win rate, avg +", round(winners$mean_diff[i], 4), " gain\n")
+  }
 }
 
 # ============================================================================
