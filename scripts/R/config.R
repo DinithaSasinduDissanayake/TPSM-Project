@@ -1,5 +1,5 @@
 parse_args <- function(args) {
-  out <- list(output_dir = "outputs", task_filter = NULL, config_path = NULL)
+  out <- list(output_dir = "outputs", task_filter = NULL, config_path = NULL, fast = FALSE)
   if (length(args) == 0) return(out)
 
   i <- 1
@@ -18,6 +18,9 @@ parse_args <- function(args) {
     } else if (key == "--config") {
       out$config_path <- val
       i <- i + 2
+    } else if (key == "--fast") {
+      out$fast <- TRUE
+      i <- i + 1
     } else {
       i <- i + 1
     }

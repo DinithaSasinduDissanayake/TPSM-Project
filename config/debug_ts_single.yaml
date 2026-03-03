@@ -1,0 +1,30 @@
+# TPSM Debug Configuration - Single Time Series Dataset
+# Purpose: Validate GBM leakage fix and ARIMAX implementation
+
+# Global settings
+global:
+  stop_on_first_fail: false
+  timeout_seconds: 300
+  parallel_workers: 1
+
+# Time Series Task
+timeseries:
+  split_method: rolling_origin
+  splits: 10
+  metrics:
+    - rmse
+    - mae
+    - mape
+    - smape
+  model_pairs:
+    - single: arima
+      ensemble: gbm_lag
+    - single: exp_smoothing
+      ensemble: gbm_lag
+  datasets:
+    - id: melbourne_temp
+      source: other
+      path: data/timeseries/melbourne_temp.csv
+      url: https://raw.githubusercontent.com/jbrownlee/Datasets/master/daily-min-temperatures.csv
+      target: Temp
+      time_col: Date
