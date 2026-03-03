@@ -30,7 +30,7 @@ download_with_retry <- function(url, dest, max_retries = 3, timeout = 60) {
     tryCatch({
       utils::download.file(url, dest, mode = "wb", quiet = TRUE, timeout = timeout)
       if (file.info(dest)$size > 100) {
-        first_bytes <- readBin(dest, raw(), n = min(20, file.info(dest)$size))
+        first_bytes <- readBin(dest, raw(), n = min(200, file.info(dest)$size))
         first_str <- tryCatch(
           rawToChar(first_bytes),
           error = function(e) ""

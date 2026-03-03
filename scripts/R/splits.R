@@ -68,7 +68,13 @@ make_rolling_splits <- function(n, n_splits) {
     train_end <- initial + (i - 1) * horizon
     test_start <- train_end + 1
     test_end <- min(n, test_start + horizon - 1)
-    if (test_start > n) break
+    if (test_start > n) {
+      warning(sprintf(
+        "Requested %d rolling splits, but only produced %d due to dataset size (n=%d)",
+        n_splits, length(splits), n
+      ))
+      break
+    }
     splits[[length(splits) + 1]] <- list(
       train_idx = seq_len(train_end),
       test_idx = seq(test_start, test_end),
