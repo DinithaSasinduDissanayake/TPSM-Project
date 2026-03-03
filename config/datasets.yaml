@@ -55,6 +55,7 @@ classification:
       path: data/classification/adult_census.csv
       url: https://archive.ics.uci.edu/ml/machine-learning-databases/adult/adult.data
       target: income
+      separator: ","
       force_binary: true
       binary_positive_vals:
         - ">50K"
@@ -80,6 +81,7 @@ classification:
       path: data/classification/magic_gamma.csv
       url: https://archive.ics.uci.edu/ml/machine-learning-databases/magic/magic04.data
       target: class
+      separator: ","
       header_names:
         - fLength
         - fWidth
@@ -98,6 +100,7 @@ classification:
       path: data/classification/letter_recognition.csv
       url: https://archive.ics.uci.edu/ml/machine-learning-databases/letter-recognition/letter-recognition.data
       target: lettr
+      separator: ","
       force_binary: false
       header_names:
         - lettr
@@ -164,6 +167,18 @@ classification:
       url: https://archive.ics.uci.edu/ml/machine-learning-databases/00459/Avila.zip
       target: class
       zip_file: avila-tr.txt
+      header_names:
+        - F1
+        - F2
+        - F3
+        - F4
+        - F5
+        - F6
+        - F7
+        - F8
+        - F9
+        - F10
+        - class
       force_binary: false
 
 # Regression Task
@@ -223,7 +238,8 @@ regression:
       source: uci
       path: data/regression/concrete_strength.csv
       url: https://archive.ics.uci.edu/ml/machine-learning-databases/concrete/compressive/Concrete_Data.xls
-      target: Strength
+      target: Concrete.compressive.strength.MPa..megapascals.
+      rename_target_from: Strength
 
     - id: ccpp
       source: uci
@@ -236,6 +252,7 @@ regression:
       path: data/regression/bike_sharing.csv
       url: https://archive.ics.uci.edu/ml/machine-learning-databases/00275/Bike-Sharing-Dataset.zip
       target: cnt
+      zip_file: hour.csv
       exclude_cols:
         - casual
         - registered
@@ -329,5 +346,7 @@ timeseries:
       exog_cols:
         - Global_reactive_power
         - Voltage
+      exclude_cols:
+        - Time
       na_strings: "?"
       max_rows: 50000

@@ -84,6 +84,7 @@ train_predict_classification <- function(model_name, train_df, test_df, target_c
       train_tmp[[target_col]] <- as.numeric(as.factor(train_tmp[[target_col]])) - 1
       fit <- gbm::gbm(as.formula(paste(target_col, "~ .")), data = train_tmp, distribution = "multinomial", n.trees = 100, interaction.depth = 3, shrinkage = 0.05, n.minobsinnode = 10, verbose = FALSE)
       prob <- stats::predict(fit, newdata = test_df, n.trees = 100, type = "response")
+      prob <- prob[, , 1]
       pred <- levels(y_train)[max.col(prob)]
       return(list(pred = pred, prob = prob))
     }

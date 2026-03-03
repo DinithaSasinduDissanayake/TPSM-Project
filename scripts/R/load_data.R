@@ -11,7 +11,8 @@ load_dataset <- function(ds_cfg, run_ctx, task_name = NULL) {
       dir.create(temp_dir)
       on.exit(unlink(temp_dir, recursive = TRUE))
       zip_path <- paste0(temp_dir, "/data.zip")
-      utils::download.file(ds_cfg$url, zip_path, mode = "wb", quiet = TRUE)
+      success <- download_with_retry(ds_cfg$url, zip_path, max_retries = 3, timeout = 60)
+      if (!success) stop(sprintf("Failed to download dataset after retries: %s", ds_cfg$id))
       
       if (file.info(zip_path)$size < 100) {
         stop(sprintf("Downloaded file too small - likely an error page: %s", ds_cfg$id))
@@ -65,7 +66,8 @@ load_dataset <- function(ds_cfg, run_ctx, task_name = NULL) {
       }
     } else if (ext == "gz") {
       temp_file <- tempfile(fileext = ".gz")
-      utils::download.file(ds_cfg$url, temp_file, mode = "wb", quiet = TRUE)
+      success <- download_with_retry(ds_cfg$url, temp_file, max_retries = 3, timeout = 60)
+      if (!success) stop(sprintf("Failed to download dataset after retries: %s", ds_cfg$id))
       if (file.info(temp_file)$size < 100) {
         stop(sprintf("Downloaded file too small - likely an error page: %s", ds_cfg$id))
       }
@@ -75,7 +77,8 @@ load_dataset <- function(ds_cfg, run_ctx, task_name = NULL) {
       dir.create(temp_dir)
       on.exit(unlink(temp_dir, recursive = TRUE))
       rar_path <- paste0(temp_dir, "/data.rar")
-      utils::download.file(ds_cfg$url, rar_path, mode = "wb", quiet = TRUE)
+      success <- download_with_retry(ds_cfg$url, rar_path, max_retries = 3, timeout = 60)
+      if (!success) stop(sprintf("Failed to download dataset after retries: %s", ds_cfg$id))
       if (file.info(rar_path)$size < 100) {
         stop(sprintf("Downloaded file too small - likely an error page: %s", ds_cfg$id))
       }
@@ -101,7 +104,8 @@ load_dataset <- function(ds_cfg, run_ctx, task_name = NULL) {
       }
     } else if (ext == "xlsx" || ext == "xls") {
       temp_file <- tempfile(fileext = paste0(".", ext))
-      utils::download.file(ds_cfg$url, temp_file, mode = "wb", quiet = TRUE)
+      success <- download_with_retry(ds_cfg$url, temp_file, max_retries = 3, timeout = 60)
+      if (!success) stop(sprintf("Failed to download dataset after retries: %s", ds_cfg$id))
       if (file.info(temp_file)$size < 100) {
         stop(sprintf("Downloaded file too small - likely an error page: %s", ds_cfg$id))
       }
@@ -112,7 +116,8 @@ load_dataset <- function(ds_cfg, run_ctx, task_name = NULL) {
       write.csv(df, ds_cfg$path, row.names = FALSE)
     } else if (ext == "data" || ext == "dat") {
       temp_file <- tempfile(fileext = paste0(".", ext))
-      utils::download.file(ds_cfg$url, temp_file, mode = "wb", quiet = TRUE)
+      success <- download_with_retry(ds_cfg$url, temp_file, max_retries = 3, timeout = 60)
+      if (!success) stop(sprintf("Failed to download dataset after retries: %s", ds_cfg$id))
       if (file.info(temp_file)$size < 100) {
         stop(sprintf("Downloaded file too small - likely an error page: %s", ds_cfg$id))
       }
@@ -125,7 +130,8 @@ load_dataset <- function(ds_cfg, run_ctx, task_name = NULL) {
       }
       write.csv(df, ds_cfg$path, row.names = FALSE)
     } else {
-      utils::download.file(ds_cfg$url, ds_cfg$path, mode = "wb", quiet = TRUE)
+      success <- download_with_retry(ds_cfg$url, ds_cfg$path, max_retries = 3, timeout = 60)
+      if (!success) stop(sprintf("Failed to download dataset after retries: %s", ds_cfg$id))
       if (file.info(ds_cfg$path)$size < 100) {
         stop(sprintf("Downloaded file too small - likely an error page: %s", ds_cfg$id))
       }
@@ -150,7 +156,11 @@ load_dataset <- function(ds_cfg, run_ctx, task_name = NULL) {
   } else {
     df <- utils::read.csv(ds_cfg$path, stringsAsFactors = FALSE)
   }
-  
+
+  if (!is.null(ds_cfg$rename_target_from) && ds_cfg$rename_target_from %in% names(df)) {
+    colnames(df)[colnames(df) == ds_cfg$rename_target_from] <- ds_cfg$target
+  }
+
   if (!ds_cfg$target %in% names(df)) {
     stop(sprintf("Target column '%s' not found for dataset '%s'", ds_cfg$target, ds_cfg$id))
   }

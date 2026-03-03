@@ -13,14 +13,14 @@ prepare_target_for_split <- function(task_name, train_df, test_df, target_col, d
   if (task_name != "classification") {
     return(list(train_df = train_df, test_df = test_df))
   }
-  
+
   y_train <- train_df[[target_col]]
   y_test <- test_df[[target_col]]
   y_train_unique <- unique(y_train[!is.na(y_train)])
   n_classes <- length(y_train_unique)
-  
+
   is_binary_forced <- !is.null(ds_cfg$force_binary) && ds_cfg$force_binary
-  
+
   if (is_binary_forced && n_classes > 2) {
     if (!is.null(ds_cfg$binary_positive_vals)) {
       y_train_chr <- as.character(y_train)
@@ -37,21 +37,20 @@ prepare_target_for_split <- function(task_name, train_df, test_df, target_col, d
       train_df[[target_col]] <- factor(y_train_bin, levels = c(0, 1), labels = c("0", "1"))
       test_df[[target_col]] <- factor(y_test_bin, levels = c(0, 1), labels = c("0", "1"))
     } else {
-      train_df[[target_col]] <- as.factor(y_train)
-      test_df[[target_col]] <- factor(y_test)
+      stop(sprintf("force_binary=TRUE with %d classes requires binary_positive_vals or binary_threshold in config for dataset '%s'", n_classes, ds_cfg$id))
     }
   } else if (n_classes == 2) {
     y_train_chr <- tolower(as.character(y_train))
     y_test_chr <- tolower(as.character(y_test))
-    y_train_bin <- ifelse(y_train_chr %in% c("m", "malignant", "yes", "true", "1", "positive", "good", "1"), 1, 0)
-    y_test_bin <- ifelse(y_test_chr %in% c("m", "malignant", "yes", "true", "1", "positive", "good", "1"), 1, 0)
+    y_train_bin <- ifelse(y_train_chr %in% c("m", "malignant", "yes", "true", "1", "positive", "good"), 1, 0)
+    y_test_bin <- ifelse(y_test_chr %in% c("m", "malignant", "yes", "true", "1", "positive", "good"), 1, 0)
     train_df[[target_col]] <- factor(y_train_bin, levels = c(0, 1), labels = c("0", "1"))
     test_df[[target_col]] <- factor(y_test_bin, levels = c(0, 1), labels = c("0", "1"))
   } else {
     train_df[[target_col]] <- as.factor(y_train)
-    test_df[[target_col]] <- factor(y_test)
+    test_df[[target_col]] <- as.factor(y_test)
   }
-  
+
   list(train_df = train_df, test_df = test_df)
 }
 
@@ -180,17 +179,17 @@ preprocess_split <- function(task_name, train_df, test_df, ds_cfg) {
     train_df <- apply_categorical_encoder(train_df, encoder, imputer, ds_cfg$target)
     test_df <- apply_categorical_encoder(test_df, encoder, imputer, ds_cfg$target)
   }
-  
+
   if (task_name == "regression") {
     encoder <- fit_categorical_encoder(train_df, ds_cfg$target)
     train_df <- apply_categorical_encoder(train_df, encoder, imputer, ds_cfg$target)
     test_df <- apply_categorical_encoder(test_df, encoder, imputer, ds_cfg$target)
-    
+
     scaler <- fit_scaler(train_df, ds_cfg$target)
     train_df <- apply_scaler(train_df, scaler, ds_cfg$target)
     test_df <- apply_scaler(test_df, scaler, ds_cfg$target)
   }
-  
+
   if (task_name == "timeseries") {
     encoder <- fit_categorical_encoder(train_df, ds_cfg$target)
     train_df <- apply_categorical_encoder(train_df, encoder, imputer, ds_cfg$target)
@@ -248,7 +247,7 @@ run_model <- function(task_name, model_name, train_df, test_df, target_col, ds_c
   if (task_name == "timeseries") {
     y_train <- train_df[[target_col]]
     y_test <- test_df[[target_col]]
-    
+
     exog_train <- NULL
     exog_test <- NULL
     if (!is.null(ds_cfg$exog_cols)) {
@@ -259,7 +258,7 @@ run_model <- function(task_name, model_name, train_df, test_df, target_col, ds_c
         exog_test <- test_df[, valid_exog, drop = FALSE]
       }
     }
-    
+
     pred <- train_predict_timeseries(model_name, y_train, y_test, lag = 12, exog_train = exog_train, exog_test = exog_test)
     return(list(pred = pred, prob = NULL))
   }

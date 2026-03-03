@@ -42,6 +42,7 @@ if (parallel_workers > 1 && future_available) {
   library(furrr)
   plan(multisession, workers = parallel_workers)
   log_event(run_ctx, "info", "parallel_enabled", list(workers = parallel_workers))
+  options(future.globals.onMissing = "warning")
 } else {
   if (parallel_workers > 1) {
     message("Packages 'future' or 'furrr' not available, running in sequential mode")
@@ -76,9 +77,9 @@ for (task in cfg$tasks) {
   task_results <- list()
   
   if (parallel_workers > 1 && future_available) {
-    task_results <- future_lapply(task$datasets, function(ds) {
+    task_results <- future_map(task$datasets, function(ds) {
       run_dataset_task(task, ds, run_ctx, stop_on_fail, timeout_sec)
-    }, future.seed = TRUE)
+    }, .options = furrr_options(seed = TRUE))
   } else {
     for (ds in task$datasets) {
       log_event(run_ctx, "info", "dataset_start", list(task = task$name, dataset = ds$id))
