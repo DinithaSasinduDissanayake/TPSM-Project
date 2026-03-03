@@ -29,3 +29,14 @@ __pycache__/
 # Run outputs
 outputs/*
 !outputs/.gitkeep
+
+# Downloaded data files (excluding tracked baseline datasets)
+# Baseline datasets (tracked): heart_disease.csv, breast_cancer.csv, bank_marketing.csv,
+# insurance.csv, housing_prices.csv, electric_production.csv, melbourne_temp.csv
+data/classification/adult_census.csv
+data/classification/letter_recognition.csv
+data/regression/boston_housing.csv
+data/timeseries/air_quality.csv
+data/timeseries/beijing_pm25.csv
+data/timeseries/household_power.csv
+data/timeseries/metro_traffic.csv
