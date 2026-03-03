@@ -212,6 +212,21 @@ preprocess_split <- function(task_name, train_df, test_df, ds_cfg) {
   train_df <- train_df[!is.na(train_df[[ds_cfg$target]]), , drop = FALSE]
   test_df <- test_df[!is.na(test_df[[ds_cfg$target]]), , drop = FALSE]
 
+  # Guard against empty test/train sets (H6)
+  if (nrow(train_df) == 0) {
+    stop(sprintf(
+      "Train set empty after NA target removal for dataset '%s'",
+      ds_cfg$id
+    ))
+  }
+  if (nrow(test_df) == 0) {
+    stop(sprintf(
+      "Test set empty after NA target removal for dataset '%s'. " +
+      "This fold may have all NA targets.",
+      ds_cfg$id
+    ))
+  }
+
   encoder <- fit_categorical_encoder(train_df, ds_cfg$target)
   train_df <- apply_categorical_encoder(train_df, encoder, imputer, ds_cfg$target)
   test_df <- apply_categorical_encoder(test_df, encoder, imputer, ds_cfg$target)
@@ -230,6 +245,16 @@ preprocess_split <- function(task_name, train_df, test_df, ds_cfg) {
     drop <- names(which(zero_var))
     train_df <- train_df[, setdiff(names(train_df), drop), drop = FALSE]
     test_df <- test_df[, setdiff(names(test_df), drop), drop = FALSE]
+  }
+
+  # Guard against empty feature matrix (H4)
+  feature_cols <- setdiff(names(train_df), ds_cfg$target)
+  if (length(feature_cols) == 0) {
+    stop(sprintf(
+      "No features remaining after preprocessing for dataset '%s'. " +
+      "All columns were removed (zero variance, ID columns, excluded columns).",
+      ds_cfg$id
+    ))
   }
 
   list(train_df = train_df, test_df = test_df)
