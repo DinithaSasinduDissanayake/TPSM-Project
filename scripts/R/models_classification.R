@@ -46,7 +46,8 @@ train_predict_classification <- function(model_name, train_df, test_df, target_c
     fit <- e1071::naiveBayes(x = train_x, y = y_train)
     prob <- stats::predict(fit, newdata = test_x, type = "raw")
     if (is_binary) {
-      pred <- ifelse(prob[, 2] >= 0.5, levels(y_train)[2], levels(y_train)[1])
+      prob <- prob[, 2]
+      pred <- ifelse(prob >= 0.5, levels(y_train)[2], levels(y_train)[1])
     } else {
       pred <- levels(y_train)[max.col(prob)]
     }

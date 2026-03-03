@@ -99,7 +99,7 @@ run_dataset_task <- function(task, ds, run_ctx, stop_on_fail, timeout_sec) {
       return(NULL)
     })
     
-    if (is.null(split_eval)) break
+    if (is.null(split_eval)) next
 
     result$model_runs <- c(result$model_runs, split_eval$model_rows)
     result$warnings <- c(result$warnings, split_eval$worker_warnings)
