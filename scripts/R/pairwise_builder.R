@@ -248,8 +248,10 @@ preprocess_split <- function(task_name, train_df, test_df, ds_cfg) {
   }
   if (nrow(test_df) == 0) {
     stop(sprintf(
-      "Test set empty after NA target removal for dataset '%s'. " +
-      "This fold may have all NA targets.",
+      paste0(
+        "Test set empty after NA target removal for dataset '%s'. ",
+        "This fold may have all NA targets."
+      ),
       ds_cfg$id
     ))
   }
@@ -282,8 +284,10 @@ preprocess_split <- function(task_name, train_df, test_df, ds_cfg) {
   feature_cols <- setdiff(names(train_df), ds_cfg$target)
   if (length(feature_cols) == 0) {
     stop(sprintf(
-      "No features remaining after preprocessing for dataset '%s'. " +
-      "All columns were removed (zero variance, ID columns, excluded columns).",
+      paste0(
+        "No features remaining after preprocessing for dataset '%s'. ",
+        "All columns were removed (zero variance, ID columns, excluded columns)."
+      ),
       ds_cfg$id
     ))
   }

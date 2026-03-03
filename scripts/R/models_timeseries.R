@@ -44,9 +44,17 @@ train_predict_timeseries <- function(model_name, y_train, y_test, lag = 12, exog
     best_aic <- Inf
     best_order <- c(1, 1, 1)
 
-    # Use ARIMAX if exogenous variables and forecast package available
+    # Error if exogenous regressors provided but forecast package unavailable
     has_exog <- !is.null(exog_train) && !is.null(exog_test)
-    use_arimax <- has_exog && requireNamespace("forecast", quietly = TRUE)
+    if (has_exog) {
+      if (!requireNamespace("forecast", quietly = TRUE)) {
+        stop(paste0("Exogenous regressors were provided, but the 'forecast' package is not installed. ",
+             "Install the 'forecast' package or run without exogenous variables."))
+      }
+      use_arimax <- TRUE
+    } else {
+      use_arimax <- FALSE
+    }
 
     if (use_arimax) {
       # ARIMAX grid search with exogenous regressors
@@ -67,8 +75,8 @@ train_predict_timeseries <- function(model_name, y_train, y_test, lag = 12, exog
       # Warning if all grid search orders failed (M5)
       if (best_aic == Inf) {
         warning(sprintf(
-          "All ARIMAX orders failed during grid search. Falling back to default order (1,1,1). " +
-          "This may indicate non-stationary data or numerical issues."
+          paste0("All ARIMAX orders failed during grid search. Falling back to default order (1,1,1). ",
+          "This may indicate non-stationary data or numerical issues.")
         ))
       }
       # Fit best ARIMAX model and forecast with exogenous test data
@@ -93,8 +101,8 @@ train_predict_timeseries <- function(model_name, y_train, y_test, lag = 12, exog
       # Warning if all grid search orders failed (M5)
       if (best_aic == Inf) {
         warning(sprintf(
-          "All ARIMA orders failed during grid search. Falling back to default order (1,1,1). " +
-          "This may indicate non-stationary data or numerical issues."
+          paste0("All ARIMA orders failed during grid search. Falling back to default order (1,1,1). ",
+          "This may indicate non-stationary data or numerical issues.")
         ))
       }
       fit <- stats::arima(y_train, order = best_order, method = "ML")
@@ -154,7 +162,6 @@ train_predict_timeseries <- function(model_name, y_train, y_test, lag = 12, exog
 
     # Build lag matrix ONLY from training data (no data leakage)
     lag_df_train <- make_lag_matrix(y_train, max_lag = lag, exog = exog_train, exog_max_lag = 6)
-    lag_df_train <- na.omit(lag_df_train)
 
     # Ensure enough training data after lag removal
     min_train_rows <- max(30, lag * 2)
@@ -190,8 +197,10 @@ train_predict_timeseries <- function(model_name, y_train, y_test, lag = 12, exog
       if (!is.null(current_exog_test)) {
         exog_for_step <- rbind(current_exog_train, current_exog_test[1:i, , drop = FALSE])
       }
-      lag_df_step <- make_lag_matrix(c(current_y, y_test[i]), max_lag = lag, exog = exog_for_step, exog_max_lag = 6)
-      lag_df_step <- na.omit(lag_df_step)
+      # Append last known value as placeholder so the final row's lag features
+      # (lag_1=current_y[N], lag_2=current_y[N-1], ...) align with the step being
+      # predicted, without accessing any y_test values (forecast-blind).
+      lag_df_step <- make_lag_matrix(c(current_y, tail(current_y, 1)), max_lag = lag, exog = exog_for_step, exog_max_lag = 6)
 
       # Get features for prediction (last row after lag removal)
       x_step <- as.matrix(lag_df_step[nrow(lag_df_step), setdiff(names(lag_df_step), "target"), drop = FALSE])
