@@ -37,6 +37,12 @@ train_predict_classification <- function(model_name, train_df, test_df, target_c
 
   if (model_name == "naive_bayes") {
     if (!requireNamespace("e1071", quietly = TRUE)) stop("Package 'e1071' required")
+    for (col in names(train_x)) {
+      if (is.character(train_x[[col]])) {
+        train_x[[col]] <- as.factor(train_x[[col]])
+        test_x[[col]] <- factor(test_x[[col]], levels = levels(train_x[[col]]))
+      }
+    }
     fit <- e1071::naiveBayes(x = train_x, y = y_train)
     prob <- stats::predict(fit, newdata = test_x, type = "raw")
     if (is_binary) {

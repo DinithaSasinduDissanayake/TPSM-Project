@@ -2,18 +2,20 @@ safe_div <- function(a, b) ifelse(b == 0, NA_real_, a / b)
 
 classification_metrics <- function(y_true, y_pred, y_prob = NULL) {
   if (is.factor(y_true)) {
+    y_true_labels <- levels(y_true)
     y_true_int <- as.integer(y_true) - 1
   } else {
-    y_true_int <- as.integer(as.character(y_true))
+    y_true_labels <- sort(unique(c(as.character(y_true), as.character(y_pred))))
+    y_true_int <- match(as.character(y_true), y_true_labels) - 1
   }
   
   if (is.factor(y_pred)) {
     y_pred_int <- as.integer(y_pred) - 1
   } else {
-    y_pred_int <- as.integer(as.character(y_pred))
+    y_pred_int <- match(as.character(y_pred), y_true_labels) - 1
   }
   
-  n_classes <- length(unique(c(y_true_int, y_pred_int)))
+  n_classes <- length(y_true_labels)
   is_binary <- n_classes == 2
   
   if (is_binary) {
@@ -50,25 +52,22 @@ classification_metrics <- function(y_true, y_pred, y_prob = NULL) {
       out$roc_auc <- NA_real_
     }
   } else {
-    classes <- as.character(unique(c(y_true_int, y_pred_int)))
-    n_classes <- length(classes)
     precisions <- numeric(n_classes)
     recalls <- numeric(n_classes)
     f1s <- numeric(n_classes)
     
-    for (i in seq_along(classes)) {
-      cls <- classes[i]
-      tp <- sum(y_true_int == cls & y_pred_int == cls)
-      fp <- sum(y_true_int != cls & y_pred_int == cls)
-      fn <- sum(y_true_int == cls & y_pred_int != cls)
+    for (i in 0:(n_classes - 1)) {
+      tp <- sum(y_true_int == i & y_pred_int == i)
+      fp <- sum(y_true_int != i & y_pred_int == i)
+      fn <- sum(y_true_int == i & y_pred_int != i)
       
-      precisions[i] <- safe_div(tp, tp + fp)
-      recalls[i] <- safe_div(tp, tp + fn)
-      f1s[i] <- ifelse(is.na(precisions[i]) || is.na(recalls[i]) || (precisions[i] + recalls[i]) == 0, NA_real_, 2 * precisions[i] * recalls[i] / (precisions[i] + recalls[i]))
+      precisions[i + 1] <- safe_div(tp, tp + fp)
+      recalls[i + 1] <- safe_div(tp, tp + fn)
+      f1s[i + 1] <- ifelse(is.na(precisions[i + 1]) || is.na(recalls[i + 1]) || (precisions[i + 1] + recalls[i + 1]) == 0, NA_real_, 2 * precisions[i + 1] * recalls[i + 1] / (precisions[i + 1] + recalls[i + 1]))
     }
     
     out <- list(
-      accuracy = mean(y_true_int == y_pred_int),
+      accuracy = mean(y_true_int == y_pred_int, na.rm = TRUE),
       precision = mean(precisions, na.rm = TRUE),
       recall = mean(recalls, na.rm = TRUE),
       f1 = mean(f1s, na.rm = TRUE)
@@ -77,7 +76,10 @@ classification_metrics <- function(y_true, y_pred, y_prob = NULL) {
     if (!is.null(y_prob) && is.matrix(y_prob) && nrow(y_prob) == length(y_true_int)) {
       eps <- 1e-15
       y_prob <- pmin(pmax(y_prob, eps), 1 - eps)
-      true_matrix <- model.matrix(~ factor(y_true_int) - 1)
+      true_matrix <- matrix(0, nrow = length(y_true_int), ncol = n_classes)
+      for (i in 0:(n_classes - 1)) {
+        true_matrix[y_true_int == i, i + 1] <- 1
+      }
       out$logloss <- -mean(rowSums(true_matrix * log(y_prob)))
       out$roc_auc <- NA_real_
       if (requireNamespace("pROC", quietly = TRUE)) {

@@ -1,5 +1,7 @@
 #!/usr/bin/env Rscript
 
+`%||%` <- function(a, b) if (is.null(a)) b else a
+
 source("scripts/R/config.R")
 source("scripts/R/logging.R")
 source("scripts/R/load_data.R")
@@ -14,22 +16,31 @@ source("scripts/R/writer.R")
 args <- parse_args(commandArgs(trailingOnly = TRUE))
 cfg <- get_config()
 
+stop_on_fail <- cfg$stop_on_first_fail
+
 if (!is.null(args$task_filter)) {
   cfg$tasks <- Filter(function(t) t$name == args$task_filter, cfg$tasks)
 }
 
 run_ctx <- init_run_context(cfg, args$output_dir)
-log_event(run_ctx, "info", "run_start", list(run_id = run_ctx$run_id))
+log_event(run_ctx, "info", "run_start", list(run_id = run_ctx$run_id, stop_on_fail = stop_on_fail))
 
 model_runs <- list()
 pairwise_rows <- list()
+failed_datasets <- list()
 
-stop_with_report <- function(msg, context = list()) {
-  log_event(run_ctx, "error", "fatal", c(list(message = msg), context))
-  write_error_report(run_ctx, msg, context)
-  write_warnings_reports(run_ctx)
-  write_partial_outputs(run_ctx, model_runs, pairwise_rows)
-  stop(msg, call. = FALSE)
+handle_error <- function(msg, context = list()) {
+  context_with_msg <- c(list(message = msg), context)
+  log_event(run_ctx, "error", "error", context_with_msg)
+  if (stop_on_fail) {
+    write_error_report(run_ctx, msg, context)
+    write_warnings_reports(run_ctx)
+    write_partial_outputs(run_ctx, model_runs, pairwise_rows)
+    stop(msg, call. = FALSE)
+  } else {
+    failed_datasets <<- c(failed_datasets, list(c(context_with_msg)))
+    warning(msg)
+  }
 }
 
 for (task in cfg$tasks) {
@@ -38,17 +49,20 @@ for (task in cfg$tasks) {
     log_event(run_ctx, "info", "dataset_start", list(task = task$name, dataset = ds$id))
     dataset <- tryCatch(load_dataset(ds, run_ctx), error = function(e) e)
     if (inherits(dataset, "error")) {
-      stop_with_report(dataset$message, list(task = task$name, dataset = ds$id, stage = "load"))
+      handle_error(dataset$message, list(task = task$name, dataset = ds$id, stage = "load"))
+      next
     }
 
     dataset <- tryCatch(prepare_dataset_for_task(task$name, dataset, ds), error = function(e) e)
     if (inherits(dataset, "error")) {
-      stop_with_report(dataset$message, list(task = task$name, dataset = ds$id, stage = "prepare"))
+      handle_error(dataset$message, list(task = task$name, dataset = ds$id, stage = "prepare"))
+      next
     }
 
     splits <- tryCatch(make_splits(task$name, dataset, task$split, ds$target), error = function(e) e)
     if (inherits(splits, "error")) {
-      stop_with_report(splits$message, list(task = task$name, dataset = ds$id, stage = "split"))
+      handle_error(splits$message, list(task = task$name, dataset = ds$id, stage = "split"))
+      next
     }
 
     model_names <- unique(c(
@@ -63,10 +77,11 @@ for (task in cfg$tasks) {
       )
 
       if (inherits(split_eval, "error")) {
-        stop_with_report(
+        handle_error(
           split_eval$message,
           list(task = task$name, dataset = ds$id, fold = sp$fold, repeat_id = sp$repeat_id, stage = "train_eval_models")
         )
+        next
       }
 
       model_runs <- c(model_runs, split_eval$model_rows)
@@ -80,10 +95,11 @@ for (task in cfg$tasks) {
         )
 
         if (inherits(pair_result, "error")) {
-          stop_with_report(
+          handle_error(
             pair_result$message,
             list(task = task$name, dataset = ds$id, single = pair$single, ensemble = pair$ensemble, fold = sp$fold, repeat_id = sp$repeat_id, stage = "build_pair_rows")
           )
+          next
         }
 
         pairwise_rows <- c(pairwise_rows, pair_result)
@@ -94,4 +110,25 @@ for (task in cfg$tasks) {
 
 write_outputs(run_ctx, model_runs, pairwise_rows)
 write_warnings_reports(run_ctx)
-log_event(run_ctx, "info", "run_complete", list(model_run_rows = length(model_runs), pairwise_rows = length(pairwise_rows)))
+
+if (length(failed_datasets) > 0) {
+  failed_summary <- data.frame(
+    do.call(rbind, lapply(failed_datasets, function(f) {
+      data.frame(
+        task = f$task %||% NA,
+        dataset = f$dataset %||% NA,
+        stage = f$stage %||% NA,
+        fold = f$fold %||% NA,
+        repeat_id = f$repeat_id %||% NA,
+        message = f$message %||% NA
+      )
+    }))
+  )
+  write.csv(failed_summary, file.path(run_ctx$out_dir, "failed_datasets.csv"), row.names = FALSE)
+  log_event(run_ctx, "warn", "run_with_failures", list(
+    failed_count = length(failed_datasets),
+    failed_summary = paste0(failed_summary$dataset, " (", failed_summary$stage, ")", collapse = "; ")
+  ))
+} else {
+  log_event(run_ctx, "info", "run_complete", list(model_run_rows = length(model_runs), pairwise_rows = length(pairwise_rows)))
+}
