@@ -47,13 +47,7 @@ log_event(run_ctx, "info", "run_start", list(
   fast_mode = fast_mode
 ))
 
-stderr_file <- file.path(run_ctx$out_dir, "stderr.log")
-stderr_conn <- file(stderr_file, open = "wt")
-sink(stderr_conn, type = "message")
-on.exit({
-  sink(type = "message")
-  close(stderr_conn)
-}, add = TRUE)
+
 
 
 future_available <- requireNamespace("future", quietly = TRUE) && requireNamespace("furrr", quietly = TRUE)
