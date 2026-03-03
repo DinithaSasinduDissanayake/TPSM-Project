@@ -91,7 +91,14 @@ train_predict_timeseries <- function(model_name, y_train, y_test, lag = 12, exog
   
   lag_df <- make_lag_matrix(full_y, max_lag = lag, exog = full_exog, exog_max_lag = 6)
   split_point <- length(y_train) - lag
+  min_train_rows <- max(30, lag * 2)
   if (split_point <= 0) stop("Not enough training data for lagged model")
+  if (split_point < min_train_rows) {
+    stop(sprintf(
+      "Not enough training data for lagged model: %d rows after lag removal (need >= %d)",
+      split_point, min_train_rows
+    ))
+  }
   
   train_df <- lag_df[seq_len(split_point), , drop = FALSE]
   test_df <- lag_df[(split_point + 1):nrow(lag_df), , drop = FALSE]

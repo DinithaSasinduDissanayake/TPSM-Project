@@ -69,6 +69,7 @@ load_dataset <- function(ds_cfg, run_ctx, task_name = NULL) {
         stop("Package 'R.utils' required for .gz files")
       }
       temp_file <- tempfile(fileext = ".gz")
+      on.exit(unlink(temp_file), add = TRUE)
       success <- download_with_retry(ds_cfg$url, temp_file, max_retries = 3, timeout = 60)
       if (!success) stop(sprintf("Failed to download dataset after retries: %s", ds_cfg$id))
       if (file.info(temp_file)$size < 100) {
@@ -107,6 +108,7 @@ load_dataset <- function(ds_cfg, run_ctx, task_name = NULL) {
       }
     } else if (ext == "xlsx" || ext == "xls") {
       temp_file <- tempfile(fileext = paste0(".", ext))
+      on.exit(unlink(temp_file), add = TRUE)
       success <- download_with_retry(ds_cfg$url, temp_file, max_retries = 3, timeout = 60)
       if (!success) stop(sprintf("Failed to download dataset after retries: %s", ds_cfg$id))
       if (file.info(temp_file)$size < 100) {
@@ -119,6 +121,7 @@ load_dataset <- function(ds_cfg, run_ctx, task_name = NULL) {
       write.csv(df, ds_cfg$path, row.names = FALSE)
     } else if (ext == "data" || ext == "dat") {
       temp_file <- tempfile(fileext = paste0(".", ext))
+      on.exit(unlink(temp_file), add = TRUE)
       success <- download_with_retry(ds_cfg$url, temp_file, max_retries = 3, timeout = 60)
       if (!success) stop(sprintf("Failed to download dataset after retries: %s", ds_cfg$id))
       if (file.info(temp_file)$size < 100) {
@@ -158,6 +161,27 @@ load_dataset <- function(ds_cfg, run_ctx, task_name = NULL) {
     df <- readxl::read_excel(ds_cfg$path)
   } else {
     df <- utils::read.csv(ds_cfg$path, stringsAsFactors = FALSE)
+  }
+
+  if (ncol(df) < 2) {
+    stop(sprintf(
+      "Dataset '%s' has only %d column(s) — likely wrong separator. Check ds_cfg$separator.",
+      ds_cfg$id, ncol(df)
+    ))
+  }
+
+  if (nrow(df) == 0) {
+    stop(sprintf("Dataset '%s' has 0 rows after loading.", ds_cfg$id))
+  }
+
+  if (!is.null(task_name) && task_name == "regression") {
+    if (!is.numeric(df[[ds_cfg$target]])) {
+      df[[ds_cfg$target]] <- suppressWarnings(as.numeric(df[[ds_cfg$target]]))
+      if (all(is.na(df[[ds_cfg$target]]))) {
+        stop(sprintf("Target '%s' in dataset '%s' could not be converted to numeric for regression",
+                     ds_cfg$target, ds_cfg$id))
+      }
+    }
   }
 
   if (!is.null(ds_cfg$rename_target_from) && ds_cfg$rename_target_from %in% names(df)) {

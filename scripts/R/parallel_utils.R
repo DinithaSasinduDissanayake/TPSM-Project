@@ -31,7 +31,10 @@ download_with_retry <- function(url, dest, max_retries = 3, timeout = 60) {
       utils::download.file(url, dest, mode = "wb", quiet = TRUE, timeout = timeout)
       if (file.info(dest)$size > 100) {
         first_bytes <- readBin(dest, raw(), n = min(20, file.info(dest)$size))
-        first_str <- rawToChar(first_bytes)
+        first_str <- tryCatch(
+          rawToChar(first_bytes),
+          error = function(e) ""
+        )
         if (grepl("<!DOCTYPE|<html|<HTML", first_str, ignore.case = TRUE)) {
           message(sprintf("Downloaded HTML error page instead of data from %s", url))
           unlink(dest)

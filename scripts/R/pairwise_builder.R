@@ -61,7 +61,15 @@ prepare_target_for_split <- function(task_name, train_df, test_df, target_col, d
     if (length(unique_vals) != 2) {
       stop(sprintf("Expected 2 classes in training data, got %d", length(unique_vals)))
     }
-    positive_val <- unique_vals[2]
+    if (!is.null(ds_cfg$positive_class)) {
+      positive_val <- ds_cfg$positive_class
+    } else {
+      positive_val <- unique_vals[2]
+      warning(sprintf(
+        "No positive class specified for '%s', using '%s' (alphabetically second). Consider setting positive_class in config.",
+        ds_cfg$id, positive_val
+      ))
+    }
     y_train_bin <- ifelse(y_train_chr == positive_val, 1, 0)
     y_test_bin <- ifelse(y_test_chr == positive_val, 1, 0)
     train_df[[target_col]] <- factor(y_train_bin, levels = c(0, 1), labels = c("0", "1"))
@@ -115,6 +123,7 @@ apply_imputer <- function(df, imputer) {
       if (!is.null(med)) {
         df[[col]][is.na(df[[col]])] <- med
         df[[col]][is.nan(df[[col]])] <- med
+        df[[col]][is.infinite(df[[col]])] <- med
       }
     } else {
       mode_val <- imputer$cat_modes[[col]]
@@ -203,30 +212,24 @@ preprocess_split <- function(task_name, train_df, test_df, ds_cfg) {
   train_df <- train_df[!is.na(train_df[[ds_cfg$target]]), , drop = FALSE]
   test_df <- test_df[!is.na(test_df[[ds_cfg$target]]), , drop = FALSE]
 
-  if (task_name == "classification") {
-    encoder <- fit_categorical_encoder(train_df, ds_cfg$target)
-    train_df <- apply_categorical_encoder(train_df, encoder, imputer, ds_cfg$target)
-    test_df <- apply_categorical_encoder(test_df, encoder, imputer, ds_cfg$target)
+  encoder <- fit_categorical_encoder(train_df, ds_cfg$target)
+  train_df <- apply_categorical_encoder(train_df, encoder, imputer, ds_cfg$target)
+  test_df <- apply_categorical_encoder(test_df, encoder, imputer, ds_cfg$target)
 
+  if (task_name %in% c("classification", "regression")) {
     scaler <- fit_scaler(train_df, ds_cfg$target)
     train_df <- apply_scaler(train_df, scaler, ds_cfg$target)
     test_df <- apply_scaler(test_df, scaler, ds_cfg$target)
   }
 
-  if (task_name == "regression") {
-    encoder <- fit_categorical_encoder(train_df, ds_cfg$target)
-    train_df <- apply_categorical_encoder(train_df, encoder, imputer, ds_cfg$target)
-    test_df <- apply_categorical_encoder(test_df, encoder, imputer, ds_cfg$target)
-
-    scaler <- fit_scaler(train_df, ds_cfg$target)
-    train_df <- apply_scaler(train_df, scaler, ds_cfg$target)
-    test_df <- apply_scaler(test_df, scaler, ds_cfg$target)
-  }
-
-  if (task_name == "timeseries") {
-    encoder <- fit_categorical_encoder(train_df, ds_cfg$target)
-    train_df <- apply_categorical_encoder(train_df, encoder, imputer, ds_cfg$target)
-    test_df <- apply_categorical_encoder(test_df, encoder, imputer, ds_cfg$target)
+  feature_cols <- setdiff(names(train_df), ds_cfg$target)
+  zero_var <- vapply(feature_cols, function(col) {
+    length(unique(train_df[[col]][!is.na(train_df[[col]])])) <= 1
+  }, logical(1))
+  if (any(zero_var)) {
+    drop <- names(which(zero_var))
+    train_df <- train_df[, setdiff(names(train_df), drop), drop = FALSE]
+    test_df <- test_df[, setdiff(names(test_df), drop), drop = FALSE]
   }
 
   list(train_df = train_df, test_df = test_df)
