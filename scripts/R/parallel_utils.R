@@ -1,3 +1,7 @@
+make_split_seed <- function(base_seed, repeat_id, fold) {
+  base_seed + (repeat_id - 1) * 1000 + fold
+}
+
 with_timeout <- function(expr, timeout = 300, on_timeout = "error") {
   if (!requireNamespace("R.utils", quietly = TRUE)) {
     return(expr)
@@ -42,7 +46,7 @@ run_dataset_task <- function(task, ds, run_ctx, stop_on_fail, timeout_sec) {
   )
   
   dataset <- tryCatch(
-    load_dataset(ds, run_ctx),
+    load_dataset(ds, run_ctx, task$name),
     error = function(e) {
       result$failed <<- TRUE
       result$error_message <<- paste0("load: ", e$message)
@@ -124,6 +128,9 @@ evaluate_models_on_split <- function(task, dataset_df, ds_cfg, split, model_name
       repeat_id = split$repeat_id,
       model_name = model_name
     )
+    
+    model_seed <- make_split_seed(42, split$repeat_id, split$fold)
+    set.seed(model_seed)
     
     model_out <- NULL
     train_time <- tryCatch({

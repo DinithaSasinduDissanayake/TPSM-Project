@@ -1,4 +1,4 @@
-load_dataset <- function(ds_cfg, run_ctx) {
+load_dataset <- function(ds_cfg, run_ctx, task_name = NULL) {
   if (!file.exists(ds_cfg$path)) {
     if (!nzchar(ds_cfg$url)) {
       stop(sprintf("Dataset not found and no URL provided: %s", ds_cfg$id))
@@ -153,6 +153,18 @@ load_dataset <- function(ds_cfg, run_ctx) {
   
   if (!ds_cfg$target %in% names(df)) {
     stop(sprintf("Target column '%s' not found for dataset '%s'", ds_cfg$target, ds_cfg$id))
+  }
+
+  if (!is.null(task_name)) {
+    validation <- validate_dataset(df, ds_cfg, task_name)
+    if (!validation$valid) {
+      for (issue in validation$issues) {
+        log_event(run_ctx, "warn", "dataset_validation_issue", list(
+          dataset = ds_cfg$id,
+          issue = issue
+        ))
+      }
+    }
   }
 
   log_event(run_ctx, "info", "dataset_loaded", list(dataset = ds_cfg$id, rows = nrow(df), cols = ncol(df)))

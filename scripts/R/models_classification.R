@@ -15,8 +15,8 @@ train_predict_classification <- function(model_name, train_df, test_df, target_c
       return(list(pred = pred, prob = prob))
     } else {
       if (!requireNamespace("nnet", quietly = TRUE)) stop("Package 'nnet' required for multiclass")
-      fit <- nnet::nnet(as.formula(paste(target_col, "~ .")), data = train_df, size = 5, linout = FALSE, trace = FALSE)
-      prob <- stats::predict(fit, newdata = test_df)
+      fit <- nnet::multinom(as.formula(paste(target_col, "~ .")), data = train_df, trace = FALSE, MaxNWts = 10000)
+      prob <- stats::predict(fit, newdata = test_df, type = "probs")
       pred <- levels(y_train)[max.col(prob)]
       return(list(pred = pred, prob = prob))
     }

@@ -4,6 +4,7 @@
 
 source("scripts/R/config.R")
 source("scripts/R/logging.R")
+source("scripts/R/validation.R")
 source("scripts/R/load_data.R")
 source("scripts/R/splits.R")
 source("scripts/R/models_classification.R")
@@ -16,6 +17,8 @@ source("scripts/R/parallel_utils.R")
 
 args <- parse_args(commandArgs(trailingOnly = TRUE))
 cfg <- get_config(args$config_path %||% NULL)
+
+validate_config(cfg)
 
 stop_on_fail <- cfg$stop_on_first_fail
 timeout_sec <- cfg$timeout_seconds %||% 300

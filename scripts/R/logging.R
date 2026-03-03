@@ -3,10 +3,24 @@ init_run_context <- function(cfg, output_root = "outputs") {
   out_dir <- file.path(output_root, run_id)
   dir.create(out_dir, recursive = TRUE, showWarnings = FALSE)
 
+  package_pkgs <- c("gbm", "rpart", "e1071", "nnet", "ada", "pROC", "dplyr", "future", "furrr", "R.utils")
+  pkg_versions <- list()
+  for (pkg in package_pkgs) {
+    if (requireNamespace(pkg, quietly = TRUE)) {
+      pkg_versions[[pkg]] <- as.character(packageVersion(pkg))
+    } else {
+      pkg_versions[[pkg]] <- "not_installed"
+    }
+  }
+
   manifest <- list(
     run_id = run_id,
     started_at_utc = format(as.POSIXct(Sys.time(), tz = "UTC"), "%Y-%m-%dT%H:%M:%SZ"),
     stop_on_first_fail = cfg$stop_on_first_fail,
+    r_version = R.version.string,
+    platform = .Platform$OS.type,
+    package_versions = pkg_versions,
+    base_seed = 42,
     config = cfg
   )
   jsonlite::write_json(manifest, file.path(out_dir, "run_manifest.json"), auto_unbox = TRUE, pretty = TRUE)

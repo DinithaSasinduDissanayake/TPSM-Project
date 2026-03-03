@@ -6,35 +6,53 @@ prepare_dataset_for_task <- function(task_name, df, ds_cfg) {
   if (task_name == "timeseries" && !is.null(ds_cfg$time_col)) {
     df <- parse_time_column(df, ds_cfg$time_col)
   }
-  
-  if (task_name == "classification") {
-    y <- df[[ds_cfg$target]]
-    y_unique <- unique(y[!is.na(y)])
-    n_classes <- length(y_unique)
-    
-    is_binary_forced <- !is.null(ds_cfg$force_binary) && ds_cfg$force_binary
-    
-    if (is_binary_forced && n_classes > 2) {
-      if (!is.null(ds_cfg$binary_positive_vals)) {
-        y_chr <- as.character(y)
-        y_bin <- ifelse(tolower(y_chr) %in% tolower(ds_cfg$binary_positive_vals), 1, 0)
-        df[[ds_cfg$target]] <- factor(y_bin, levels = c(0, 1), labels = c("0", "1"))
-      } else if (!is.null(ds_cfg$binary_threshold)) {
-        y_num <- as.numeric(y)
-        y_bin <- ifelse(y_num > ds_cfg$binary_threshold, 1, 0)
-        df[[ds_cfg$target]] <- factor(y_bin, levels = c(0, 1), labels = c("0", "1"))
-      } else {
-        df[[ds_cfg$target]] <- as.factor(y)
-      }
-    } else if (n_classes == 2) {
-      y_chr <- tolower(as.character(y))
-      y_bin <- ifelse(y_chr %in% c("m", "malignant", "yes", "true", "1", "positive", "good", "1"), 1, 0)
-      df[[ds_cfg$target]] <- factor(y_bin, levels = c(0, 1), labels = c("0", "1"))
-    } else {
-      df[[ds_cfg$target]] <- as.factor(y)
-    }
-  }
   df
+}
+
+prepare_target_for_split <- function(task_name, train_df, test_df, target_col, ds_cfg) {
+  if (task_name != "classification") {
+    return(list(train_df = train_df, test_df = test_df))
+  }
+  
+  y_train <- train_df[[target_col]]
+  y_test <- test_df[[target_col]]
+  y_train_unique <- unique(y_train[!is.na(y_train)])
+  n_classes <- length(y_train_unique)
+  
+  is_binary_forced <- !is.null(ds_cfg$force_binary) && ds_cfg$force_binary
+  
+  if (is_binary_forced && n_classes > 2) {
+    if (!is.null(ds_cfg$binary_positive_vals)) {
+      y_train_chr <- as.character(y_train)
+      y_test_chr <- as.character(y_test)
+      y_train_bin <- ifelse(tolower(y_train_chr) %in% tolower(ds_cfg$binary_positive_vals), 1, 0)
+      y_test_bin <- ifelse(tolower(y_test_chr) %in% tolower(ds_cfg$binary_positive_vals), 1, 0)
+      train_df[[target_col]] <- factor(y_train_bin, levels = c(0, 1), labels = c("0", "1"))
+      test_df[[target_col]] <- factor(y_test_bin, levels = c(0, 1), labels = c("0", "1"))
+    } else if (!is.null(ds_cfg$binary_threshold)) {
+      y_train_num <- as.numeric(y_train)
+      y_test_num <- as.numeric(y_test)
+      y_train_bin <- ifelse(y_train_num > ds_cfg$binary_threshold, 1, 0)
+      y_test_bin <- ifelse(y_test_num > ds_cfg$binary_threshold, 1, 0)
+      train_df[[target_col]] <- factor(y_train_bin, levels = c(0, 1), labels = c("0", "1"))
+      test_df[[target_col]] <- factor(y_test_bin, levels = c(0, 1), labels = c("0", "1"))
+    } else {
+      train_df[[target_col]] <- as.factor(y_train)
+      test_df[[target_col]] <- factor(y_test)
+    }
+  } else if (n_classes == 2) {
+    y_train_chr <- tolower(as.character(y_train))
+    y_test_chr <- tolower(as.character(y_test))
+    y_train_bin <- ifelse(y_train_chr %in% c("m", "malignant", "yes", "true", "1", "positive", "good", "1"), 1, 0)
+    y_test_bin <- ifelse(y_test_chr %in% c("m", "malignant", "yes", "true", "1", "positive", "good", "1"), 1, 0)
+    train_df[[target_col]] <- factor(y_train_bin, levels = c(0, 1), labels = c("0", "1"))
+    test_df[[target_col]] <- factor(y_test_bin, levels = c(0, 1), labels = c("0", "1"))
+  } else {
+    train_df[[target_col]] <- as.factor(y_train)
+    test_df[[target_col]] <- factor(y_test)
+  }
+  
+  list(train_df = train_df, test_df = test_df)
 }
 
 infer_id_columns <- function(df, target_col) {
@@ -148,6 +166,10 @@ preprocess_split <- function(task_name, train_df, test_df, ds_cfg) {
     train_df <- train_df[, setdiff(names(train_df), drop_cols), drop = FALSE]
     test_df <- test_df[, setdiff(names(test_df), drop_cols), drop = FALSE]
   }
+
+  target_prepped <- prepare_target_for_split(task_name, train_df, test_df, ds_cfg$target, ds_cfg)
+  train_df <- target_prepped$train_df
+  test_df <- target_prepped$test_df
 
   imputer <- fit_imputer(train_df)
   train_df <- apply_imputer(train_df, imputer)
