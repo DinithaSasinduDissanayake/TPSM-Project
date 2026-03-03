@@ -67,7 +67,7 @@ train_predict_timeseries <- function(model_name, y_train, y_test, lag = 12, exog
       # Warning if all grid search orders failed (M5)
       if (best_aic == Inf) {
         warning(sprintf(
-          "All ARIMAX orders failed during grid search. Falling back to default order (1,1,1). " +
+          "All ARIMAX orders failed during grid search. Falling back to default order (1,1,1). %s",
           "This may indicate non-stationary data or numerical issues."
         ))
       }
@@ -93,7 +93,7 @@ train_predict_timeseries <- function(model_name, y_train, y_test, lag = 12, exog
       # Warning if all grid search orders failed (M5)
       if (best_aic == Inf) {
         warning(sprintf(
-          "All ARIMA orders failed during grid search. Falling back to default order (1,1,1). " +
+          "All ARIMA orders failed during grid search. Falling back to default order (1,1,1). %s",
           "This may indicate non-stationary data or numerical issues."
         ))
       }
@@ -190,7 +190,7 @@ train_predict_timeseries <- function(model_name, y_train, y_test, lag = 12, exog
       if (!is.null(current_exog_test)) {
         exog_for_step <- rbind(current_exog_train, current_exog_test[1:i, , drop = FALSE])
       }
-      lag_df_step <- make_lag_matrix(c(current_y, y_test[i]), max_lag = lag, exog = exog_for_step, exog_max_lag = 6)
+      lag_df_step <- make_lag_matrix(current_y, max_lag = lag, exog = exog_for_step, exog_max_lag = 6)
       lag_df_step <- na.omit(lag_df_step)
 
       # Get features for prediction (last row after lag removal)
