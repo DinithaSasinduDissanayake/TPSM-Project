@@ -69,6 +69,7 @@ train_predict_classification <- function(model_name, train_df, test_df, target_c
       pred <- ifelse(prob >= 0.5, levels(y_train)[2], levels(y_train)[1])
     } else {
       prob <- stats::predict(fit, newdata = test_df, n.trees = 100, type = "response")
+      prob <- prob[, , 1]
       pred <- levels(y_train)[max.col(prob)]
     }
     return(list(pred = pred, prob = prob))

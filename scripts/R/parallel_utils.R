@@ -31,23 +31,6 @@ download_with_retry <- function(url, dest, max_retries = 3, timeout = 60) {
   FALSE
 }
 
-calculate_expected_rows <- function(cfg) {
-  total <- 0
-  for (task in cfg$tasks) {
-    n_datasets <- length(task$datasets)
-    n_splits <- if (!is.null(task$split$splits)) {
-      task$split$splits
-    } else {
-      task$split$folds * task$split$repeats
-    }
-    n_pairs <- length(task$model_pairs)
-    n_metrics <- length(task$metrics)
-    
-    total <- total + (n_datasets * n_splits * n_pairs * n_metrics * 2)
-  }
-  total
-}
-
 run_dataset_task <- function(task, ds, run_ctx, stop_on_fail, timeout_sec) {
   result <- list(
     dataset_id = ds$id,
@@ -58,29 +41,35 @@ run_dataset_task <- function(task, ds, run_ctx, stop_on_fail, timeout_sec) {
     error_message = NULL
   )
   
-  tryCatch({
-    dataset <- load_dataset(ds, run_ctx)
-  }, error = function(e) {
-    result$failed <- TRUE
-    result$error_message <- paste0("load: ", e$message)
-    return(result)
-  })
+  dataset <- tryCatch(
+    load_dataset(ds, run_ctx),
+    error = function(e) {
+      result$failed <<- TRUE
+      result$error_message <<- paste0("load: ", e$message)
+      NULL
+    }
+  )
+  if (result$failed) return(result)
   
-  tryCatch({
-    dataset <- prepare_dataset_for_task(task$name, dataset, ds)
-  }, error = function(e) {
-    result$failed <- TRUE
-    result$error_message <- paste0("prepare: ", e$message)
-    return(result)
-  })
+  dataset <- tryCatch(
+    prepare_dataset_for_task(task$name, dataset, ds),
+    error = function(e) {
+      result$failed <<- TRUE
+      result$error_message <<- paste0("prepare: ", e$message)
+      NULL
+    }
+  )
+  if (result$failed) return(result)
   
-  tryCatch({
-    splits <- make_splits(task$name, dataset, task$split, ds$target)
-  }, error = function(e) {
-    result$failed <- TRUE
-    result$error_message <- paste0("split: ", e$message)
-    return(result)
-  })
+  splits <- tryCatch(
+    make_splits(task$name, dataset, task$split, ds$target),
+    error = function(e) {
+      result$failed <<- TRUE
+      result$error_message <<- paste0("split: ", e$message)
+      NULL
+    }
+  )
+  if (result$failed) return(result)
   
   model_names <- unique(c(
     vapply(task$model_pairs, function(p) p$single, character(1)),
@@ -139,16 +128,23 @@ evaluate_models_on_split <- function(task, dataset_df, ds_cfg, split, model_name
     model_out <- NULL
     train_time <- tryCatch({
       system.time({
-        model_out <- with_timeout({
-          run_model(task$name, model_name, train_df, test_df, ds_cfg$target, ds_cfg)
-        }, timeout = timeout_sec)
+        model_out <- withCallingHandlers(
+          with_timeout(
+            run_model(task$name, model_name, train_df, test_df, ds_cfg$target, ds_cfg),
+            timeout = timeout_sec
+          ),
+          warning = function(w) {
+            log_warning(run_ctx, conditionMessage(w), c(warning_ctx_base, list(stage = "model_train_predict")))
+            invokeRestart("muffleWarning")
+          }
+        )
       })
     }, error = function(e) {
-      log_warning(run_ctx, sprintf("Model %s timed out after %ds", model_name, timeout_sec), warning_ctx_base)
+      log_warning(run_ctx, sprintf("Model %s failed: %s", model_name, e$message), warning_ctx_base)
       NULL
     })
     
-    if (is.null(model_out)) {
+    if (is.null(model_out) || is.null(train_time)) {
       model_cache[[model_name]] <- list(
         metrics = as.list(setNames(rep(NA_real_, length(task$metrics)), task$metrics)),
         train_time = NA_real_,
@@ -161,11 +157,13 @@ evaluate_models_on_split <- function(task, dataset_df, ds_cfg, split, model_name
     
     train_time <- train_time[["elapsed"]]
     
-    model_metrics <- tryCatch({
-      calc_metrics(task$name, test_df[[ds_cfg$target]], model_out$pred, model_out$prob)
-    }, error = function(e) {
-      as.list(setNames(rep(NA_real_, length(task$metrics)), task$metrics))
-    })
+    model_metrics <- withCallingHandlers(
+      calc_metrics(task$name, test_df[[ds_cfg$target]], model_out$pred, model_out$prob),
+      warning = function(w) {
+        log_warning(run_ctx, conditionMessage(w), c(warning_ctx_base, list(stage = "metrics")))
+        invokeRestart("muffleWarning")
+      }
+    )
     
     model_cache[[model_name]] <- list(
       metrics = model_metrics,
