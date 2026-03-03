@@ -26,7 +26,11 @@ classification_metrics <- function(y_true, y_pred, y_prob = NULL) {
     
     precision <- safe_div(tp, tp + fp)
     recall <- safe_div(tp, tp + fn)
-    f1 <- ifelse(is.na(precision) || is.na(recall) || (precision + recall) == 0, NA_real_, 2 * precision * recall / (precision + recall))
+    f1 <- if (is.na(precision) || is.na(recall) || (precision + recall) == 0) {
+      NA_real_
+    } else {
+      2 * precision * recall / (precision + recall)
+    }
     acc <- safe_div(tp + tn, length(y_true_int))
     
     out <- list(
@@ -63,7 +67,11 @@ classification_metrics <- function(y_true, y_pred, y_prob = NULL) {
       
       precisions[i + 1] <- safe_div(tp, tp + fp)
       recalls[i + 1] <- safe_div(tp, tp + fn)
-      f1s[i + 1] <- ifelse(is.na(precisions[i + 1]) || is.na(recalls[i + 1]) || (precisions[i + 1] + recalls[i + 1]) == 0, NA_real_, 2 * precisions[i + 1] * recalls[i + 1] / (precisions[i + 1] + recalls[i + 1]))
+      f1s[i + 1] <- if (is.na(precisions[i + 1]) || is.na(recalls[i + 1]) || (precisions[i + 1] + recalls[i + 1]) == 0) {
+        NA_real_
+      } else {
+        2 * precisions[i + 1] * recalls[i + 1] / (precisions[i + 1] + recalls[i + 1])
+      }
     }
     
     out <- list(
@@ -86,7 +94,9 @@ classification_metrics <- function(y_true, y_pred, y_prob = NULL) {
         tryCatch({
           roc_obj <- pROC::multiclass.roc(y_true_int, y_prob, quiet = TRUE)
           out$roc_auc <- as.numeric(pROC::auc(roc_obj))
-        }, error = function(e) {})
+        }, error = function(e) {
+          warning(sprintf("Multiclass AUC calculation failed: %s. Setting AUC to NA.", e$message))
+        })
       }
     } else {
       out$logloss <- NA_real_

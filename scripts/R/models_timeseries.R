@@ -64,6 +64,13 @@ train_predict_timeseries <- function(model_name, y_train, y_test, lag = 12, exog
           }
         }
       }
+      # Warning if all grid search orders failed (M5)
+      if (best_aic == Inf) {
+        warning(sprintf(
+          "All ARIMAX orders failed during grid search. Falling back to default order (1,1,1). " +
+          "This may indicate non-stationary data or numerical issues."
+        ))
+      }
       # Fit best ARIMAX model and forecast with exogenous test data
       fit <- forecast::Arima(y_train, order = best_order, xreg = exog_train)
       fc <- forecast::forecast(fit, h = length(y_test), xreg = exog_test)$mean
@@ -82,6 +89,13 @@ train_predict_timeseries <- function(model_name, y_train, y_test, lag = 12, exog
             }, error = function(e) {})
           }
         }
+      }
+      # Warning if all grid search orders failed (M5)
+      if (best_aic == Inf) {
+        warning(sprintf(
+          "All ARIMA orders failed during grid search. Falling back to default order (1,1,1). " +
+          "This may indicate non-stationary data or numerical issues."
+        ))
       }
       fit <- stats::arima(y_train, order = best_order, method = "ML")
       fc <- stats::predict(fit, n.ahead = length(y_test))$pred

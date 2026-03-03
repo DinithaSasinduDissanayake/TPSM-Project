@@ -65,10 +65,18 @@ prepare_target_for_split <- function(task_name, train_df, test_df, target_col, d
       positive_val <- ds_cfg$positive_class
     } else {
       positive_val <- unique_vals[2]
-      warning(sprintf(
-        "No positive class specified for '%s', using '%s' (alphabetically second). Consider setting positive_class in config.",
-        ds_cfg$id, positive_val
-      ))
+
+      # Cache decision and warn only once per dataset (H7 - prevents warning flood)
+      if (is.null(ds_cfg$positive_class_cached)) {
+        warning(sprintf(
+          "No positive class specified for '%s', using '%s' (alphabetically second). Consider setting positive_class in config.",
+          ds_cfg$id, positive_val
+        ))
+        ds_cfg$positive_class_cached <- positive_val
+      } else {
+        # Use cached value from first split
+        positive_val <- ds_cfg$positive_class_cached
+      }
     }
     y_train_bin <- ifelse(y_train_chr == positive_val, 1, 0)
     y_test_bin <- ifelse(y_test_chr == positive_val, 1, 0)
@@ -197,6 +205,10 @@ preprocess_split <- function(task_name, train_df, test_df, ds_cfg) {
   drop_cols <- unique(drop_cols)
 
   if (length(drop_cols) > 0) {
+    message(sprintf(
+      "Dataset '%s': Removing columns %s (excluded/ID/time columns)",
+      ds_cfg$id, paste(drop_cols, collapse = ", ")
+    ))
     train_df <- train_df[, setdiff(names(train_df), drop_cols), drop = FALSE]
     test_df <- test_df[, setdiff(names(test_df), drop_cols), drop = FALSE]
   }
@@ -243,6 +255,10 @@ preprocess_split <- function(task_name, train_df, test_df, ds_cfg) {
   }, logical(1))
   if (any(zero_var)) {
     drop <- names(which(zero_var))
+    message(sprintf(
+      "Dataset '%s': Removing zero-variance columns %s",
+      ds_cfg$id, paste(drop, collapse = ", ")
+    ))
     train_df <- train_df[, setdiff(names(train_df), drop), drop = FALSE]
     test_df <- test_df[, setdiff(names(test_df), drop), drop = FALSE]
   }
