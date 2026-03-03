@@ -65,20 +65,6 @@ sanitize_yaml_config <- function(yaml_cfg) {
     if (!is.null(task_yaml$datasets)) {
       for (ds in task_yaml$datasets) {
         ds_cfg <- as.list(ds)
-        
-        if (!is.null(ds_cfg$exclude_cols)) {
-          ds_cfg$exclude_cols <- ds_cfg$exclude_cols
-        }
-        if (!is.null(ds_cfg$header_names)) {
-          ds_cfg$header_names <- ds_cfg$header_names
-        }
-        if (!is.null(ds_cfg$exog_cols)) {
-          ds_cfg$exog_cols <- ds_cfg$exog_cols
-        }
-        if (!is.null(ds_cfg$binary_positive_vals)) {
-          ds_cfg$binary_positive_vals <- ds_cfg$binary_positive_vals
-        }
-        
         task_cfg$datasets[[length(task_cfg$datasets) + 1]] <- ds_cfg
       }
     }

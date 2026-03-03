@@ -108,8 +108,9 @@ for (task in cfg$tasks) {
   all_dataset_results <- c(all_dataset_results, task_results)
 }
 
-if (exists("plan")) {
+if (parallel_workers > 1 && future_available) {
   plan(sequential)
+  log_event(run_ctx, "info", "parallel_disabled", list(reason = "run_complete"))
 }
 
 write_outputs(run_ctx, model_runs, pairwise_rows)
