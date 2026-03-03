@@ -12,6 +12,9 @@ parse_args <- function(args) {
     } else if (key == "--task") {
       out$task_filter <- val
       i <- i + 2
+    } else if (key == "--workers") {
+      out$workers <- as.integer(val)
+      i <- i + 2
     } else {
       i <- i + 1
     }
@@ -19,9 +22,101 @@ parse_args <- function(args) {
   out
 }
 
-get_config <- function() {
+sanitize_yaml_config <- function(yaml_cfg) {
+  cfg <- list(
+    stop_on_first_fail = yaml_cfg$global$stop_on_first_fail %||% FALSE,
+    timeout_seconds = yaml_cfg$global$timeout_seconds %||% 300,
+    parallel_workers = yaml_cfg$global$parallel_workers %||% 1,
+    tasks = list()
+  )
+  
+  task_names <- c("classification", "regression", "timeseries")
+  
+  for (task_name in task_names) {
+    if (is.null(yaml_cfg[[task_name]])) next
+    
+    task_yaml <- yaml_cfg[[task_name]]
+    
+    task_cfg <- list(
+      name = task_name,
+      split = list(
+        method = task_yaml$split_method %||% "repeated_kfold",
+        folds = task_yaml$folds %||% 10,
+        repeats = task_yaml$repeats %||% 5,
+        splits = task_yaml$splits %||% 10
+      ),
+      metrics = task_yaml$metrics %||% character(0),
+      datasets = list(),
+      model_pairs = list()
+    )
+    
+    if (!is.null(task_yaml$model_pairs)) {
+      for (mp in task_yaml$model_pairs) {
+        task_cfg$model_pairs[[length(task_cfg$model_pairs) + 1]] <- list(
+          single = mp$single,
+          ensemble = mp$ensemble
+        )
+      }
+    }
+    
+    if (!is.null(task_yaml$datasets)) {
+      for (ds in task_yaml$datasets) {
+        ds_cfg <- as.list(ds)
+        
+        if (!is.null(ds_cfg$exclude_cols)) {
+          ds_cfg$exclude_cols <- ds_cfg$exclude_cols
+        }
+        if (!is.null(ds_cfg$header_names)) {
+          ds_cfg$header_names <- ds_cfg$header_names
+        }
+        if (!is.null(ds_cfg$exog_cols)) {
+          ds_cfg$exog_cols <- ds_cfg$exog_cols
+        }
+        if (!is.null(ds_cfg$binary_positive_vals)) {
+          ds_cfg$binary_positive_vals <- ds_cfg$binary_positive_vals
+        }
+        
+        task_cfg$datasets[[length(task_cfg$datasets) + 1]] <- ds_cfg
+      }
+    }
+    
+    cfg$tasks[[length(cfg$tasks) + 1]] <- task_cfg
+  }
+  
+  cfg
+}
+
+get_config <- function(config_path = NULL) {
+  if (is.null(config_path)) {
+    config_path <- "config/datasets.yaml"
+  }
+  
+  if (!file.exists(config_path)) {
+    message("YAML config not found at ", config_path, ", using R fallback")
+    return(get_config_fallback())
+  }
+  
+  yaml_available <- requireNamespace("yaml", quietly = TRUE)
+  if (!yaml_available) {
+    message("Package 'yaml' not installed, using R fallback config")
+    return(get_config_fallback())
+  }
+  
+  tryCatch({
+    yaml_cfg <- yaml::read_yaml(config_path)
+    sanitize_yaml_config(yaml_cfg)
+  }, error = function(e) {
+    message("Error reading YAML config: ", e$message)
+    message("Falling back to R config")
+    get_config_fallback()
+  })
+}
+
+get_config_fallback <- function() {
   list(
     stop_on_first_fail = FALSE,
+    timeout_seconds = 300,
+    parallel_workers = 1,
     tasks = list(
       list(
         name = "classification",
