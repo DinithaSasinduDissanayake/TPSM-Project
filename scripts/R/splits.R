@@ -38,6 +38,13 @@ make_repeated_kfold_splits <- function(df, target_col, k, repeats, use_stratify 
       classes <- unique(y)
       for (cls in classes) {
         idxs <- which(y == cls)
+        if (length(idxs) < k) {
+          warning(sprintf(
+            "Class '%s' has only %d samples, fewer than k=%d folds. " +
+            "Some folds will have zero samples of this class, affecting reliability of metrics.",
+            cls, length(idxs), k
+          ))
+        }
         fold_ids[idxs] <- sample(rep(seq_len(k), length.out = length(idxs)))
       }
     }

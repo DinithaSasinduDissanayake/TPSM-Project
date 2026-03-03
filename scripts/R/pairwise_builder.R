@@ -94,13 +94,29 @@ infer_id_columns <- function(df, target_col) {
   out <- character(0)
   for (col in names(df)) {
     if (col == target_col) next
-    if (tolower(col) %in% c("id", "identifier", "uid")) {
+
+    # Remove columns with clearly ID-like names
+    if (tolower(col) %in% c("id", "identifier", "uid", "row_id",
+                             "index", "no", "sr_no", "serial")) {
       out <- c(out, col)
       next
     }
+
+    # For all-unique columns, only remove if they look like IDs:
+    # - Sequential integers (common in row IDs)
+    # - High-cardinality with ID-like names
     if (length(unique(df[[col]])) == nrow(df)) {
-      if (is.integer(df[[col]]) || is.character(df[[col]]) || is.factor(df[[col]])) {
-        out <- c(out, col)
+      if (is.integer(df[[col]])) {
+        # Check if sequential (common in row IDs)
+        vals <- sort(df[[col]])
+        if (length(vals) > 1 && all(diff(vals) == 1)) {
+          out <- c(out, col)
+        }
+      } else if (is.character(df[[col]]) || is.factor(df[[col]])) {
+        # Check if name suggests ID
+        if (tolower(col) %in% c("id", "identifier", "uid", "key")) {
+          out <- c(out, col)
+        }
       }
     }
   }
@@ -130,7 +146,6 @@ apply_imputer <- function(df, imputer) {
       med <- imputer$num_medians[[col]]
       if (!is.null(med)) {
         df[[col]][is.na(df[[col]])] <- med
-        df[[col]][is.nan(df[[col]])] <- med
         df[[col]][is.infinite(df[[col]])] <- med
       }
     } else {

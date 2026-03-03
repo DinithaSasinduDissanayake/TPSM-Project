@@ -162,3 +162,35 @@ Example:
 - [x] Models trained and evaluated (3,160 comparisons generated)
 - [x] Hypothesis testing completed
 - [x] Results documented
+
+---
+
+## Known Limitations
+
+### Ordinal Encoding Bias (H1)
+**Severity:** Medium | **Confidence:** 85% | **Status:** Documented (not fixed)
+
+**Problem:** Categorical features are encoded as integers (1, 2, 3, ...) using alphabetical ordering. This imposes an artificial ordinal relationship on nominal data.
+
+**Example:** If a feature has values `["red", "green", "blue"]`, they are encoded as `[3, 1, 2]`, implying `green < blue < red`.
+
+**Impact:**
+- **Hurts linear models:** Logistic regression, linear regression, SVR interpret these as continuous ordinal values and fit linear relationships to arbitrary orderings
+- **Helps tree-based models:** Gradient boosting, decision trees can split on any threshold, so ordinal vs nominal encoding barely matters
+- **Systematic bias:** May inflate ensemble win rates (tree-based) vs single models (linear models)
+
+**Why not fixed:**
+- One-hot encoding would add significant complexity (feature explosion for high-cardinality categorical features)
+- Time constraints for student project scope
+- Focus is on ensemble vs single model comparison, not optimal encoding strategies
+
+**Recommendation for future work:**
+- Implement one-hot encoding for linear models only
+- Use ordinal encoding for tree-based models (current behavior)
+- This would remove the systematic bias while maintaining efficiency
+
+**Affected comparisons:**
+- Logistic Regression vs Gradient Boosting
+- Linear Regression vs Gradient Boosting Regressor
+- SVR vs Gradient Boosting Regressor
+
