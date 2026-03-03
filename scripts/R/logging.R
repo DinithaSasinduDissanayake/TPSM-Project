@@ -3,7 +3,7 @@ init_run_context <- function(cfg, output_root = "outputs") {
   out_dir <- file.path(output_root, run_id)
   dir.create(out_dir, recursive = TRUE, showWarnings = FALSE)
 
-  package_pkgs <- c("gbm", "rpart", "e1071", "nnet", "ada", "pROC", "dplyr", "future", "furrr", "R.utils")
+  package_pkgs <- c("gbm", "rpart", "e1071", "nnet", "ada", "pROC", "dplyr", "future", "furrr", "R.utils", "filelock")
   pkg_versions <- list()
   for (pkg in package_pkgs) {
     if (requireNamespace(pkg, quietly = TRUE)) {
@@ -39,6 +39,10 @@ log_event <- function(run_ctx, level, event, payload = list()) {
     payload = payload
   )
   line <- jsonlite::toJSON(entry, auto_unbox = TRUE)
+  if (requireNamespace("filelock", quietly = TRUE)) {
+    lock <- filelock::lock(paste0(run_ctx$log_file, ".lock"), timeout = 5000)
+    on.exit(filelock::unlock(lock))
+  }
   cat(line, "\n", file = run_ctx$log_file, append = TRUE)
 }
 

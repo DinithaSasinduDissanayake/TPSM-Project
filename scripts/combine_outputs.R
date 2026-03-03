@@ -38,6 +38,7 @@ for (dir in input_dirs) {
 if (length(all_pairwise) > 0) {
   combined_pw <- do.call(rbind, all_pairwise)
   combined_pw$comparison_id <- NULL
+  combined_pw <- combined_pw[!duplicated(combined_pw), ]
   rownames(combined_pw) <- NULL
   
   output_file <- file.path(OUTPUT_DIR, "combined_pairwise_differences.csv")
@@ -50,6 +51,7 @@ if (length(all_pairwise) > 0) {
 if (length(all_model_runs) > 0) {
   combined_mr <- do.call(rbind, all_model_runs)
   combined_mr$run_id <- NULL
+  combined_mr <- combined_mr[!duplicated(combined_mr), ]
   rownames(combined_mr) <- NULL
   
   output_file <- file.path(OUTPUT_DIR, "combined_model_runs.csv")

@@ -262,6 +262,8 @@ regression:
       path: data/regression/energy_efficiency.csv
       url: https://archive.ics.uci.edu/ml/machine-learning-databases/00242/ENB2012_data.xlsx
       target: Y1
+      exclude_cols:
+        - Y2
 
     - id: airfoil
       source: uci

@@ -155,7 +155,7 @@ get_config_fallback <- function() {
           list(id = "concrete_strength", source = "uci", path = "data/regression/concrete_strength.csv", url = "https://archive.ics.uci.edu/ml/machine-learning-databases/concrete/compressive/Concrete_Data.xls", target = "Concrete.compressive.strength.MPa..megapascals.", rename_target_from = "Strength"),
           list(id = "ccpp", source = "uci", path = "data/regression/ccpp.csv", url = "https://archive.ics.uci.edu/ml/machine-learning-databases/00294/CCPP.zip", target = "PE"),
           list(id = "bike_sharing", source = "uci", path = "data/regression/bike_sharing.csv", url = "https://archive.ics.uci.edu/ml/machine-learning-databases/00275/Bike-Sharing-Dataset.zip", target = "cnt", zip_file = "hour.csv", exclude_cols = c("casual", "registered")),
-          list(id = "energy_efficiency", source = "uci", path = "data/regression/energy_efficiency.csv", url = "https://archive.ics.uci.edu/ml/machine-learning-databases/00242/ENB2012_data.xlsx", target = "Y1"),
+          list(id = "energy_efficiency", source = "uci", path = "data/regression/energy_efficiency.csv", url = "https://archive.ics.uci.edu/ml/machine-learning-databases/00242/ENB2012_data.xlsx", target = "Y1", exclude_cols = c("Y2")),
           list(id = "airfoil", source = "uci", path = "data/regression/airfoil.csv", url = "https://archive.ics.uci.edu/ml/machine-learning-databases/00291/airfoil_self_noise.dat", target = "ScaledSoundPressureLevel", header_names = c("Frequency", "AngleOfAttack", "ChordLength", "FreeStreamVelocity", "SuctionSideDisplacement", "ScaledSoundPressureLevel"))
         ),
         model_pairs = list(

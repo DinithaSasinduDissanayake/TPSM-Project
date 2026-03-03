@@ -42,7 +42,10 @@ prepare_target_for_split <- function(task_name, train_df, test_df, target_col, d
   } else if (n_classes == 2) {
     y_train_chr <- as.character(y_train)
     y_test_chr <- as.character(y_test)
-    unique_vals <- sort(unique(c(y_train_chr, y_test_chr)))
+    unique_vals <- sort(unique(y_train_chr))
+    if (length(unique_vals) != 2) {
+      stop(sprintf("Expected 2 classes in training data, got %d", length(unique_vals)))
+    }
     positive_val <- unique_vals[2]
     y_train_bin <- ifelse(y_train_chr == positive_val, 1, 0)
     y_test_bin <- ifelse(y_test_chr == positive_val, 1, 0)

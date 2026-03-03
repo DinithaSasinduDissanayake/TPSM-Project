@@ -112,7 +112,9 @@ regression_metrics <- function(y_true, y_pred) {
 
 timeseries_metrics <- function(y_true, y_pred) {
   base <- regression_metrics(y_true, y_pred)
-  smape <- mean(200 * abs(y_pred - y_true) / (abs(y_true) + abs(y_pred)), na.rm = TRUE)
+  denom <- abs(y_true) + abs(y_pred)
+  smape_vals <- ifelse(denom == 0, 0, 200 * abs(y_pred - y_true) / denom)
+  smape <- mean(smape_vals, na.rm = TRUE)
   base$smape <- smape
   base
 }

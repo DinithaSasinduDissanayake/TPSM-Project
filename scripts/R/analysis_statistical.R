@@ -62,10 +62,10 @@ perform_statistical_tests <- function(df) {
 create_forest_plot <- function(df, output_dir, task_type = NULL, metric = NULL) {
   df_filtered <- df[df$valid_pair == TRUE, ]
   
-  if (!is.null(task_type)) {
+  if (is.null(task_type)) {
     task_type <- df_filtered$task_type[1]
   }
-  if (!is.null(metric)) {
+  if (is.null(metric)) {
     metric <- df_filtered$metric_name[1]
   }
   
@@ -104,10 +104,10 @@ create_forest_plot <- function(df, output_dir, task_type = NULL, metric = NULL) 
 create_violin_plot <- function(df, output_dir, task_type = NULL, metric = NULL) {
   df_filtered <- df[df$valid_pair == TRUE, ]
   
-  if (!is.null(task_type)) {
+  if (is.null(task_type)) {
     task_type <- df_filtered$task_type[1]
   }
-  if (!is.null(metric)) {
+  if (is.null(metric)) {
     metric <- df_filtered$metric_name[1]
   }
   

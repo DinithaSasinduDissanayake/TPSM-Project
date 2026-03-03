@@ -1,9 +1,18 @@
+get_base_seed <- function(dataset_id = NULL, base = 42) {
+  if (!is.null(dataset_id)) {
+    base + sum(as.numeric(charToRaw(dataset_id))) %% 100000
+  } else {
+    base
+  }
+}
+
 make_split_seed <- function(base_seed, repeat_id, fold) {
   base_seed + (repeat_id - 1) * 1000 + fold
 }
 
 with_timeout <- function(expr, timeout = 300, on_timeout = "error") {
   if (!requireNamespace("R.utils", quietly = TRUE)) {
+    warning("R.utils not available — timeout protection disabled")
     return(expr)
   }
   tryCatch({
@@ -123,11 +132,7 @@ evaluate_models_on_split <- function(task, dataset_df, ds_cfg, split, model_name
   model_rows <- list()
   worker_warnings <- list()
 
-  base_seed <- 42
-  if (!is.null(dataset_id)) {
-    seed_hash <- sum(as.numeric(charToRaw(dataset_id))) %% 100000
-    base_seed <- base_seed + seed_hash
-  }
+  base_seed <- get_base_seed(dataset_id)
 
   for (model_name in model_names) {
     warning_ctx_base <- list(
@@ -138,7 +143,8 @@ evaluate_models_on_split <- function(task, dataset_df, ds_cfg, split, model_name
       model_name = model_name
     )
 
-    model_seed <- make_split_seed(base_seed, split$repeat_id, split$fold)
+    model_seed <- make_split_seed(base_seed, split$repeat_id, split$fold) +
+      sum(as.numeric(charToRaw(model_name)))
     set.seed(model_seed)
     
     model_out <- NULL
@@ -150,13 +156,13 @@ evaluate_models_on_split <- function(task, dataset_df, ds_cfg, split, model_name
             timeout = timeout_sec
           ),
           warning = function(w) {
-            worker_warnings[[length(worker_warnings) + 1]] <- c(warning_ctx_base, list(stage = "model_train_predict", message = conditionMessage(w)))
+            worker_warnings[[length(worker_warnings) + 1]] <<- c(warning_ctx_base, list(stage = "model_train_predict", message = conditionMessage(w)))
             invokeRestart("muffleWarning")
           }
         )
       })
     }, error = function(e) {
-      worker_warnings[[length(worker_warnings) + 1]] <- c(warning_ctx_base, list(stage = "model_train_predict", message = sprintf("Model %s failed: %s", model_name, e$message)))
+      worker_warnings[[length(worker_warnings) + 1]] <<- c(warning_ctx_base, list(stage = "model_train_predict", message = sprintf("Model %s failed: %s", model_name, e$message)))
       NULL
     })
     
@@ -201,7 +207,7 @@ evaluate_models_on_split <- function(task, dataset_df, ds_cfg, split, model_name
     model_metrics <- withCallingHandlers(
       calc_metrics(task$name, test_df[[ds_cfg$target]], model_out$pred, model_out$prob),
       warning = function(w) {
-        worker_warnings[[length(worker_warnings) + 1]] <- c(warning_ctx_base, list(stage = "metrics", message = conditionMessage(w)))
+        worker_warnings[[length(worker_warnings) + 1]] <<- c(warning_ctx_base, list(stage = "metrics", message = conditionMessage(w)))
         invokeRestart("muffleWarning")
       }
     )
