@@ -23,6 +23,16 @@ validate_config(cfg)
 stop_on_fail <- cfg$stop_on_first_fail
 timeout_sec <- cfg$timeout_seconds %||% 300
 parallel_workers <- cfg$parallel_workers %||% 1
+if (!is.null(args$workers)) parallel_workers <- args$workers
+
+fast_mode <- isTRUE(args$fast)
+n_cores <- NA
+if (fast_mode) {
+  n_cores <- parallel::detectCores(logical = TRUE)
+  if (is.null(args$workers)) {
+    parallel_workers <- max(1, n_cores - 2)
+  }
+}
 
 if (!is.null(args$task_filter)) {
   cfg$tasks <- Filter(function(t) t$name == args$task_filter, cfg$tasks)
@@ -30,19 +40,26 @@ if (!is.null(args$task_filter)) {
 
 run_ctx <- init_run_context(cfg, args$output_dir)
 log_event(run_ctx, "info", "run_start", list(
-  run_id = run_ctx$run_id, 
+  run_id = run_ctx$run_id,
   stop_on_fail = stop_on_fail,
   timeout_sec = timeout_sec,
-  parallel_workers = parallel_workers
+  parallel_workers = parallel_workers,
+  fast_mode = fast_mode
 ))
 
 future_available <- requireNamespace("future", quietly = TRUE) && requireNamespace("furrr", quietly = TRUE)
+if (fast_mode && !is.na(n_cores)) {
+  log_event(run_ctx, "info", "fast_mode_enabled", list(
+    n_cores = n_cores,
+    requested_workers = parallel_workers
+  ))
+}
 if (parallel_workers > 1 && future_available) {
   library(future)
   library(furrr)
   plan(multisession, workers = parallel_workers)
   log_event(run_ctx, "info", "parallel_enabled", list(workers = parallel_workers))
-  options(future.globals.onMissing = "warning")
+  options(future.globals.onMissing = "ignore")
 } else {
   if (parallel_workers > 1) {
     message("Packages 'future' or 'furrr' not available, running in sequential mode")
@@ -79,7 +96,7 @@ for (task in cfg$tasks) {
   if (parallel_workers > 1 && future_available) {
     task_results <- future_map(task$datasets, function(ds) {
       run_dataset_task(task, ds, run_ctx, stop_on_fail, timeout_sec)
-    }, .options = furrr_options(seed = TRUE))
+    }, .options = furrr_options(seed = NULL))
   } else {
     for (ds in task$datasets) {
       log_event(run_ctx, "info", "dataset_start", list(task = task$name, dataset = ds$id))

@@ -160,6 +160,8 @@ evaluate_models_on_split <- function(task, dataset_df, ds_cfg, split, model_name
 
     model_seed <- make_split_seed(base_seed, split$repeat_id, split$fold) +
       sum(as.numeric(charToRaw(model_name)))
+    RNGkind("Mersenne-Twister", normal.kind = "Inversion", sample.kind = "Rejection")
+    set.seed(NULL)
     set.seed(model_seed)
     
     model_out <- NULL
