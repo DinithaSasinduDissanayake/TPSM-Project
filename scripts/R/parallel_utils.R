@@ -30,6 +30,18 @@ download_with_retry <- function(url, dest, max_retries = 3, timeout = 60) {
     tryCatch({
       utils::download.file(url, dest, mode = "wb", quiet = TRUE, timeout = timeout)
       if (file.info(dest)$size > 100) {
+        first_bytes <- readBin(dest, raw(), n = min(20, file.info(dest)$size))
+        first_str <- rawToChar(first_bytes)
+        if (grepl("<!DOCTYPE|<html|<HTML", first_str, ignore.case = TRUE)) {
+          message(sprintf("Downloaded HTML error page instead of data from %s", url))
+          unlink(dest)
+          if (i < max_retries) {
+            wait_time <- 2^i
+            message(sprintf("Retrying in %d seconds...", wait_time))
+            Sys.sleep(wait_time)
+          }
+          next
+        }
         return(TRUE)
       }
     }, error = function(e) {
@@ -148,6 +160,8 @@ evaluate_models_on_split <- function(task, dataset_df, ds_cfg, split, model_name
     set.seed(model_seed)
     
     model_out <- NULL
+    is_timeout <- FALSE
+    error_message <- NULL
     train_time <- tryCatch({
       system.time({
         model_out <- withCallingHandlers(
@@ -162,19 +176,31 @@ evaluate_models_on_split <- function(task, dataset_df, ds_cfg, split, model_name
         )
       })
     }, error = function(e) {
+      error_message <<- e$message
+      if (grepl("timed out", e$message, ignore.case = TRUE)) {
+        is_timeout <<- TRUE
+      }
       worker_warnings[[length(worker_warnings) + 1]] <<- c(warning_ctx_base, list(stage = "model_train_predict", message = sprintf("Model %s failed: %s", model_name, e$message)))
       NULL
     })
     
     if (is.null(model_out) || is.null(train_time)) {
+      failure_status <- if (is_timeout) "timeout" else "error"
       model_cache[[model_name]] <- list(
         metrics = as.list(setNames(rep(NA_real_, length(task$metrics)), task$metrics)),
         train_time = NA_real_,
         train_rows = nrow(train_df),
         test_rows = nrow(test_df),
-        status = "timeout"
+        status = failure_status
       )
-      model_family <- if (model_name %in% vapply(task$model_pairs, function(p) p$ensemble, character(1))) "ensemble" else "single"
+    model_family <- if (model_name %in% vapply(task$model_pairs, function(p) p$ensemble, character(1))) "ensemble" else "single"
+    actual_model_used <- model_name
+    if (model_name == "adaboost" && task$name == "classification") {
+      n_classes <- length(unique(train_df[[ds_cfg$target]]))
+      if (n_classes > 2) {
+        actual_model_used <- "gradient_boosting"
+      }
+    }
       for (m in task$metrics) {
         run_id_model <- make_row_id("run", run_ctx$run_id, task$name, ds_cfg$id, model_name, split$fold, split$repeat_id, m)
         model_rows[[length(model_rows) + 1]] <- list(
@@ -184,6 +210,7 @@ evaluate_models_on_split <- function(task, dataset_df, ds_cfg, split, model_name
           dataset_source = ds_cfg$source,
           model_family = model_family,
           model_name = model_name,
+          actual_model_used = actual_model_used,
           split_method = split$split_method,
           fold = split$fold,
           repeat_id = split$repeat_id,
@@ -195,8 +222,8 @@ evaluate_models_on_split <- function(task, dataset_df, ds_cfg, split, model_name
           metric_name = m,
           metric_value = NA_real_,
           timestamp_utc = format(as.POSIXct(Sys.time(), tz = "UTC"), "%Y-%m-%dT%H:%M:%SZ"),
-          status = "timeout",
-          error_message = NA_character_
+          status = failure_status,
+          error_message = if (!is.null(error_message)) error_message else NA_character_
         )
       }
       next
@@ -224,6 +251,13 @@ evaluate_models_on_split <- function(task, dataset_df, ds_cfg, split, model_name
     metric_names <- metric_names[metric_names %in% task$metrics]
     
     model_family <- if (model_name %in% vapply(task$model_pairs, function(p) p$ensemble, character(1))) "ensemble" else "single"
+    actual_model_used <- model_name
+    if (model_name == "adaboost" && task$name == "classification") {
+      n_classes <- length(unique(train_df[[ds_cfg$target]]))
+      if (n_classes > 2) {
+        actual_model_used <- "gradient_boosting"
+      }
+    }
     
     for (m in metric_names) {
       run_id_model <- make_row_id("run", run_ctx$run_id, task$name, ds_cfg$id, model_name, split$fold, split$repeat_id, m)
@@ -234,6 +268,7 @@ evaluate_models_on_split <- function(task, dataset_df, ds_cfg, split, model_name
         dataset_source = ds_cfg$source,
         model_family = model_family,
         model_name = model_name,
+        actual_model_used = actual_model_used,
         split_method = split$split_method,
         fold = split$fold,
         repeat_id = split$repeat_id,

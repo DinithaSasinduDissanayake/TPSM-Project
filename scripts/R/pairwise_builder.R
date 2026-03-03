@@ -4,6 +4,21 @@ make_row_id <- function(prefix, ...) {
 
 prepare_dataset_for_task <- function(task_name, df, ds_cfg) {
   if (task_name == "timeseries" && !is.null(ds_cfg$time_col)) {
+    time_col <- ds_cfg$time_col
+    if (time_col %in% names(df)) {
+      parsed <- tryCatch({
+        as.POSIXct(df[[time_col]], tz = "UTC")
+      }, error = function(e) {
+        tryCatch({
+          as.Date(df[[time_col]])
+        }, error = function(e2) {
+          NULL
+        })
+      })
+      if (!is.null(parsed) && !all(is.na(parsed))) {
+        df <- df[order(parsed), ]
+      }
+    }
     df <- parse_time_column(df, ds_cfg$time_col)
   }
   df
