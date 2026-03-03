@@ -63,16 +63,20 @@ infer_id_columns <- function(df, target_col) {
       next
     }
     if (length(unique(df[[col]])) == nrow(df)) {
-      out <- c(out, col)
+      if (is.character(df[[col]]) || is.factor(df[[col]]) ||
+          (is.integer(df[[col]]) && !is.numeric(df[[col]]))) {
+        out <- c(out, col)
+      }
     }
   }
   unique(out)
 }
 
-fit_imputer <- function(train_df) {
+fit_imputer <- function(train_df, target_col = NULL) {
   num_medians <- list()
   cat_modes <- list()
   for (col in names(train_df)) {
+    if (!is.null(target_col) && col == target_col) next
     if (is.numeric(train_df[[col]]) || is.integer(train_df[[col]])) {
       num_medians[[col]] <- stats::median(train_df[[col]], na.rm = TRUE)
     } else {
@@ -105,13 +109,16 @@ apply_imputer <- function(df, imputer) {
 
 fit_categorical_encoder <- function(train_df, target_col) {
   levels_map <- list()
+  fallback_medians <- list()
   for (col in names(train_df)) {
     if (col == target_col) next
     if (!is.numeric(train_df[[col]]) && !is.integer(train_df[[col]])) {
       levels_map[[col]] <- unique(as.character(train_df[[col]]))
+      enc_temp <- as.numeric(factor(train_df[[col]], levels = levels_map[[col]]))
+      fallback_medians[[col]] <- stats::median(enc_temp, na.rm = TRUE)
     }
   }
-  list(levels_map = levels_map)
+  list(levels_map = levels_map, fallback_medians = fallback_medians)
 }
 
 apply_categorical_encoder <- function(df, encoder, imputer, target_col) {
@@ -120,7 +127,7 @@ apply_categorical_encoder <- function(df, encoder, imputer, target_col) {
     lvls <- encoder$levels_map[[col]]
     df[[col]] <- as.numeric(factor(df[[col]], levels = lvls))
     if (is.null(imputer$num_medians[[col]])) {
-      med <- stats::median(df[[col]], na.rm = TRUE)
+      med <- encoder$fallback_medians[[col]]
       df[[col]][is.na(df[[col]])] <- med
       df[[col]][is.nan(df[[col]])] <- med
     }
@@ -170,9 +177,12 @@ preprocess_split <- function(task_name, train_df, test_df, ds_cfg) {
   train_df <- target_prepped$train_df
   test_df <- target_prepped$test_df
 
-  imputer <- fit_imputer(train_df)
+  imputer <- fit_imputer(train_df, ds_cfg$target)
   train_df <- apply_imputer(train_df, imputer)
   test_df <- apply_imputer(test_df, imputer)
+
+  train_df <- train_df[!is.na(train_df[[ds_cfg$target]]), , drop = FALSE]
+  test_df <- test_df[!is.na(test_df[[ds_cfg$target]]), , drop = FALSE]
 
   if (task_name == "classification") {
     encoder <- fit_categorical_encoder(train_df, ds_cfg$target)

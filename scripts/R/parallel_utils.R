@@ -44,7 +44,7 @@ run_dataset_task <- function(task, ds, run_ctx, stop_on_fail, timeout_sec) {
     failed = FALSE,
     error_message = NULL
   )
-  
+
   dataset <- tryCatch(
     load_dataset(ds, run_ctx, task$name),
     error = function(e) {
@@ -66,7 +66,7 @@ run_dataset_task <- function(task, ds, run_ctx, stop_on_fail, timeout_sec) {
   if (result$failed) return(result)
   
   splits <- tryCatch(
-    make_splits(task$name, dataset, task$split, ds$target),
+    make_splits(task$name, dataset, task$split, ds$target, ds$id),
     error = function(e) {
       result$failed <<- TRUE
       result$error_message <<- paste0("split: ", e$message)
@@ -159,6 +159,31 @@ evaluate_models_on_split <- function(task, dataset_df, ds_cfg, split, model_name
         test_rows = nrow(test_df),
         status = "timeout"
       )
+      model_family <- if (model_name %in% vapply(task$model_pairs, function(p) p$ensemble, character(1))) "ensemble" else "single"
+      for (m in task$metrics) {
+        run_id_model <- make_row_id("run", run_ctx$run_id, task$name, ds_cfg$id, model_name, split$fold, split$repeat_id, m)
+        model_rows[[length(model_rows) + 1]] <- list(
+          run_id = run_id_model,
+          task_type = task$name,
+          dataset_id = ds_cfg$id,
+          dataset_source = ds_cfg$source,
+          model_family = model_family,
+          model_name = model_name,
+          split_method = split$split_method,
+          fold = split$fold,
+          repeat_id = split$repeat_id,
+          n_folds = split$n_folds,
+          train_rows = nrow(train_df),
+          test_rows = nrow(test_df),
+          train_time_sec = NA_real_,
+          predict_time_sec = NA_real_,
+          metric_name = m,
+          metric_value = NA_real_,
+          timestamp_utc = format(as.POSIXct(Sys.time(), tz = "UTC"), "%Y-%m-%dT%H:%M:%SZ"),
+          status = "timeout",
+          error_message = NA_character_
+        )
+      }
       next
     }
     

@@ -174,7 +174,7 @@ get_config_fallback <- function() {
           list(id = "air_quality", source = "uci", path = "data/timeseries/air_quality.csv", url = "https://archive.ics.uci.edu/ml/machine-learning-databases/00360/AirQualityUCI.zip", target = "CO.GT", time_col = "Date", exog_cols = c("NO2.GT", "T"), separator = ";", decimal = ","),
           list(id = "beijing_pm25", source = "uci", path = "data/timeseries/beijing_pm25.csv", url = "https://archive.ics.uci.edu/ml/machine-learning-databases/00381/PRSA_data_2010.1.1-2014.12.31.csv", target = "pm2.5", time_col = "date", exog_cols = c("TEMP", "PRES")),
           list(id = "metro_traffic", source = "uci", path = "data/timeseries/metro_traffic.csv", url = "https://archive.ics.uci.edu/ml/machine-learning-databases/00492/Metro_Interstate_Traffic_Volume.csv.gz", target = "traffic_volume", time_col = "date_time", exog_cols = c("holiday", "temp")),
-          list(id = "household_power", source: "uci", path = "data/timeseries/household_power.csv", url = "https://archive.ics.uci.edu/ml/machine-learning-databases/00235/household_power_consumption.zip", target = "Global_active_power", time_col = "Date", exog_cols = c("Global_reactive_power", "Voltage"), exclude_cols = c("Time"), na_strings = "?", max_rows = 50000)
+          list(id = "household_power", source = "uci", path = "data/timeseries/household_power.csv", url = "https://archive.ics.uci.edu/ml/machine-learning-databases/00235/household_power_consumption.zip", target = "Global_active_power", time_col = "Date", exog_cols = c("Global_reactive_power", "Voltage"), exclude_cols = c("Time"), na_strings = "?", max_rows = 50000)
         ),
         model_pairs = list(
           list(single = "arima", ensemble = "gbm_lag"),

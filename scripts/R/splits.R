@@ -1,5 +1,10 @@
-make_splits <- function(task_name, df, split_cfg, target_col = NULL) {
-  set.seed(42)
+make_splits <- function(task_name, df, split_cfg, target_col = NULL, dataset_id = NULL) {
+  base_seed <- 42
+  if (!is.null(dataset_id)) {
+    seed_hash <- sum(as.numeric(charToRaw(dataset_id))) %% 100000
+    base_seed <- base_seed + seed_hash
+  }
+  set.seed(base_seed)
   if (split_cfg$method == "repeated_kfold") {
     use_stratify <- task_name == "classification" && !is.null(target_col) && target_col %in% names(df)
     return(make_repeated_kfold_splits(df, target_col, split_cfg$folds, split_cfg$repeats, use_stratify))
