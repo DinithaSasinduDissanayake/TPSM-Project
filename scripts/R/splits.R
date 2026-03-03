@@ -1,5 +1,14 @@
-make_splits <- function(task_name, df, split_cfg, target_col = NULL) {
-  set.seed(42)
+get_base_seed <- function(dataset_id = NULL, base = 42) {
+  if (!is.null(dataset_id)) {
+    base + sum(as.numeric(charToRaw(dataset_id))) %% 100000
+  } else {
+    base
+  }
+}
+
+make_splits <- function(task_name, df, split_cfg, target_col = NULL, dataset_id = NULL) {
+  base_seed <- get_base_seed(dataset_id)
+  set.seed(base_seed)
   if (split_cfg$method == "repeated_kfold") {
     use_stratify <- task_name == "classification" && !is.null(target_col) && target_col %in% names(df)
     return(make_repeated_kfold_splits(df, target_col, split_cfg$folds, split_cfg$repeats, use_stratify))
@@ -29,6 +38,13 @@ make_repeated_kfold_splits <- function(df, target_col, k, repeats, use_stratify 
       classes <- unique(y)
       for (cls in classes) {
         idxs <- which(y == cls)
+        if (length(idxs) < k) {
+          warning(sprintf(
+            "Class '%s' has only %d samples, fewer than k=%d folds. " +
+            "Some folds will have zero samples of this class, affecting reliability of metrics.",
+            cls, length(idxs), k
+          ))
+        }
         fold_ids[idxs] <- sample(rep(seq_len(k), length.out = length(idxs)))
       }
     }
@@ -52,7 +68,13 @@ make_rolling_splits <- function(n, n_splits) {
     train_end <- initial + (i - 1) * horizon
     test_start <- train_end + 1
     test_end <- min(n, test_start + horizon - 1)
-    if (test_start > n) break
+    if (test_start > n) {
+      warning(sprintf(
+        "Requested %d rolling splits, but only produced %d due to dataset size (n=%d)",
+        n_splits, length(splits), n
+      ))
+      break
+    }
     splits[[length(splits) + 1]] <- list(
       train_idx = seq_len(train_end),
       test_idx = seq(test_start, test_end),

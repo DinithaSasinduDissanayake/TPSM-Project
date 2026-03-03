@@ -15,8 +15,8 @@ train_predict_classification <- function(model_name, train_df, test_df, target_c
       return(list(pred = pred, prob = prob))
     } else {
       if (!requireNamespace("nnet", quietly = TRUE)) stop("Package 'nnet' required for multiclass")
-      fit <- nnet::nnet(as.formula(paste(target_col, "~ .")), data = train_df, size = 5, linout = FALSE, trace = FALSE)
-      prob <- stats::predict(fit, newdata = test_df)
+      fit <- nnet::multinom(as.formula(paste(target_col, "~ .")), data = train_df, trace = FALSE, MaxNWts = 10000)
+      prob <- stats::predict(fit, newdata = test_df, type = "probs")
       pred <- levels(y_train)[max.col(prob)]
       return(list(pred = pred, prob = prob))
     }
@@ -37,10 +37,17 @@ train_predict_classification <- function(model_name, train_df, test_df, target_c
 
   if (model_name == "naive_bayes") {
     if (!requireNamespace("e1071", quietly = TRUE)) stop("Package 'e1071' required")
+    for (col in names(train_x)) {
+      if (is.character(train_x[[col]])) {
+        train_x[[col]] <- as.factor(train_x[[col]])
+        test_x[[col]] <- factor(test_x[[col]], levels = levels(train_x[[col]]))
+      }
+    }
     fit <- e1071::naiveBayes(x = train_x, y = y_train)
     prob <- stats::predict(fit, newdata = test_x, type = "raw")
     if (is_binary) {
-      pred <- ifelse(prob[, 2] >= 0.5, levels(y_train)[2], levels(y_train)[1])
+      prob <- prob[, 2]
+      pred <- ifelse(prob >= 0.5, levels(y_train)[2], levels(y_train)[1])
     } else {
       pred <- levels(y_train)[max.col(prob)]
     }
@@ -63,20 +70,22 @@ train_predict_classification <- function(model_name, train_df, test_df, target_c
       pred <- ifelse(prob >= 0.5, levels(y_train)[2], levels(y_train)[1])
     } else {
       prob <- stats::predict(fit, newdata = test_df, n.trees = 100, type = "response")
+      prob <- prob[, , 1]
       pred <- levels(y_train)[max.col(prob)]
     }
     return(list(pred = pred, prob = prob))
   }
 
   if (model_name == "adaboost") {
-    if (!requireNamespace("ada", quietly = TRUE)) stop("Package 'ada' required")
+    if (!requireNamespace("ada", quietly = TRUE)) stop("Package 'ada' required for adaboost")
     if (!is_binary) {
-      warning("adaboost does not support multiclass, substituting with gradient_boosting")
+      warning("adaboost does not support multiclass; substituting with gradient_boosting (GBM). Note: this means pairwise comparisons labeled 'vs adaboost' for multiclass datasets are actually comparing vs GBM, not AdaBoost. This may affect experimental results.")
       if (!requireNamespace("gbm", quietly = TRUE)) stop("Package 'gbm' required")
       train_tmp <- train_df
       train_tmp[[target_col]] <- as.numeric(as.factor(train_tmp[[target_col]])) - 1
       fit <- gbm::gbm(as.formula(paste(target_col, "~ .")), data = train_tmp, distribution = "multinomial", n.trees = 100, interaction.depth = 3, shrinkage = 0.05, n.minobsinnode = 10, verbose = FALSE)
       prob <- stats::predict(fit, newdata = test_df, n.trees = 100, type = "response")
+      prob <- prob[, , 1]
       pred <- levels(y_train)[max.col(prob)]
       return(list(pred = pred, prob = prob))
     }

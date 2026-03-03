@@ -4,58 +4,130 @@ make_row_id <- function(prefix, ...) {
 
 prepare_dataset_for_task <- function(task_name, df, ds_cfg) {
   if (task_name == "timeseries" && !is.null(ds_cfg$time_col)) {
+    time_col <- ds_cfg$time_col
+    if (time_col %in% names(df)) {
+      parsed <- tryCatch({
+        as.POSIXct(df[[time_col]], tz = "UTC")
+      }, error = function(e) {
+        tryCatch({
+          as.Date(df[[time_col]])
+        }, error = function(e2) {
+          NULL
+        })
+      })
+      if (!is.null(parsed) && !all(is.na(parsed))) {
+        df <- df[order(parsed), ]
+      }
+    }
     df <- parse_time_column(df, ds_cfg$time_col)
   }
-  
-  if (task_name == "classification") {
-    y <- df[[ds_cfg$target]]
-    y_unique <- unique(y[!is.na(y)])
-    n_classes <- length(y_unique)
-    
-    is_binary_forced <- !is.null(ds_cfg$force_binary) && ds_cfg$force_binary
-    
-    if (is_binary_forced && n_classes > 2) {
-      if (!is.null(ds_cfg$binary_positive_vals)) {
-        y_chr <- as.character(y)
-        y_bin <- ifelse(tolower(y_chr) %in% tolower(ds_cfg$binary_positive_vals), 1, 0)
-        df[[ds_cfg$target]] <- factor(y_bin, levels = c(0, 1), labels = c("0", "1"))
-      } else if (!is.null(ds_cfg$binary_threshold)) {
-        y_num <- as.numeric(y)
-        y_bin <- ifelse(y_num > ds_cfg$binary_threshold, 1, 0)
-        df[[ds_cfg$target]] <- factor(y_bin, levels = c(0, 1), labels = c("0", "1"))
-      } else {
-        df[[ds_cfg$target]] <- as.factor(y)
-      }
-    } else if (n_classes == 2) {
-      y_chr <- tolower(as.character(y))
-      y_bin <- ifelse(y_chr %in% c("m", "malignant", "yes", "true", "1", "positive", "good", "1"), 1, 0)
-      df[[ds_cfg$target]] <- factor(y_bin, levels = c(0, 1), labels = c("0", "1"))
-    } else {
-      df[[ds_cfg$target]] <- as.factor(y)
-    }
-  }
   df
+}
+
+prepare_target_for_split <- function(task_name, train_df, test_df, target_col, ds_cfg) {
+  if (task_name != "classification") {
+    return(list(train_df = train_df, test_df = test_df))
+  }
+
+  y_train <- train_df[[target_col]]
+  y_test <- test_df[[target_col]]
+  y_train_unique <- unique(y_train[!is.na(y_train)])
+  n_classes <- length(y_train_unique)
+
+  is_binary_forced <- !is.null(ds_cfg$force_binary) && ds_cfg$force_binary
+
+  if (is_binary_forced && n_classes > 2) {
+    if (!is.null(ds_cfg$binary_positive_vals)) {
+      y_train_chr <- as.character(y_train)
+      y_test_chr <- as.character(y_test)
+      y_train_bin <- ifelse(tolower(y_train_chr) %in% tolower(ds_cfg$binary_positive_vals), 1, 0)
+      y_test_bin <- ifelse(tolower(y_test_chr) %in% tolower(ds_cfg$binary_positive_vals), 1, 0)
+      train_df[[target_col]] <- factor(y_train_bin, levels = c(0, 1), labels = c("0", "1"))
+      test_df[[target_col]] <- factor(y_test_bin, levels = c(0, 1), labels = c("0", "1"))
+    } else if (!is.null(ds_cfg$binary_threshold)) {
+      y_train_num <- as.numeric(y_train)
+      y_test_num <- as.numeric(y_test)
+      y_train_bin <- ifelse(y_train_num > ds_cfg$binary_threshold, 1, 0)
+      y_test_bin <- ifelse(y_test_num > ds_cfg$binary_threshold, 1, 0)
+      train_df[[target_col]] <- factor(y_train_bin, levels = c(0, 1), labels = c("0", "1"))
+      test_df[[target_col]] <- factor(y_test_bin, levels = c(0, 1), labels = c("0", "1"))
+    } else {
+      stop(sprintf("force_binary=TRUE with %d classes requires binary_positive_vals or binary_threshold in config for dataset '%s'", n_classes, ds_cfg$id))
+    }
+  } else if (n_classes == 2) {
+    y_train_chr <- as.character(y_train)
+    y_test_chr <- as.character(y_test)
+    unique_vals <- sort(unique(y_train_chr))
+    if (length(unique_vals) != 2) {
+      stop(sprintf("Expected 2 classes in training data, got %d", length(unique_vals)))
+    }
+    if (!is.null(ds_cfg$positive_class)) {
+      positive_val <- ds_cfg$positive_class
+    } else {
+      positive_val <- unique_vals[2]
+
+      # Cache decision and warn only once per dataset (H7 - prevents warning flood)
+      if (is.null(ds_cfg$positive_class_cached)) {
+        warning(sprintf(
+          "No positive class specified for '%s', using '%s' (alphabetically second). Consider setting positive_class in config.",
+          ds_cfg$id, positive_val
+        ))
+        ds_cfg$positive_class_cached <- positive_val
+      } else {
+        # Use cached value from first split
+        positive_val <- ds_cfg$positive_class_cached
+      }
+    }
+    y_train_bin <- ifelse(y_train_chr == positive_val, 1, 0)
+    y_test_bin <- ifelse(y_test_chr == positive_val, 1, 0)
+    train_df[[target_col]] <- factor(y_train_bin, levels = c(0, 1), labels = c("0", "1"))
+    test_df[[target_col]] <- factor(y_test_bin, levels = c(0, 1), labels = c("0", "1"))
+  } else {
+    train_df[[target_col]] <- as.factor(y_train)
+    test_df[[target_col]] <- as.factor(y_test)
+  }
+
+  list(train_df = train_df, test_df = test_df)
 }
 
 infer_id_columns <- function(df, target_col) {
   out <- character(0)
   for (col in names(df)) {
     if (col == target_col) next
-    if (tolower(col) %in% c("id", "identifier", "uid")) {
+
+    # Remove columns with clearly ID-like names
+    if (tolower(col) %in% c("id", "identifier", "uid", "row_id",
+                             "index", "no", "sr_no", "serial")) {
       out <- c(out, col)
       next
     }
+
+    # For all-unique columns, only remove if they look like IDs:
+    # - Sequential integers (common in row IDs)
+    # - High-cardinality with ID-like names
     if (length(unique(df[[col]])) == nrow(df)) {
-      out <- c(out, col)
+      if (is.integer(df[[col]])) {
+        # Check if sequential (common in row IDs)
+        vals <- sort(df[[col]])
+        if (length(vals) > 1 && all(diff(vals) == 1)) {
+          out <- c(out, col)
+        }
+      } else if (is.character(df[[col]]) || is.factor(df[[col]])) {
+        # Check if name suggests ID
+        if (tolower(col) %in% c("id", "identifier", "uid", "key")) {
+          out <- c(out, col)
+        }
+      }
     }
   }
   unique(out)
 }
 
-fit_imputer <- function(train_df) {
+fit_imputer <- function(train_df, target_col = NULL) {
   num_medians <- list()
   cat_modes <- list()
   for (col in names(train_df)) {
+    if (!is.null(target_col) && col == target_col) next
     if (is.numeric(train_df[[col]]) || is.integer(train_df[[col]])) {
       num_medians[[col]] <- stats::median(train_df[[col]], na.rm = TRUE)
     } else {
@@ -74,7 +146,7 @@ apply_imputer <- function(df, imputer) {
       med <- imputer$num_medians[[col]]
       if (!is.null(med)) {
         df[[col]][is.na(df[[col]])] <- med
-        df[[col]][is.nan(df[[col]])] <- med
+        df[[col]][is.infinite(df[[col]])] <- med
       }
     } else {
       mode_val <- imputer$cat_modes[[col]]
@@ -88,13 +160,16 @@ apply_imputer <- function(df, imputer) {
 
 fit_categorical_encoder <- function(train_df, target_col) {
   levels_map <- list()
+  fallback_medians <- list()
   for (col in names(train_df)) {
     if (col == target_col) next
     if (!is.numeric(train_df[[col]]) && !is.integer(train_df[[col]])) {
       levels_map[[col]] <- unique(as.character(train_df[[col]]))
+      enc_temp <- as.numeric(factor(train_df[[col]], levels = levels_map[[col]]))
+      fallback_medians[[col]] <- stats::median(enc_temp, na.rm = TRUE)
     }
   }
-  list(levels_map = levels_map)
+  list(levels_map = levels_map, fallback_medians = fallback_medians)
 }
 
 apply_categorical_encoder <- function(df, encoder, imputer, target_col) {
@@ -103,7 +178,7 @@ apply_categorical_encoder <- function(df, encoder, imputer, target_col) {
     lvls <- encoder$levels_map[[col]]
     df[[col]] <- as.numeric(factor(df[[col]], levels = lvls))
     if (is.null(imputer$num_medians[[col]])) {
-      med <- stats::median(df[[col]], na.rm = TRUE)
+      med <- encoder$fallback_medians[[col]]
       df[[col]][is.na(df[[col]])] <- med
       df[[col]][is.nan(df[[col]])] <- med
     }
@@ -145,132 +220,96 @@ preprocess_split <- function(task_name, train_df, test_df, ds_cfg) {
   drop_cols <- unique(drop_cols)
 
   if (length(drop_cols) > 0) {
+    message(sprintf(
+      "Dataset '%s': Removing columns %s (excluded/ID/time columns)",
+      ds_cfg$id, paste(drop_cols, collapse = ", ")
+    ))
     train_df <- train_df[, setdiff(names(train_df), drop_cols), drop = FALSE]
     test_df <- test_df[, setdiff(names(test_df), drop_cols), drop = FALSE]
   }
 
-  imputer <- fit_imputer(train_df)
+  target_prepped <- prepare_target_for_split(task_name, train_df, test_df, ds_cfg$target, ds_cfg)
+  train_df <- target_prepped$train_df
+  test_df <- target_prepped$test_df
+
+  imputer <- fit_imputer(train_df, ds_cfg$target)
   train_df <- apply_imputer(train_df, imputer)
   test_df <- apply_imputer(test_df, imputer)
 
-  if (task_name == "classification") {
-    encoder <- fit_categorical_encoder(train_df, ds_cfg$target)
-    train_df <- apply_categorical_encoder(train_df, encoder, imputer, ds_cfg$target)
-    test_df <- apply_categorical_encoder(test_df, encoder, imputer, ds_cfg$target)
+  train_df <- train_df[!is.na(train_df[[ds_cfg$target]]), , drop = FALSE]
+  test_df <- test_df[!is.na(test_df[[ds_cfg$target]]), , drop = FALSE]
+
+  # Guard against empty test/train sets (H6)
+  if (nrow(train_df) == 0) {
+    stop(sprintf(
+      "Train set empty after NA target removal for dataset '%s'",
+      ds_cfg$id
+    ))
   }
-  
-  if (task_name == "regression") {
-    encoder <- fit_categorical_encoder(train_df, ds_cfg$target)
-    train_df <- apply_categorical_encoder(train_df, encoder, imputer, ds_cfg$target)
-    test_df <- apply_categorical_encoder(test_df, encoder, imputer, ds_cfg$target)
-    
+  if (nrow(test_df) == 0) {
+    stop(sprintf(
+      "Test set empty after NA target removal for dataset '%s'. %s",
+      ds_cfg$id,
+      "This fold may have all NA targets."
+    ))
+  }
+
+  encoder <- fit_categorical_encoder(train_df, ds_cfg$target)
+  train_df <- apply_categorical_encoder(train_df, encoder, imputer, ds_cfg$target)
+  test_df <- apply_categorical_encoder(test_df, encoder, imputer, ds_cfg$target)
+
+  if (task_name %in% c("classification", "regression")) {
     scaler <- fit_scaler(train_df, ds_cfg$target)
     train_df <- apply_scaler(train_df, scaler, ds_cfg$target)
     test_df <- apply_scaler(test_df, scaler, ds_cfg$target)
   }
-  
-  if (task_name == "timeseries") {
-    encoder <- fit_categorical_encoder(train_df, ds_cfg$target)
-    train_df <- apply_categorical_encoder(train_df, encoder, imputer, ds_cfg$target)
-    test_df <- apply_categorical_encoder(test_df, encoder, imputer, ds_cfg$target)
+
+  feature_cols <- setdiff(names(train_df), ds_cfg$target)
+  zero_var <- vapply(feature_cols, function(col) {
+    length(unique(train_df[[col]][!is.na(train_df[[col]])])) <= 1
+  }, logical(1))
+  if (any(zero_var)) {
+    drop <- names(which(zero_var))
+    message(sprintf(
+      "Dataset '%s': Removing zero-variance columns %s",
+      ds_cfg$id, paste(drop, collapse = ", ")
+    ))
+    train_df <- train_df[, setdiff(names(train_df), drop), drop = FALSE]
+    test_df <- test_df[, setdiff(names(test_df), drop), drop = FALSE]
+  }
+
+  # Guard against empty feature matrix (H4)
+  feature_cols <- setdiff(names(train_df), ds_cfg$target)
+  if (length(feature_cols) == 0) {
+    stop(sprintf(
+      "No features remaining after preprocessing for dataset '%s'. %s",
+      ds_cfg$id,
+      "All columns were removed (zero variance, ID columns, excluded columns)."
+    ))
   }
 
   list(train_df = train_df, test_df = test_df)
 }
 
-evaluate_models_on_split <- function(task, dataset_df, ds_cfg, split, model_names, run_ctx) {
-  train_df <- dataset_df[split$train_idx, , drop = FALSE]
-  test_df <- dataset_df[split$test_idx, , drop = FALSE]
-
-  prepped <- preprocess_split(task$name, train_df, test_df, ds_cfg)
-  train_df <- prepped$train_df
-  test_df <- prepped$test_df
-
-  model_cache <- list()
-  model_rows <- list()
-
-  for (model_name in model_names) {
-    warning_ctx_base <- list(
-      task = task$name,
-      dataset = ds_cfg$id,
-      fold = split$fold,
-      repeat_id = split$repeat_id,
-      model_name = model_name
-    )
-
-    model_out <- list()
-    train_time <- system.time({
-      model_out <- withCallingHandlers(
-        run_model(task$name, model_name, train_df, test_df, ds_cfg$target, ds_cfg),
-        warning = function(w) {
-          log_warning(run_ctx, conditionMessage(w), c(warning_ctx_base, list(stage = "model_train_predict")))
-          invokeRestart("muffleWarning")
-        }
-      )
-    })[["elapsed"]]
-
-    model_metrics <- withCallingHandlers(
-      calc_metrics(task$name, test_df[[ds_cfg$target]], model_out$pred, model_out$prob),
-      warning = function(w) {
-        log_warning(run_ctx, conditionMessage(w), c(warning_ctx_base, list(stage = "metrics")))
-        invokeRestart("muffleWarning")
-      }
-    )
-
-    model_cache[[model_name]] <- list(
-      metrics = model_metrics,
-      train_time = train_time,
-      train_rows = nrow(train_df),
-      test_rows = nrow(test_df)
-    )
-
-    metric_names <- names(model_metrics)
-    metric_names <- metric_names[metric_names %in% task$metrics]
-
-    model_family <- if (model_name %in% vapply(task$model_pairs, function(p) p$ensemble, character(1))) "ensemble" else "single"
-
-    for (m in metric_names) {
-      run_id_model <- make_row_id("run", run_ctx$run_id, task$name, ds_cfg$id, model_name, split$fold, split$repeat_id, m)
-      model_rows[[length(model_rows) + 1]] <- list(
-        run_id = run_id_model,
-        task_type = task$name,
-        dataset_id = ds_cfg$id,
-        dataset_source = ds_cfg$source,
-        model_family = model_family,
-        model_name = model_name,
-        split_method = split$split_method,
-        fold = split$fold,
-        repeat_id = split$repeat_id,
-        n_folds = split$n_folds,
-        train_rows = nrow(train_df),
-        test_rows = nrow(test_df),
-        train_time_sec = train_time,
-        predict_time_sec = NA_real_,
-        metric_name = m,
-        metric_value = model_metrics[[m]],
-        timestamp_utc = format(as.POSIXct(Sys.time(), tz = "UTC"), "%Y-%m-%dT%H:%M:%SZ"),
-        status = "ok",
-        error_message = NA_character_
-      )
-    }
-  }
-
-  list(model_cache = model_cache, model_rows = model_rows)
-}
-
 build_pair_rows_from_cache <- function(task, ds_cfg, pair, split, model_cache, run_ctx) {
   metric_single <- model_cache[[pair$single]]$metrics
   metric_ensemble <- model_cache[[pair$ensemble]]$metrics
-
+  
   metric_names <- intersect(names(metric_single), names(metric_ensemble))
   metric_names <- metric_names[metric_names %in% task$metrics]
-
+  
+  actual_single <- model_cache[[pair$single]]$actual_model_used
+  actual_ensemble <- model_cache[[pair$ensemble]]$actual_model_used
+  
+  single_model_name_to_use <- if (!is.null(actual_single)) actual_single else pair$single
+  ensemble_model_name_to_use <- if (!is.null(actual_ensemble)) actual_ensemble else pair$ensemble
+  
   pair_rows <- list()
   for (m in metric_names) {
     higher <- is_higher_better(m)
     d <- if (higher) metric_ensemble[[m]] - metric_single[[m]] else metric_single[[m]] - metric_ensemble[[m]]
     def <- if (higher) paste0("ensemble_minus_single_", m) else paste0("single_minus_ensemble_", m)
-
+    
     pair_rows[[length(pair_rows) + 1]] <- list(
       comparison_id = make_row_id("cmp", run_ctx$run_id, task$name, ds_cfg$id, pair$single, pair$ensemble, split$fold, split$repeat_id, m),
       run_id = run_ctx$run_id,
@@ -280,8 +319,8 @@ build_pair_rows_from_cache <- function(task, ds_cfg, pair, split, model_cache, r
       fold = split$fold,
       repeat_id = split$repeat_id,
       metric_name = m,
-      single_model_name = pair$single,
-      ensemble_model_name = pair$ensemble,
+      single_model_name = single_model_name_to_use,
+      ensemble_model_name = ensemble_model_name_to_use,
       single_metric_value = metric_single[[m]],
       ensemble_metric_value = metric_ensemble[[m]],
       difference_definition = def,
@@ -306,7 +345,7 @@ run_model <- function(task_name, model_name, train_df, test_df, target_col, ds_c
   if (task_name == "timeseries") {
     y_train <- train_df[[target_col]]
     y_test <- test_df[[target_col]]
-    
+
     exog_train <- NULL
     exog_test <- NULL
     if (!is.null(ds_cfg$exog_cols)) {
@@ -317,7 +356,7 @@ run_model <- function(task_name, model_name, train_df, test_df, target_col, ds_c
         exog_test <- test_df[, valid_exog, drop = FALSE]
       }
     }
-    
+
     pred <- train_predict_timeseries(model_name, y_train, y_test, lag = 12, exog_train = exog_train, exog_test = exog_test)
     return(list(pred = pred, prob = NULL))
   }
