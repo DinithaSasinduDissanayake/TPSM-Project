@@ -43,6 +43,68 @@ See [methodology](docs/methodology.md) for detailed approach.
 
 ---
 
+## Usage
+
+### Basic Run
+
+```bash
+Rscript scripts/main.R
+```
+
+This runs the full pipeline with default settings:
+- All tasks (classification, regression, timeseries)
+- Sequential processing (1 worker)
+- Output to `outputs/` directory
+
+### CLI Options
+
+| Flag | Description | Example |
+|------|-------------|---------|
+| `--fast` | Enable fast mode (auto-detects CPU cores) | `--fast` |
+| `--workers <N>` | Set specific number of parallel workers | `--workers 8` |
+| `--task <name>` | Run only specific task (classification/regression/timeseries) | `--task classification` |
+| `--output-dir <path>` | Custom output directory | `--output-dir my_results` |
+| `--config <path>` | Use custom config file | `--config config/quick_test.yaml` |
+
+### Fast Mode
+
+The `--fast` flag enables dataset-level parallelism for faster execution:
+
+**When to use:**
+- Running with many datasets (10+ datasets)
+- Production runs with full dataset suite (25 datasets)
+
+**Performance expectations:**
+- With 25 datasets: **6-10x speedup** (20 min → 2-3 min)
+- With 3 datasets: Slower due to parallelization overhead
+
+**Worker count:**
+- Auto-detects CPU cores and sets workers to `cores - 2`
+- Can be overridden with `--workers <N>` flag
+
+**Reproducibility:**
+- Fast mode produces identical results to sequential mode
+- Verified across classification, regression, and timeseries tasks
+
+### Examples
+
+**Run all datasets in fast mode:**
+```bash
+Rscript scripts/main.R --fast
+```
+
+**Run only classification task with 4 workers:**
+```bash
+Rscript scripts/main.R --task classification --workers 4
+```
+
+**Run with custom config:**
+```bash
+Rscript scripts/main.R --config config/quick_test.yaml
+```
+
+---
+
 ## Technical Approach
 
 ### Models Compared
@@ -61,6 +123,8 @@ See [methodology](docs/methodology.md) for detailed approach.
 - **e1071** — SVR, Naive Bayes
 - **forecast** — time series (ARIMA, Exponential Smoothing)
 - **tidyverse** — data manipulation and visualization
+- **future/furrr** — parallel processing (for `--fast` mode)
+- **filelock** — safe concurrent file operations
 
 > "I don't restrict you to use the R. You can go with any analysis tool but I recommend you to use the R. R is having the most powerful statistical repositories."
 >

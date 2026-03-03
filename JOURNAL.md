@@ -143,3 +143,37 @@ TPSM Project Development Journal
 - Optional: Update project README to document `--fast` flag usage
 - The fast mode feature is complete and verified
 
+
+---
+
+## 2026-03-03T19:30:00+05:30
+
+**Task:** Update README.md with fast mode documentation and prepare PR for review
+
+**What was done:**
+- Created branch `feature/fast-mode-docs`
+- Added "Usage" section to README.md with:
+  - Complete CLI flags table (--fast, --workers, --task, --output-dir, --config)
+  - Fast mode performance guidance and expectations
+  - Worker count auto-detection explanation
+  - Examples for common use cases
+- Updated Tools section to include future, furrr, filelock packages
+- Updated .gitignore to exclude 7 large data files (adult_census.csv, letter_recognition.csv, boston_housing.csv, air_quality.csv, beijing_pm25.csv, household_power.csv, metro_traffic.csv)
+- Committed changes with detailed message
+- Ready to push and create PR
+
+**Files modified:**
+- README.md: Added Usage section (75 new lines)
+- .gitignore: Added data file exclusions (8 new lines)
+
+**Git workflow:**
+- Branch: feature/fast-mode-docs
+- Changes staged and committed
+- Next: Push to remote, create PR to main branch
+
+**Status:**
+- Implementation complete ✅
+- Documentation complete ✅
+- Ready for PR creation ✅
+- **Awaiting push and review**
+
