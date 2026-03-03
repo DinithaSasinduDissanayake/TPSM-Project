@@ -27,8 +27,9 @@ init_run_context <- function(cfg, output_root = "outputs") {
 
   state <- new.env(parent = emptyenv())
   state$warnings <- list()
+  state$last_dataset <- "none"
 
-  list(run_id = run_id, out_dir = out_dir, log_file = file.path(out_dir, "run_log.txt"), state = state)
+  list(run_id = run_id, out_dir = out_dir, log_file = file.path(out_dir, "run_log.txt"), state = state, heartbeat_file = file.path(out_dir, "heartbeat.txt"))
 }
 
 log_event <- function(run_ctx, level, event, payload = list()) {
@@ -123,4 +124,13 @@ write_warnings_reports <- function(run_ctx) {
     groups = grouped
   )
   jsonlite::write_json(summary_report, file.path(run_ctx$out_dir, "warnings_summary.json"), auto_unbox = TRUE, pretty = TRUE)
+}
+
+write_heartbeat <- function(run_ctx, current_dataset = "none") {
+  heartbeat_line <- sprintf(
+    "{\"timestamp_utc\":\"%s\",\"last_dataset\":\"%s\"}\n",
+    format(as.POSIXct(Sys.time(), tz = "UTC"), "%Y-%m-%dT%H:%M:%SZ"),
+    current_dataset
+  )
+  cat(heartbeat_line, file = run_ctx$heartbeat_file)
 }

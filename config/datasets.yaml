@@ -45,7 +45,7 @@ classification:
       source: uci
       path: data/classification/bank_marketing.csv
       url: https://archive.ics.uci.edu/ml/machine-learning-databases/00222/bank.zip
-      target: y
+      target: "y"
       exclude_cols:
         - duration
       zip_file: bank-full.csv
@@ -129,7 +129,8 @@ classification:
       force_binary: true
       binary_positive_vals:
         - "1"
-        - good
+        - "good"
+      separator: " "
       header_names:
         - Status
         - Duration
@@ -246,6 +247,7 @@ regression:
       path: data/regression/ccpp.csv
       url: https://archive.ics.uci.edu/ml/machine-learning-databases/00294/CCPP.zip
       target: PE
+      zip_file: CCPP/Folds5x2_pp.xlsx
 
     - id: bike_sharing
       source: uci
@@ -317,7 +319,7 @@ timeseries:
         - NO2.GT
         - T
       separator: ";"
-      decimal: ","
+      rename_target_from: "CO(GT)"
 
     - id: beijing_pm25
       source: uci
@@ -348,6 +350,7 @@ timeseries:
       exog_cols:
         - Global_reactive_power
         - Voltage
+      separator: ";"
       exclude_cols:
         - Time
       na_strings: "?"

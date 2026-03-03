@@ -68,6 +68,9 @@ sanitize_yaml_config <- function(yaml_cfg) {
     if (!is.null(task_yaml$datasets)) {
       for (ds in task_yaml$datasets) {
         ds_cfg <- as.list(ds)
+        if (!is.null(ds_cfg$target) && is.logical(ds_cfg$target)) {
+          ds_cfg$target <- as.character(ds_cfg$target)
+        }
         task_cfg$datasets[[length(task_cfg$datasets) + 1]] <- ds_cfg
       }
     }

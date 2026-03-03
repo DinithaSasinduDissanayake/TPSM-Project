@@ -234,3 +234,37 @@ TPSM Project Development Journal
 - Technical approach clarity
 - Business impact (time savings, zero quality loss)
 
+
+## 2026-03-04T20:30:00+05:30
+
+**Task:** Implement enhanced logging and monitoring for autonomous overnight run iteration
+
+**What was done:**
+- Fixed bank_marketing YAML boolean parsing bug (target: "y" was being parsed as boolean TRUE)
+- Implemented comprehensive enhanced logging system for better diagnostics
+- Added per-dataset timing events (dataset_start, dataset_complete with breakdown)
+- Added per-stage timing within datasets (load, prepare, split, evaluate)
+- Added progress counter events tracking % complete after each dataset
+- Added run summary event at end with full metrics
+- Added heartbeat file writer for liveness monitoring
+- Added stderr capture to stderr.log file
+- Fixed config separator/decimal logic in load_data.R (inverted is.null check)
+
+**Code changes:**
+- `scripts/R/config.R`: Added boolean-to-string conversion for target field to prevent YAML parsing of "y" as TRUE
+- `scripts/R/logging.R`: Added heartbeat_file to run_ctx, added write_heartbeat() function
+- `scripts/R/parallel_utils.R`: Added timing for all dataset stages, added dataset_start/complete/stage_complete/stage_failed events
+- `scripts/main.R`: Added progress tracking after each dataset, added run_summary at end, added stderr capture with sink()
+
+**Observability improvements:**
+- Per-dataset timing breakdown (load/prepare/split/evaluate seconds)
+- Progress events showing completed/total/pct after each dataset
+- Run summary with elapsed time, success/failure counts, row counts
+- Heartbeat.txt file with last dataset being processed for liveness
+- stderr.log file capturing all console messages
+
+**Next steps:**
+- Run full production pipeline with enhanced logging
+- Analyze run results to identify any remaining issues
+- Fix issues and re-run iteratively overnight
+

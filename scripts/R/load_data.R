@@ -147,8 +147,8 @@ load_dataset <- function(ds_cfg, run_ctx, task_name = NULL) {
   ext <- tools::file_ext(ds_cfg$path)
   if (ext == "csv") {
     first_line <- readLines(ds_cfg$path, n = 1)
-    sep <- if (!is.null(ds_cfg$separator)) ds_cfg$separator else if (grepl(";", first_line)) ";" else ","
-    dec <- if (!is.null(ds_cfg$decimal)) ds_cfg$decimal else "."
+    sep <- if (is.null(ds_cfg$separator)) if (grepl(";", first_line)) ";" else "," else ds_cfg$separator
+    dec <- if (is.null(ds_cfg$decimal)) "." else ds_cfg$decimal
     na_strings <- if (!is.null(ds_cfg$na_strings)) ds_cfg$na_strings else "NA"
     df <- utils::read.csv(ds_cfg$path, stringsAsFactors = FALSE, sep = sep, dec = dec, na.strings = na_strings)
     if (!is.null(ds_cfg$max_rows) && nrow(df) > ds_cfg$max_rows) {

@@ -70,6 +70,17 @@ run_dataset_task <- function(task, ds, run_ctx, stop_on_fail, timeout_sec) {
     error_message = NULL
   )
 
+  write_heartbeat(run_ctx, ds$id)
+  run_ctx$state$last_dataset <<- ds$id
+
+  dataset_start_time <- Sys.time()
+  log_event(run_ctx, "info", "dataset_start", list(
+    task = task$name,
+    dataset = ds$id,
+    n_workers = if (exists("parallel_workers")) get("parallel_workers", envir = globalenv()) else 1
+  ))
+
+  load_start <- Sys.time()
   dataset <- tryCatch(
     load_dataset(ds, run_ctx, task$name),
     error = function(e) {
@@ -78,8 +89,24 @@ run_dataset_task <- function(task, ds, run_ctx, stop_on_fail, timeout_sec) {
       NULL
     }
   )
-  if (result$failed) return(result)
+  if (result$failed) {
+    log_event(run_ctx, "error", "dataset_stage_failed", list(
+      task = task$name,
+      dataset = ds$id,
+      stage = "load",
+      elapsed_sec = as.numeric(Sys.time() - load_start),
+      error_message = result$error_message
+    ))
+    return(result)
+  }
+  log_event(run_ctx, "debug", "dataset_stage_complete", list(
+    task = task$name,
+    dataset = ds$id,
+    stage = "load",
+    elapsed_sec = as.numeric(Sys.time() - load_start)
+  ))
   
+  prep_start <- Sys.time()
   dataset <- tryCatch(
     prepare_dataset_for_task(task$name, dataset, ds),
     error = function(e) {
@@ -88,8 +115,24 @@ run_dataset_task <- function(task, ds, run_ctx, stop_on_fail, timeout_sec) {
       NULL
     }
   )
-  if (result$failed) return(result)
+  if (result$failed) {
+    log_event(run_ctx, "error", "dataset_stage_failed", list(
+      task = task$name,
+      dataset = ds$id,
+      stage = "prepare",
+      elapsed_sec = as.numeric(Sys.time() - prep_start),
+      error_message = result$error_message
+    ))
+    return(result)
+  }
+  log_event(run_ctx, "debug", "dataset_stage_complete", list(
+    task = task$name,
+    dataset = ds$id,
+    stage = "prepare",
+    elapsed_sec = as.numeric(Sys.time() - prep_start)
+  ))
   
+  split_start <- Sys.time()
   splits <- tryCatch(
     make_splits(task$name, dataset, task$split, ds$target, ds$id),
     error = function(e) {
@@ -98,39 +141,117 @@ run_dataset_task <- function(task, ds, run_ctx, stop_on_fail, timeout_sec) {
       NULL
     }
   )
-  if (result$failed) return(result)
+  if (result$failed) {
+    log_event(run_ctx, "error", "dataset_stage_failed", list(
+      task = task$name,
+      dataset = ds$id,
+      stage = "split",
+      elapsed_sec = as.numeric(Sys.time() - split_start),
+      error_message = result$error_message
+    ))
+    return(result)
+  }
+  log_event(run_ctx, "debug", "dataset_stage_complete", list(
+    task = task$name,
+    dataset = ds$id,
+    stage = "split",
+    elapsed_sec = as.numeric(Sys.time() - split_start),
+    n_splits = length(splits)
+  ))
   
   model_names <- unique(c(
     vapply(task$model_pairs, function(p) p$single, character(1)),
     vapply(task$model_pairs, function(p) p$ensemble, character(1))
   ))
   
-  for (sp in splits) {
-    split_eval <- tryCatch({
-      evaluate_models_on_split(task, dataset, ds, sp, model_names, run_ctx, timeout_sec, ds$id)
-    }, error = function(e) {
-      result$failed <<- TRUE
-      result$error_message <<- paste0("train_eval: ", e$message)
-      return(NULL)
-    })
-    
-    if (is.null(split_eval)) next
-
-    result$model_runs <- c(result$model_runs, split_eval$model_rows)
-    result$warnings <- c(result$warnings, split_eval$worker_warnings)
-    
-    for (pair in task$model_pairs) {
-      pair_result <- tryCatch({
-        build_pair_rows_from_cache(task, ds, pair, sp, split_eval$model_cache, run_ctx)
+  # For multiclass classification, skip adaboost training (falls back to duplicate GBM)
+  # Track alias mapping for pairwise comparison: adaboost -> gradient_boosting
+  model_aliases <- list()
+  if (task$name == "classification") {
+    n_classes <- length(unique(dataset[[ds$target]]))
+    if (n_classes > 2 && "adaboost" %in% model_names) {
+      model_names <- setdiff(model_names, "adaboost")
+      model_aliases[["adaboost"]] <- "gradient_boosting"
+    }
+  }
+  
+  eval_start <- Sys.time()
+  # Parallelize splits for large split counts to reduce bottleneck
+  if (length(splits) > 10 && parallel_workers > 1 && future_available) {
+    n_split_workers <- min(4, max(1, parallel::detectCores() %/% 2))
+    split_results <- future_map(splits, function(sp) {
+      split_eval <- tryCatch({
+        evaluate_models_on_split(task, dataset, ds, sp, model_names, run_ctx, timeout_sec, ds$id)
       }, error = function(e) {
-        NULL
+        list(failed = TRUE, error_message = paste0("train_eval: ", e$message))
       })
       
-      if (!is.null(pair_result)) {
-        result$pairwise_rows <- c(result$pairwise_rows, pair_result)
+      if (is.null(split_eval) || !is.null(split_eval$failed)) {
+        return(list(model_rows = list(), pair_rows = list()))
+      }
+      
+      pair_rows <- list()
+      for (pair in task$model_pairs) {
+        pair_result <- tryCatch({
+          build_pair_rows_from_cache(task, ds, pair, sp, split_eval$model_cache, run_ctx, model_aliases)
+        }, error = function(e) NULL)
+        if (!is.null(pair_result)) {
+          pair_rows <- c(pair_rows, pair_result)
+        }
+      }
+      list(model_rows = split_eval$model_rows, pair_rows = pair_rows, worker_warnings = split_eval$worker_warnings)
+    }, .options = furrr_options(seed = NULL))
+    
+    for (sr in split_results) {
+      result$model_runs <- c(result$model_runs, sr$model_rows)
+      result$pairwise_rows <- c(result$pairwise_rows, sr$pair_rows)
+      result$warnings <- c(result$warnings, sr$worker_warnings)
+    }
+  } else {
+    for (sp in splits) {
+      split_eval <- tryCatch({
+        evaluate_models_on_split(task, dataset, ds, sp, model_names, run_ctx, timeout_sec, ds$id)
+      }, error = function(e) {
+        result$failed <<- TRUE
+        result$error_message <<- paste0("train_eval: ", e$message)
+        return(NULL)
+      })
+      
+      if (is.null(split_eval)) next
+
+      result$model_runs <- c(result$model_runs, split_eval$model_rows)
+      result$warnings <- c(result$warnings, split_eval$worker_warnings)
+      
+      for (pair in task$model_pairs) {
+        pair_result <- tryCatch({
+          build_pair_rows_from_cache(task, ds, pair, sp, split_eval$model_cache, run_ctx, model_aliases)
+        }, error = function(e) {
+          NULL
+        })
+        
+        if (!is.null(pair_result)) {
+          result$pairwise_rows <- c(result$pairwise_rows, pair_result)
+        }
       }
     }
   }
+  
+  total_elapsed <- as.numeric(Sys.time() - dataset_start_time)
+  eval_elapsed <- as.numeric(Sys.time() - eval_start)
+  
+  log_event(run_ctx, "info", "dataset_complete", list(
+    task = task$name,
+    dataset = ds$id,
+    elapsed_sec = total_elapsed,
+    load_sec = as.numeric(load_start - dataset_start_time),
+    prepare_sec = as.numeric(prep_start - load_start),
+    split_sec = as.numeric(split_start - prep_start),
+    evaluate_sec = eval_elapsed,
+    n_model_runs = length(result$model_runs),
+    n_pairwise_rows = length(result$pairwise_rows),
+    n_warnings = length(result$warnings),
+    failed = result$failed
+  ))
   
   result
 }

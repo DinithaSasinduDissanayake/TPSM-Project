@@ -47,6 +47,12 @@ log_event(run_ctx, "info", "run_start", list(
   fast_mode = fast_mode
 ))
 
+stderr_file <- file.path(run_ctx$out_dir, "stderr.log")
+sink(stderr_file, type = "message")
+sink_conn <- stderr_file
+on.exit(sink(type = "message"), add = TRUE)
+
+
 future_available <- requireNamespace("future", quietly = TRUE) && requireNamespace("furrr", quietly = TRUE)
 if (fast_mode && !is.na(n_cores)) {
   log_event(run_ctx, "info", "fast_mode_enabled", list(
@@ -87,48 +93,71 @@ handle_error <- function(msg, context = list()) {
 
 log_event(run_ctx, "info", "task_start", list(task = "ALL"))
 
-all_dataset_results <- list()
-ds_idx <- 1
-
+# Flatten all (task, dataset) pairs into single job pool for better CPU utilization
+all_jobs <- list()
 for (task in cfg$tasks) {
-  task_results <- list()
-  
-  if (parallel_workers > 1 && future_available) {
-    task_results <- future_map(task$datasets, function(ds) {
-      run_dataset_task(task, ds, run_ctx, stop_on_fail, timeout_sec)
-    }, .options = furrr_options(seed = NULL))
-  } else {
-    for (ds in task$datasets) {
-      log_event(run_ctx, "info", "dataset_start", list(task = task$name, dataset = ds$id))
-      ds_result <- run_dataset_task(task, ds, run_ctx, stop_on_fail, timeout_sec)
-      task_results[[length(task_results) + 1]] <- ds_result
-    }
+  for (ds in task$datasets) {
+    all_jobs[[length(all_jobs) + 1]] <- list(task = task, ds = ds)
   }
-  
-  for (ds_result in task_results) {
-    if (ds_result$failed) {
-      handle_error(
-        ds_result$error_message,
-        list(task = task$name, dataset = ds_result$dataset_id, stage = "dataset")
-      )
-    } else {
-      model_runs <- c(model_runs, ds_result$model_runs)
-      pairwise_rows <- c(pairwise_rows, ds_result$pairwise_rows)
-      if (!is.null(ds_result$warnings) && length(ds_result$warnings) > 0) {
-        for (w in ds_result$warnings) {
-          run_ctx$state$warnings[[length(run_ctx$state$warnings) + 1]] <- w
-        }
+}
+
+all_dataset_results <- list()
+
+if (parallel_workers > 1 && future_available) {
+  all_dataset_results <- future_map(all_jobs, function(job) {
+    run_dataset_task(job$task, job$ds, run_ctx, stop_on_fail, timeout_sec)
+  }, .options = furrr_options(seed = NULL))
+} else {
+  for (job in all_jobs) {
+    log_event(run_ctx, "info", "dataset_start", list(task = job$task$name, dataset = job$ds$id))
+    ds_result <- run_dataset_task(job$task, job$ds, run_ctx, stop_on_fail, timeout_sec)
+    all_dataset_results[[length(all_dataset_results) + 1]] <- ds_result
+  }
+}
+
+total_datasets <- length(all_dataset_results)
+for (i in seq_along(all_dataset_results)) {
+  ds_result <- all_dataset_results[[i]]
+  completed <- i - 1
+  if (ds_result$failed) {
+    handle_error(
+      ds_result$error_message,
+      list(task = ds_result$task_name, dataset = ds_result$dataset_id, stage = "dataset")
+    )
+    log_event(run_ctx, "info", "progress", list(
+      completed = i,
+      total = total_datasets,
+      pct = round(100 * i / total_datasets, 1),
+      last_dataset = ds_result$dataset_id,
+      last_status = "failed"
+    ))
+  } else {
+    model_runs <- c(model_runs, ds_result$model_runs)
+    pairwise_rows <- c(pairwise_rows, ds_result$pairwise_rows)
+    if (!is.null(ds_result$warnings) && length(ds_result$warnings) > 0) {
+      for (w in ds_result$warnings) {
+        run_ctx$state$warnings[[length(run_ctx$state$warnings) + 1]] <- w
       }
     }
+    log_event(run_ctx, "info", "progress", list(
+      completed = i,
+      total = total_datasets,
+      pct = round(100 * i / total_datasets, 1),
+      last_dataset = ds_result$dataset_id,
+      last_status = "success",
+      n_model_runs = length(ds_result$model_runs),
+      n_pairwise_rows = length(ds_result$pairwise_rows)
+    ))
   }
-  
-  all_dataset_results <- c(all_dataset_results, task_results)
 }
 
 if (parallel_workers > 1 && future_available) {
   plan(sequential)
   log_event(run_ctx, "info", "parallel_disabled", list(reason = "run_complete"))
 }
+
+run_end_time <- Sys.time()
+run_elapsed_sec <- as.numeric(difftime(run_end_time, parse(run_ctx$run_id, format = "%Y%m%dT%H%M%S"), units = "secs"))
 
 write_outputs(run_ctx, model_runs, pairwise_rows)
 write_warnings_reports(run_ctx)
@@ -151,9 +180,33 @@ if (length(failed_datasets) > 0) {
     failed_count = length(failed_datasets),
     failed_summary = paste0(failed_summary$dataset, " (", failed_summary$stage, ")", collapse = "; ")
   ))
+  log_event(run_ctx, "info", "run_summary", list(
+    elapsed_sec = run_elapsed_sec,
+    elapsed_min = round(run_elapsed_sec / 60, 2),
+    total_datasets = total_datasets,
+    successful_datasets = total_datasets - length(failed_datasets),
+    failed_datasets = length(failed_datasets),
+    model_run_rows = length(model_runs),
+    pairwise_rows = length(pairwise_rows),
+    total_warnings = length(run_ctx$state$warnings),
+    run_id = run_ctx$run_id,
+    output_dir = run_ctx$out_dir
+  ))
 } else {
   log_event(run_ctx, "info", "run_complete", list(
     model_run_rows = length(model_runs), 
     pairwise_rows = length(pairwise_rows)
+  ))
+  log_event(run_ctx, "info", "run_summary", list(
+    elapsed_sec = run_elapsed_sec,
+    elapsed_min = round(run_elapsed_sec / 60, 2),
+    total_datasets = total_datasets,
+    successful_datasets = total_datasets,
+    failed_datasets = 0,
+    model_run_rows = length(model_runs),
+    pairwise_rows = length(pairwise_rows),
+    total_warnings = length(run_ctx$state$warnings),
+    run_id = run_ctx$run_id,
+    output_dir = run_ctx$out_dir
   ))
 }
