@@ -199,7 +199,7 @@ train_predict_timeseries <- function(model_name, y_train, y_test, lag = 12, exog
       names(test_lag_df) <- paste0("x", seq_len(ncol(x_step)))
 
       # Predict this step
-      preds[i] <- gbm::predict(fit, newdata = test_lag_df, n.trees = 100)
+      preds[i] <- gbm::predict.gbm(fit, newdata = test_lag_df, n.trees = 100)
 
       # Update history with prediction (use prediction as lag for next step)
       current_y <- c(current_y, preds[i])
