@@ -41,6 +41,7 @@ run_dataset_task <- function(task, ds, run_ctx, stop_on_fail, timeout_sec) {
     task_name = task$name,
     model_runs = list(),
     pairwise_rows = list(),
+    warnings = list(),
     failed = FALSE,
     error_message = NULL
   )
@@ -82,7 +83,7 @@ run_dataset_task <- function(task, ds, run_ctx, stop_on_fail, timeout_sec) {
   
   for (sp in splits) {
     split_eval <- tryCatch({
-      evaluate_models_on_split(task, dataset, ds, sp, model_names, run_ctx, timeout_sec)
+      evaluate_models_on_split(task, dataset, ds, sp, model_names, run_ctx, timeout_sec, ds$id)
     }, error = function(e) {
       result$failed <<- TRUE
       result$error_message <<- paste0("train_eval: ", e$message)
@@ -90,8 +91,9 @@ run_dataset_task <- function(task, ds, run_ctx, stop_on_fail, timeout_sec) {
     })
     
     if (is.null(split_eval)) break
-    
+
     result$model_runs <- c(result$model_runs, split_eval$model_rows)
+    result$warnings <- c(result$warnings, split_eval$worker_warnings)
     
     for (pair in task$model_pairs) {
       pair_result <- tryCatch({
@@ -109,17 +111,24 @@ run_dataset_task <- function(task, ds, run_ctx, stop_on_fail, timeout_sec) {
   result
 }
 
-evaluate_models_on_split <- function(task, dataset_df, ds_cfg, split, model_names, run_ctx, timeout_sec = 300) {
+evaluate_models_on_split <- function(task, dataset_df, ds_cfg, split, model_names, run_ctx, timeout_sec = 300, dataset_id = NULL) {
   train_df <- dataset_df[split$train_idx, , drop = FALSE]
   test_df <- dataset_df[split$test_idx, , drop = FALSE]
-  
+
   prepped <- preprocess_split(task$name, train_df, test_df, ds_cfg)
   train_df <- prepped$train_df
   test_df <- prepped$test_df
-  
+
   model_cache <- list()
   model_rows <- list()
-  
+  worker_warnings <- list()
+
+  base_seed <- 42
+  if (!is.null(dataset_id)) {
+    seed_hash <- sum(as.numeric(charToRaw(dataset_id))) %% 100000
+    base_seed <- base_seed + seed_hash
+  }
+
   for (model_name in model_names) {
     warning_ctx_base <- list(
       task = task$name,
@@ -128,8 +137,8 @@ evaluate_models_on_split <- function(task, dataset_df, ds_cfg, split, model_name
       repeat_id = split$repeat_id,
       model_name = model_name
     )
-    
-    model_seed <- make_split_seed(42, split$repeat_id, split$fold)
+
+    model_seed <- make_split_seed(base_seed, split$repeat_id, split$fold)
     set.seed(model_seed)
     
     model_out <- NULL
@@ -141,13 +150,13 @@ evaluate_models_on_split <- function(task, dataset_df, ds_cfg, split, model_name
             timeout = timeout_sec
           ),
           warning = function(w) {
-            log_warning(run_ctx, conditionMessage(w), c(warning_ctx_base, list(stage = "model_train_predict")))
+            worker_warnings[[length(worker_warnings) + 1]] <- c(warning_ctx_base, list(stage = "model_train_predict", message = conditionMessage(w)))
             invokeRestart("muffleWarning")
           }
         )
       })
     }, error = function(e) {
-      log_warning(run_ctx, sprintf("Model %s failed: %s", model_name, e$message), warning_ctx_base)
+      worker_warnings[[length(worker_warnings) + 1]] <- c(warning_ctx_base, list(stage = "model_train_predict", message = sprintf("Model %s failed: %s", model_name, e$message)))
       NULL
     })
     
@@ -192,7 +201,7 @@ evaluate_models_on_split <- function(task, dataset_df, ds_cfg, split, model_name
     model_metrics <- withCallingHandlers(
       calc_metrics(task$name, test_df[[ds_cfg$target]], model_out$pred, model_out$prob),
       warning = function(w) {
-        log_warning(run_ctx, conditionMessage(w), c(warning_ctx_base, list(stage = "metrics")))
+        worker_warnings[[length(worker_warnings) + 1]] <- c(warning_ctx_base, list(stage = "metrics", message = conditionMessage(w)))
         invokeRestart("muffleWarning")
       }
     )
@@ -235,6 +244,6 @@ evaluate_models_on_split <- function(task, dataset_df, ds_cfg, split, model_name
       )
     }
   }
-  
-  list(model_cache = model_cache, model_rows = model_rows)
+
+  list(model_cache = model_cache, model_rows = model_rows, worker_warnings = worker_warnings)
 }

@@ -97,6 +97,11 @@ for (task in cfg$tasks) {
     } else {
       model_runs <- c(model_runs, ds_result$model_runs)
       pairwise_rows <- c(pairwise_rows, ds_result$pairwise_rows)
+      if (!is.null(ds_result$warnings) && length(ds_result$warnings) > 0) {
+        for (w in ds_result$warnings) {
+          run_ctx$state$warnings[[length(run_ctx$state$warnings) + 1]] <- w
+        }
+      }
     }
   }
   

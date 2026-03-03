@@ -65,6 +65,9 @@ load_dataset <- function(ds_cfg, run_ctx, task_name = NULL) {
         stop(sprintf("No suitable file found in ZIP for dataset: %s", ds_cfg$id))
       }
     } else if (ext == "gz") {
+      if (!requireNamespace("R.utils", quietly = TRUE)) {
+        stop("Package 'R.utils' required for .gz files")
+      }
       temp_file <- tempfile(fileext = ".gz")
       success <- download_with_retry(ds_cfg$url, temp_file, max_retries = 3, timeout = 60)
       if (!success) stop(sprintf("Failed to download dataset after retries: %s", ds_cfg$id))

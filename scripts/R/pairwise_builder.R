@@ -40,10 +40,12 @@ prepare_target_for_split <- function(task_name, train_df, test_df, target_col, d
       stop(sprintf("force_binary=TRUE with %d classes requires binary_positive_vals or binary_threshold in config for dataset '%s'", n_classes, ds_cfg$id))
     }
   } else if (n_classes == 2) {
-    y_train_chr <- tolower(as.character(y_train))
-    y_test_chr <- tolower(as.character(y_test))
-    y_train_bin <- ifelse(y_train_chr %in% c("m", "malignant", "yes", "true", "1", "positive", "good"), 1, 0)
-    y_test_bin <- ifelse(y_test_chr %in% c("m", "malignant", "yes", "true", "1", "positive", "good"), 1, 0)
+    y_train_chr <- as.character(y_train)
+    y_test_chr <- as.character(y_test)
+    unique_vals <- sort(unique(c(y_train_chr, y_test_chr)))
+    positive_val <- unique_vals[2]
+    y_train_bin <- ifelse(y_train_chr == positive_val, 1, 0)
+    y_test_bin <- ifelse(y_test_chr == positive_val, 1, 0)
     train_df[[target_col]] <- factor(y_train_bin, levels = c(0, 1), labels = c("0", "1"))
     test_df[[target_col]] <- factor(y_test_bin, levels = c(0, 1), labels = c("0", "1"))
   } else {
@@ -63,8 +65,7 @@ infer_id_columns <- function(df, target_col) {
       next
     }
     if (length(unique(df[[col]])) == nrow(df)) {
-      if (is.character(df[[col]]) || is.factor(df[[col]]) ||
-          (is.integer(df[[col]]) && !is.numeric(df[[col]]))) {
+      if (is.integer(df[[col]]) || is.character(df[[col]]) || is.factor(df[[col]])) {
         out <- c(out, col)
       }
     }
@@ -188,6 +189,10 @@ preprocess_split <- function(task_name, train_df, test_df, ds_cfg) {
     encoder <- fit_categorical_encoder(train_df, ds_cfg$target)
     train_df <- apply_categorical_encoder(train_df, encoder, imputer, ds_cfg$target)
     test_df <- apply_categorical_encoder(test_df, encoder, imputer, ds_cfg$target)
+
+    scaler <- fit_scaler(train_df, ds_cfg$target)
+    train_df <- apply_scaler(train_df, scaler, ds_cfg$target)
+    test_df <- apply_scaler(test_df, scaler, ds_cfg$target)
   }
 
   if (task_name == "regression") {

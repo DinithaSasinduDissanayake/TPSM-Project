@@ -76,9 +76,9 @@ train_predict_classification <- function(model_name, train_df, test_df, target_c
   }
 
   if (model_name == "adaboost") {
-    if (!requireNamespace("ada", quietly = TRUE)) stop("Package 'ada' required")
+    if (!requireNamespace("ada", quietly = TRUE)) stop("Package 'ada' required for adaboost")
     if (!is_binary) {
-      warning("adaboost does not support multiclass, substituting with gradient_boosting")
+      warning("adaboost does not support multiclass; substituting with gradient_boosting (GBM). Note: this means pairwise comparisons labeled 'vs adaboost' for multiclass datasets are actually comparing vs GBM, not AdaBoost. This may affect experimental results.")
       if (!requireNamespace("gbm", quietly = TRUE)) stop("Package 'gbm' required")
       train_tmp <- train_df
       train_tmp[[target_col]] <- as.numeric(as.factor(train_tmp[[target_col]])) - 1

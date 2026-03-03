@@ -31,7 +31,9 @@ parse_time_column <- function(df, time_col) {
     df[[time_col]] <- NULL
     df$day_of_week <- as.integer(format(parsed, "%w"))
     df$month <- as.integer(format(parsed, "%m"))
-    df$hour_of_day <- as.integer(format(parsed, "%H"))
+    if (inherits(parsed, "POSIXct")) {
+      df$hour_of_day <- as.integer(format(parsed, "%H"))
+    }
     df$day_of_year <- as.integer(format(parsed, "%j"))
   }
   df
@@ -66,10 +68,10 @@ train_predict_timeseries <- function(model_name, y_train, y_test, lag = 12, exog
     for (a in c(0.1, 0.2, 0.3, 0.4, 0.5)) {
       tryCatch({
         fit <- stats::HoltWinters(y_ts, alpha = a, beta = FALSE, gamma = FALSE, opt.crit = "rmse")
-        fitted_vals <- stats::fitted(fit)
+        fitted_vals <- stats::fitted(fit)[, "xhat"]
         n_fitted <- length(fitted_vals)
         y_train_tail <- y_train[(length(y_train) - n_fitted + 1):length(y_train)]
-        sse <- sum((as.numeric(fitted_vals) - y_train_tail)^2, na.rm = TRUE)
+        sse <- sum((fitted_vals - y_train_tail)^2, na.rm = TRUE)
         if (sse < best_sse) {
           best_sse <- sse
           alpha <- a
