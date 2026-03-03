@@ -235,16 +235,22 @@ preprocess_split <- function(task_name, train_df, test_df, ds_cfg) {
 build_pair_rows_from_cache <- function(task, ds_cfg, pair, split, model_cache, run_ctx) {
   metric_single <- model_cache[[pair$single]]$metrics
   metric_ensemble <- model_cache[[pair$ensemble]]$metrics
-
+  
   metric_names <- intersect(names(metric_single), names(metric_ensemble))
   metric_names <- metric_names[metric_names %in% task$metrics]
-
+  
+  actual_single <- model_cache[[pair$single]]$actual_model_used
+  actual_ensemble <- model_cache[[pair$ensemble]]$actual_model_used
+  
+  single_model_name_to_use <- if (!is.null(actual_single)) actual_single else pair$single
+  ensemble_model_name_to_use <- if (!is.null(actual_ensemble)) actual_ensemble else pair$ensemble
+  
   pair_rows <- list()
   for (m in metric_names) {
     higher <- is_higher_better(m)
     d <- if (higher) metric_ensemble[[m]] - metric_single[[m]] else metric_single[[m]] - metric_ensemble[[m]]
     def <- if (higher) paste0("ensemble_minus_single_", m) else paste0("single_minus_ensemble_", m)
-
+    
     pair_rows[[length(pair_rows) + 1]] <- list(
       comparison_id = make_row_id("cmp", run_ctx$run_id, task$name, ds_cfg$id, pair$single, pair$ensemble, split$fold, split$repeat_id, m),
       run_id = run_ctx$run_id,
@@ -254,8 +260,8 @@ build_pair_rows_from_cache <- function(task, ds_cfg, pair, split, model_cache, r
       fold = split$fold,
       repeat_id = split$repeat_id,
       metric_name = m,
-      single_model_name = pair$single,
-      ensemble_model_name = pair$ensemble,
+      single_model_name = single_model_name_to_use,
+      ensemble_model_name = ensemble_model_name_to_use,
       single_metric_value = metric_single[[m]],
       ensemble_metric_value = metric_ensemble[[m]],
       difference_definition = def,

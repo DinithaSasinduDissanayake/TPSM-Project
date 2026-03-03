@@ -162,6 +162,16 @@ evaluate_models_on_split <- function(task, dataset_df, ds_cfg, split, model_name
     model_out <- NULL
     is_timeout <- FALSE
     error_message <- NULL
+    
+    model_family <- if (model_name %in% vapply(task$model_pairs, function(p) p$ensemble, character(1))) "ensemble" else "single"
+    actual_model_used <- model_name
+    if (model_name == "adaboost" && task$name == "classification") {
+      n_classes <- length(unique(train_df[[ds_cfg$target]]))
+      if (n_classes > 2) {
+        actual_model_used <- "gradient_boosting"
+      }
+    }
+    
     train_time <- tryCatch({
       system.time({
         model_out <- withCallingHandlers(
@@ -191,16 +201,10 @@ evaluate_models_on_split <- function(task, dataset_df, ds_cfg, split, model_name
         train_time = NA_real_,
         train_rows = nrow(train_df),
         test_rows = nrow(test_df),
-        status = failure_status
+        status = failure_status,
+        model_family = model_family,
+        actual_model_used = actual_model_used
       )
-    model_family <- if (model_name %in% vapply(task$model_pairs, function(p) p$ensemble, character(1))) "ensemble" else "single"
-    actual_model_used <- model_name
-    if (model_name == "adaboost" && task$name == "classification") {
-      n_classes <- length(unique(train_df[[ds_cfg$target]]))
-      if (n_classes > 2) {
-        actual_model_used <- "gradient_boosting"
-      }
-    }
       for (m in task$metrics) {
         run_id_model <- make_row_id("run", run_ctx$run_id, task$name, ds_cfg$id, model_name, split$fold, split$repeat_id, m)
         model_rows[[length(model_rows) + 1]] <- list(
@@ -244,20 +248,13 @@ evaluate_models_on_split <- function(task, dataset_df, ds_cfg, split, model_name
       train_time = train_time,
       train_rows = nrow(train_df),
       test_rows = nrow(test_df),
-      status = "ok"
+      status = "ok",
+      model_family = model_family,
+      actual_model_used = actual_model_used
     )
     
     metric_names <- names(model_metrics)
     metric_names <- metric_names[metric_names %in% task$metrics]
-    
-    model_family <- if (model_name %in% vapply(task$model_pairs, function(p) p$ensemble, character(1))) "ensemble" else "single"
-    actual_model_used <- model_name
-    if (model_name == "adaboost" && task$name == "classification") {
-      n_classes <- length(unique(train_df[[ds_cfg$target]]))
-      if (n_classes > 2) {
-        actual_model_used <- "gradient_boosting"
-      }
-    }
     
     for (m in metric_names) {
       run_id_model <- make_row_id("run", run_ctx$run_id, task$name, ds_cfg$id, model_name, split$fold, split$repeat_id, m)
