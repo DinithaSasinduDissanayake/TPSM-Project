@@ -154,7 +154,8 @@ if (parallel_workers > 1 && future_available) {
 }
 
 run_end_time <- Sys.time()
-run_elapsed_sec <- as.numeric(difftime(run_end_time, parse(run_ctx$run_id, format = "%Y%m%dT%H%M%S"), units = "secs"))
+run_start_time <- as.POSIXct(run_ctx$run_id, format = "%Y%m%dT%H%M%S")
+run_elapsed_sec <- as.numeric(difftime(run_end_time, run_start_time, units = "secs"))
 
 write_outputs(run_ctx, model_runs, pairwise_rows)
 write_warnings_reports(run_ctx)

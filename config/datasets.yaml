@@ -130,7 +130,7 @@ classification:
       binary_positive_vals:
         - "1"
         - "good"
-      separator: " "
+
       header_names:
         - Status
         - Duration
@@ -319,6 +319,7 @@ timeseries:
         - NO2.GT
         - T
       separator: ";"
+      decimal: ","
       rename_target_from: "CO(GT)"
 
     - id: beijing_pm25
