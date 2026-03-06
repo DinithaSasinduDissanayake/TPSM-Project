@@ -1,0 +1,3 @@
+Error in sink(stderr_file, type = "message") : 
+  'file' must be NULL or an already open connection
+Execution halted

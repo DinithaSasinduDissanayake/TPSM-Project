@@ -24,6 +24,9 @@ prepare_dataset_for_task <- function(task_name, df, ds_cfg) {
   df
 }
 
+# Module-level cache for positive class decisions (persists across splits)
+.positive_class_cache <- new.env(parent = emptyenv())
+
 prepare_target_for_split <- function(task_name, train_df, test_df, target_col, ds_cfg) {
   if (task_name != "classification") {
     return(list(train_df = train_df, test_df = test_df))
@@ -64,18 +67,17 @@ prepare_target_for_split <- function(task_name, train_df, test_df, target_col, d
     if (!is.null(ds_cfg$positive_class)) {
       positive_val <- ds_cfg$positive_class
     } else {
-      positive_val <- unique_vals[2]
-
-      # Cache decision and warn only once per dataset (H7 - prevents warning flood)
-      if (is.null(ds_cfg$positive_class_cached)) {
+      cache_key <- ds_cfg$id
+      if (!is.null(.positive_class_cache[[cache_key]])) {
+        # Use cached value from first split — no warning
+        positive_val <- .positive_class_cache[[cache_key]]
+      } else {
+        positive_val <- unique_vals[2]
+        .positive_class_cache[[cache_key]] <- positive_val
         warning(sprintf(
           "No positive class specified for '%s', using '%s' (alphabetically second). Consider setting positive_class in config.",
           ds_cfg$id, positive_val
         ))
-        ds_cfg$positive_class_cached <- positive_val
-      } else {
-        # Use cached value from first split
-        positive_val <- ds_cfg$positive_class_cached
       }
     }
     y_train_bin <- ifelse(y_train_chr == positive_val, 1, 0)
@@ -220,10 +222,6 @@ preprocess_split <- function(task_name, train_df, test_df, ds_cfg) {
   drop_cols <- unique(drop_cols)
 
   if (length(drop_cols) > 0) {
-    message(sprintf(
-      "Dataset '%s': Removing columns %s (excluded/ID/time columns)",
-      ds_cfg$id, paste(drop_cols, collapse = ", ")
-    ))
     train_df <- train_df[, setdiff(names(train_df), drop_cols), drop = FALSE]
     test_df <- test_df[, setdiff(names(test_df), drop_cols), drop = FALSE]
   }
@@ -270,10 +268,6 @@ preprocess_split <- function(task_name, train_df, test_df, ds_cfg) {
   }, logical(1))
   if (any(zero_var)) {
     drop <- names(which(zero_var))
-    message(sprintf(
-      "Dataset '%s': Removing zero-variance columns %s",
-      ds_cfg$id, paste(drop, collapse = ", ")
-    ))
     train_df <- train_df[, setdiff(names(train_df), drop), drop = FALSE]
     test_df <- test_df[, setdiff(names(test_df), drop), drop = FALSE]
   }
@@ -291,15 +285,19 @@ preprocess_split <- function(task_name, train_df, test_df, ds_cfg) {
   list(train_df = train_df, test_df = test_df)
 }
 
-build_pair_rows_from_cache <- function(task, ds_cfg, pair, split, model_cache, run_ctx) {
-  metric_single <- model_cache[[pair$single]]$metrics
-  metric_ensemble <- model_cache[[pair$ensemble]]$metrics
+build_pair_rows_from_cache <- function(task, ds_cfg, pair, split, model_cache, run_ctx, model_aliases = NULL) {
+  # Resolve model names using aliases (e.g., adaboost -> gradient_boosting for multiclass)
+  single_cache_key <- model_aliases[[pair$single]] %||% pair$single
+  ensemble_cache_key <- model_aliases[[pair$ensemble]] %||% pair$ensemble
+  
+  metric_single <- model_cache[[single_cache_key]]$metrics
+  metric_ensemble <- model_cache[[ensemble_cache_key]]$metrics
   
   metric_names <- intersect(names(metric_single), names(metric_ensemble))
   metric_names <- metric_names[metric_names %in% task$metrics]
   
-  actual_single <- model_cache[[pair$single]]$actual_model_used
-  actual_ensemble <- model_cache[[pair$ensemble]]$actual_model_used
+  actual_single <- model_cache[[single_cache_key]]$actual_model_used
+  actual_ensemble <- model_cache[[ensemble_cache_key]]$actual_model_used
   
   single_model_name_to_use <- if (!is.null(actual_single)) actual_single else pair$single
   ensemble_model_name_to_use <- if (!is.null(actual_ensemble)) actual_ensemble else pair$ensemble

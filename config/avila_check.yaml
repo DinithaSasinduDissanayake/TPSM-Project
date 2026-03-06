@@ -1,0 +1,43 @@
+global:
+  stop_on_first_fail: false
+  timeout_seconds: 300
+  parallel_workers: 1
+
+classification:
+  split_method: repeated_kfold
+  folds: 10
+  repeats: 5
+  metrics:
+    - accuracy
+    - precision
+    - recall
+    - f1
+    - roc_auc
+    - logloss
+  model_pairs:
+    - single: logistic_regression
+      ensemble: gradient_boosting
+    - single: decision_tree
+      ensemble: adaboost
+    - single: naive_bayes
+      ensemble: gradient_boosting
+  datasets:
+    - id: avila
+      source: uci
+      path: data/classification/avila.csv
+      url: https://archive.ics.uci.edu/static/public/459/avila.zip
+      target: class
+      zip_file: avila/avila-tr.txt
+      header_names:
+        - F1
+        - F2
+        - F3
+        - F4
+        - F5
+        - F6
+        - F7
+        - F8
+        - F9
+        - F10
+        - class
+      force_binary: false

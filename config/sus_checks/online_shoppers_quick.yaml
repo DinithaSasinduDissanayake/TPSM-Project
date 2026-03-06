@@ -1,0 +1,28 @@
+global:
+  stop_on_first_fail: false
+  timeout_seconds: 300
+  parallel_workers: 1
+classification:
+  split_method: repeated_kfold
+  folds: 10
+  repeats: 1
+  metrics:
+  - accuracy
+  - precision
+  - recall
+  - f1
+  - roc_auc
+  - logloss
+  model_pairs:
+  - single: logistic_regression
+    ensemble: gradient_boosting
+  - single: decision_tree
+    ensemble: adaboost
+  - single: naive_bayes
+    ensemble: gradient_boosting
+  datasets:
+  - id: online_shoppers
+    source: uci
+    path: data/classification/online_shoppers.csv
+    url: https://archive.ics.uci.edu/ml/machine-learning-databases/00468/online_shoppers_intention.csv
+    target: Revenue

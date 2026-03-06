@@ -131,7 +131,7 @@ get_config_fallback <- function() {
         ),
         model_pairs = list(
           list(single = "logistic_regression", ensemble = "gradient_boosting"),
-          list(single = "decision_tree", ensemble = "adaboost"),
+          list(single = "decision_tree", ensemble = "random_forest"),
           list(single = "naive_bayes", ensemble = "gradient_boosting")
         )
       ),

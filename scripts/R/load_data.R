@@ -46,9 +46,14 @@ load_dataset <- function(ds_cfg, run_ctx, task_name = NULL) {
       if (!is.null(target_file)) {
         if (grepl("\\.txt$", target_file, ignore.case = TRUE)) {
           first_lines <- readLines(target_file, n = 3)
-          sep <- if (any(grepl("\t", first_lines))) "\t" else ","
-          df <- utils::read.table(target_file, header = FALSE, stringsAsFactors = FALSE, sep = sep)
-          if (!is.null(ds_cfg$header_names)) {
+          if (!is.null(ds_cfg$separator)) {
+            sep <- ds_cfg$separator
+          } else {
+            sep <- if (any(grepl("\t", first_lines))) "\t" else ","
+          }
+          has_header <- !is.null(ds_cfg$header_names)
+          df <- utils::read.table(target_file, header = !has_header, stringsAsFactors = FALSE, sep = sep)
+          if (has_header) {
             colnames(df) <- ds_cfg$header_names
           }
           write.csv(df, ds_cfg$path, row.names = FALSE)
@@ -147,7 +152,12 @@ load_dataset <- function(ds_cfg, run_ctx, task_name = NULL) {
   ext <- tools::file_ext(ds_cfg$path)
   if (ext == "csv") {
     first_line <- readLines(ds_cfg$path, n = 1)
-    sep <- if (is.null(ds_cfg$separator)) if (grepl(";", first_line)) ";" else "," else ds_cfg$separator
+    # Use config separator if specified, otherwise auto-detect from file content
+    if (!is.null(ds_cfg$separator)) {
+      sep <- ds_cfg$separator
+    } else {
+      sep <- if (grepl(";", first_line)) ";" else ","
+    }
     dec <- if (is.null(ds_cfg$decimal)) "." else ds_cfg$decimal
     na_strings <- if (!is.null(ds_cfg$na_strings)) ds_cfg$na_strings else "NA"
     df <- utils::read.csv(ds_cfg$path, stringsAsFactors = FALSE, sep = sep, dec = dec, na.strings = na_strings)
@@ -184,8 +194,17 @@ load_dataset <- function(ds_cfg, run_ctx, task_name = NULL) {
     }
   }
 
-  if (!is.null(ds_cfg$rename_target_from) && ds_cfg$rename_target_from %in% names(df)) {
-    colnames(df)[colnames(df) == ds_cfg$rename_target_from] <- ds_cfg$target
+  if (!is.null(ds_cfg$rename_target_from)) {
+    orig <- ds_cfg$rename_target_from
+    if (orig %in% names(df)) {
+      colnames(df)[colnames(df) == orig] <- ds_cfg$target
+    } else {
+      # R's read.csv sanitizes column names via make.names(), so try matching that too
+      safe_orig <- make.names(orig)
+      if (safe_orig %in% names(df)) {
+        colnames(df)[colnames(df) == safe_orig] <- ds_cfg$target
+      }
+    }
   }
 
   if (!ds_cfg$target %in% names(df)) {

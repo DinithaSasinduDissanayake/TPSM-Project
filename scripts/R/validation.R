@@ -15,7 +15,7 @@ validate_config <- function(cfg) {
     }
     known_models <- list(
       classification = c("logistic_regression", "decision_tree",
-                         "naive_bayes", "gradient_boosting", "adaboost"),
+                         "naive_bayes", "gradient_boosting", "random_forest", "adaboost"),
       regression = c("linear_regression", "decision_tree_regressor",
                      "svr", "gradient_boosting_regressor"),
       timeseries = c("arima", "exp_smoothing", "gbm_lag")

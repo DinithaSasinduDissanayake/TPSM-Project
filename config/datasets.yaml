@@ -23,7 +23,7 @@ classification:
     - single: logistic_regression
       ensemble: gradient_boosting
     - single: decision_tree
-      ensemble: adaboost
+      ensemble: random_forest
     - single: naive_bayes
       ensemble: gradient_boosting
   datasets:
@@ -46,6 +46,7 @@ classification:
       path: data/classification/bank_marketing.csv
       url: https://archive.ics.uci.edu/ml/machine-learning-databases/00222/bank.zip
       target: "y"
+      separator: ";"
       exclude_cols:
         - duration
       zip_file: bank-full.csv
@@ -158,16 +159,17 @@ classification:
     - id: dry_bean
       source: uci
       path: data/classification/dry_bean.csv
-      url: https://archive.ics.uci.edu/ml/machine-learning-databases/00602/Dry_Bean_Dataset.xlsx
+      url: https://archive.ics.uci.edu/static/public/602/dry+bean+dataset.zip
       target: Class
       force_binary: false
+      zip_file: DryBeanDataset/Dry_Bean_Dataset.xlsx
 
     - id: avila
       source: uci
       path: data/classification/avila.csv
-      url: https://archive.ics.uci.edu/ml/machine-learning-databases/00459/Avila.zip
+      url: https://archive.ics.uci.edu/static/public/459/avila.zip
       target: class
-      zip_file: avila-tr.txt
+      zip_file: avila/avila-tr.txt
       header_names:
         - F1
         - F2
@@ -210,13 +212,14 @@ regression:
       source: kaggle
       path: data/regression/housing_prices.csv
       url: https://raw.githubusercontent.com/datasets/house-prices-uk/main/data/data.csv
-      target: Price..All.
+      target: "Price (All)"
 
     - id: wine_quality
       source: uci
       path: data/regression/wine_quality.csv
       url: https://archive.ics.uci.edu/ml/machine-learning-databases/wine-quality/winequality-red.csv
       target: quality
+      separator: ";"
 
     - id: abalone
       source: uci
@@ -239,7 +242,7 @@ regression:
       source: uci
       path: data/regression/concrete_strength.csv
       url: https://archive.ics.uci.edu/ml/machine-learning-databases/concrete/compressive/Concrete_Data.xls
-      target: Concrete.compressive.strength.MPa..megapascals.
+      target: "Concrete compressive strength(MPa, megapascals)"
       rename_target_from: Strength
 
     - id: ccpp
@@ -313,10 +316,10 @@ timeseries:
       source: uci
       path: data/timeseries/air_quality.csv
       url: https://archive.ics.uci.edu/ml/machine-learning-databases/00360/AirQualityUCI.zip
-      target: CO.GT
+      target: "CO(GT)"
       time_col: Date
       exog_cols:
-        - NO2.GT
+        - "NO2(GT)"
         - T
       separator: ";"
       decimal: ","
@@ -341,6 +344,9 @@ timeseries:
       exog_cols:
         - holiday
         - temp
+      splits_override: 3
+      max_ts_train_rows: 12000
+      arima_max_order: 3
 
     - id: household_power
       source: uci
@@ -356,3 +362,6 @@ timeseries:
         - Time
       na_strings: "?"
       max_rows: 50000
+      splits_override: 3
+      max_ts_train_rows: 12000
+      arima_max_order: 3

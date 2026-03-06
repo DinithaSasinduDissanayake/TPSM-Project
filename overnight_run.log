@@ -1,0 +1,50 @@
+Download attempt 1 failed: cannot open URL 'https://archive.ics.uci.edu/ml/machine-learning-databases/00602/Dry_Bean_Dataset.xlsx'
+Retrying in 2 seconds...
+Download attempt 2 failed: cannot open URL 'https://archive.ics.uci.edu/ml/machine-learning-databases/00602/Dry_Bean_Dataset.xlsx'
+Retrying in 4 seconds...
+Download attempt 3 failed: cannot open URL 'https://archive.ics.uci.edu/ml/machine-learning-databases/00602/Dry_Bean_Dataset.xlsx'
+Download attempt 1 failed: cannot open URL 'https://archive.ics.uci.edu/ml/machine-learning-databases/00459/Avila.zip'
+Retrying in 2 seconds...
+Download attempt 2 failed: cannot open URL 'https://archive.ics.uci.edu/ml/machine-learning-databases/00459/Avila.zip'
+Retrying in 4 seconds...
+Download attempt 3 failed: cannot open URL 'https://archive.ics.uci.edu/ml/machine-learning-databases/00459/Avila.zip'
+Timing stopped at: 7 0.106 7.374
+Timing stopped at: 5.671 0.026 5.894
+Timing stopped at: 6.25 0.013 6.51
+Timing stopped at: 6.146 0.028 6.432
+Timing stopped at: 6.608 0.018 6.776
+Timing stopped at: 5.041 0.022 5.126
+Timing stopped at: 5.398 0.034 5.507
+Timing stopped at: 5.229 0.027 5.342
+Timing stopped at: 4.754 0.021 4.839
+Timing stopped at: 5.222 0.001 5.277
+Timing stopped at: 8.424 0.098 8.846
+Timing stopped at: 6.553 0.041 6.85
+Timing stopped at: 6.681 0.023 6.98
+Timing stopped at: 7.504 0.023 7.851
+Timing stopped at: 6.547 0.022 6.684
+Timing stopped at: 6.349 0.016 6.459
+Timing stopped at: 6.452 0.032 6.601
+Timing stopped at: 6.711 0.033 6.822
+Timing stopped at: 6.265 0.011 6.338
+Timing stopped at: 6.988 0.004 7.058
+There were 50 or more warnings (use warnings() to see the first 50)
+Warning messages:
+1: In handle_error(ds_result$error_message, list(task = ds_result$task_name,  :
+  load: Dataset 'german_credit' has only 1 column(s) — likely wrong separator. Check ds_cfg$separator.
+2: In handle_error(ds_result$error_message, list(task = ds_result$task_name,  :
+  split: non-numeric argument to binary operator
+3: In handle_error(ds_result$error_message, list(task = ds_result$task_name,  :
+  load: Failed to download dataset after retries: dry_bean
+4: In handle_error(ds_result$error_message, list(task = ds_result$task_name,  :
+  load: Failed to download dataset after retries: avila
+5: In handle_error(ds_result$error_message, list(task = ds_result$task_name,  :
+  load: cannot open the connection
+6: In handle_error(ds_result$error_message, list(task = ds_result$task_name,  :
+  load: Target column 'CO.GT' not found for dataset 'air_quality'
+7: In handle_error(ds_result$error_message, list(task = ds_result$task_name,  :
+  load: Dataset 'household_power' has only 1 column(s) — likely wrong separator. Check ds_cfg$separator.
+Error in parse(run_ctx$run_id, format = "%Y%m%dT%H%M%S") : 
+  unused argument (format = "%Y%m%dT%H%M%S")
+Calls: difftime -> as.POSIXct
+Execution halted

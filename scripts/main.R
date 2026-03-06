@@ -62,7 +62,6 @@ if (parallel_workers > 1 && future_available) {
   library(furrr)
   plan(multisession, workers = parallel_workers)
   log_event(run_ctx, "info", "parallel_enabled", list(workers = parallel_workers))
-  options(future.globals.onMissing = "ignore")
 } else {
   if (parallel_workers > 1) {
     message("Packages 'future' or 'furrr' not available, running in sequential mode")
@@ -102,12 +101,38 @@ all_dataset_results <- list()
 
 if (parallel_workers > 1 && future_available) {
   all_dataset_results <- future_map(all_jobs, function(job) {
-    run_dataset_task(job$task, job$ds, run_ctx, stop_on_fail, timeout_sec)
+    tryCatch(
+      run_dataset_task(job$task, job$ds, run_ctx, stop_on_fail, timeout_sec),
+      error = function(e) {
+        list(
+          dataset_id = job$ds$id,
+          task_name = job$task$name,
+          model_runs = list(),
+          pairwise_rows = list(),
+          warnings = list(),
+          failed = TRUE,
+          error_message = paste0("worker_crash: ", e$message)
+        )
+      }
+    )
   }, .options = furrr_options(seed = NULL))
 } else {
   for (job in all_jobs) {
     log_event(run_ctx, "info", "dataset_start", list(task = job$task$name, dataset = job$ds$id))
-    ds_result <- run_dataset_task(job$task, job$ds, run_ctx, stop_on_fail, timeout_sec)
+    ds_result <- tryCatch(
+      run_dataset_task(job$task, job$ds, run_ctx, stop_on_fail, timeout_sec),
+      error = function(e) {
+        list(
+          dataset_id = job$ds$id,
+          task_name = job$task$name,
+          model_runs = list(),
+          pairwise_rows = list(),
+          warnings = list(),
+          failed = TRUE,
+          error_message = paste0("unhandled: ", e$message)
+        )
+      }
+    )
     all_dataset_results[[length(all_dataset_results) + 1]] <- ds_result
   }
 }
@@ -115,36 +140,50 @@ if (parallel_workers > 1 && future_available) {
 total_datasets <- length(all_dataset_results)
 for (i in seq_along(all_dataset_results)) {
   ds_result <- all_dataset_results[[i]]
-  completed <- i - 1
-  if (ds_result$failed) {
-    handle_error(
-      ds_result$error_message,
-      list(task = ds_result$task_name, dataset = ds_result$dataset_id, stage = "dataset")
-    )
-    log_event(run_ctx, "info", "progress", list(
-      completed = i,
-      total = total_datasets,
-      pct = round(100 * i / total_datasets, 1),
-      last_dataset = ds_result$dataset_id,
-      last_status = "failed"
-    ))
-  } else {
-    model_runs <- c(model_runs, ds_result$model_runs)
-    pairwise_rows <- c(pairwise_rows, ds_result$pairwise_rows)
-    if (!is.null(ds_result$warnings) && length(ds_result$warnings) > 0) {
-      for (w in ds_result$warnings) {
-        run_ctx$state$warnings[[length(run_ctx$state$warnings) + 1]] <- w
+  tryCatch({
+    if (ds_result$failed) {
+      handle_error(
+        ds_result$error_message,
+        list(task = ds_result$task_name, dataset = ds_result$dataset_id, stage = "dataset")
+      )
+      log_event(run_ctx, "info", "progress", list(
+        completed = i,
+        total = total_datasets,
+        pct = round(100 * i / total_datasets, 1),
+        last_dataset = ds_result$dataset_id,
+        last_status = "failed"
+      ))
+    } else {
+      model_runs <- c(model_runs, ds_result$model_runs)
+      pairwise_rows <- c(pairwise_rows, ds_result$pairwise_rows)
+      if (!is.null(ds_result$warnings) && length(ds_result$warnings) > 0) {
+        for (w in ds_result$warnings) {
+          run_ctx$state$warnings[[length(run_ctx$state$warnings) + 1]] <- w
+        }
       }
+      log_event(run_ctx, "info", "progress", list(
+        completed = i,
+        total = total_datasets,
+        pct = round(100 * i / total_datasets, 1),
+        last_dataset = ds_result$dataset_id,
+        last_status = "success",
+        n_model_runs = length(ds_result$model_runs),
+        n_pairwise_rows = length(ds_result$pairwise_rows)
+      ))
     }
-    log_event(run_ctx, "info", "progress", list(
-      completed = i,
-      total = total_datasets,
-      pct = round(100 * i / total_datasets, 1),
-      last_dataset = ds_result$dataset_id,
-      last_status = "success",
-      n_model_runs = length(ds_result$model_runs),
-      n_pairwise_rows = length(ds_result$pairwise_rows)
+  }, error = function(e) {
+    log_event(run_ctx, "error", "result_processing_error", list(
+      dataset = ds_result$dataset_id,
+      message = e$message
     ))
+  })
+
+  # Write partial outputs after every 5 datasets (crash protection)
+  if (i %% 5 == 0 || i == total_datasets) {
+    tryCatch(
+      write_partial_outputs(run_ctx, model_runs, pairwise_rows),
+      error = function(e) {}
+    )
   }
 }
 

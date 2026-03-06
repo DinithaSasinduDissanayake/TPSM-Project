@@ -6,6 +6,25 @@
 
 ## Resolved Questions
 
+### Q0: Is the Python pipeline ready for controlled production?
+**Answer:** YES, with caveats.
+
+Current assessment after targeted audits:
+- regression pipeline is clean
+- classification pipeline is clean after replacing `decision_tree -> adaboost` with `decision_tree -> random_forest`
+- timeseries pipeline is clean after fixing the `air_quality` schema mismatch
+- overall Python pipeline confidence is currently `98/100`
+
+Main caveats:
+- `metro_traffic` and `household_power` are operationally expensive with ARIMA
+- `MAPE` is unreliable on some low-target timeseries datasets
+
+Current mitigations:
+- shared config now uses lighter controls for heavy time-series datasets
+- pairwise outputs carry `MAPE` / `SMAPE` reliability notes when low-target risk is detected
+
+See [python-validation-2026-03-06.md](python-validation-2026-03-06.md).
+
 ### Q1: What is expected for the project?
 **Answer:** Justify whether the selected statement is correct or wrong using:
 - Descriptive analytics

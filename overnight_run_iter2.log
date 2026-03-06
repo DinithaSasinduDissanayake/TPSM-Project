@@ -1,0 +1,42 @@
+Download attempt 1 failed: cannot open URL 'https://archive.ics.uci.edu/ml/machine-learning-databases/00602/Dry_Bean_Dataset.xlsx'
+Retrying in 2 seconds...
+Download attempt 2 failed: cannot open URL 'https://archive.ics.uci.edu/ml/machine-learning-databases/00602/Dry_Bean_Dataset.xlsx'
+Retrying in 4 seconds...
+Download attempt 3 failed: cannot open URL 'https://archive.ics.uci.edu/ml/machine-learning-databases/00602/Dry_Bean_Dataset.xlsx'
+Download attempt 1 failed: cannot open URL 'https://archive.ics.uci.edu/ml/machine-learning-databases/00459/Avila.zip'
+Retrying in 2 seconds...
+Download attempt 2 failed: cannot open URL 'https://archive.ics.uci.edu/ml/machine-learning-databases/00459/Avila.zip'
+Retrying in 4 seconds...
+Download attempt 3 failed: cannot open URL 'https://archive.ics.uci.edu/ml/machine-learning-databases/00459/Avila.zip'
+Timing stopped at: 8.006 0.137 8.779
+Timing stopped at: 6.522 0.063 7.127
+Timing stopped at: 6.659 0.018 6.901
+Timing stopped at: 6.774 0.038 7.271
+Timing stopped at: 7.135 0.025 7.426
+Timing stopped at: 6.12 0.03 6.248
+Timing stopped at: 6.875 0.032 7.254
+Timing stopped at: 7.513 0.042 7.874
+Timing stopped at: 7.297 0.034 7.594
+Timing stopped at: 6.516 0.005 6.727
+Timing stopped at: 9.411 0.133 10.29
+Timing stopped at: 7.434 0.039 7.958
+Timing stopped at: 6.817 0.026 7.04
+Timing stopped at: 8.231 0.039 8.705
+Timing stopped at: 8.028 0 8.293
+Timing stopped at: 7.26 0.01 7.404
+Timing stopped at: 8.591 0.017 8.915
+Timing stopped at: 8.54 0.046 8.899
+Timing stopped at: 8.718 0.049 9.051
+Timing stopped at: 8.327 0.031 8.589
+There were 50 or more warnings (use warnings() to see the first 50)
+Warning messages:
+1: In handle_error(ds_result$error_message, list(task = ds_result$task_name,  :
+  split: non-numeric argument to binary operator
+2: In handle_error(ds_result$error_message, list(task = ds_result$task_name,  :
+  load: Failed to download dataset after retries: dry_bean
+3: In handle_error(ds_result$error_message, list(task = ds_result$task_name,  :
+  load: Failed to download dataset after retries: avila
+4: In handle_error(ds_result$error_message, list(task = ds_result$task_name,  :
+  load: Target column 'CO.GT' not found for dataset 'air_quality'
+5: In handle_error(ds_result$error_message, list(task = ds_result$task_name,  :
+  load: Dataset 'household_power' has only 1 column(s) — likely wrong separator. Check ds_cfg$separator.

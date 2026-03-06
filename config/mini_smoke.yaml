@@ -1,0 +1,57 @@
+global:
+  stop_on_first_fail: true
+  timeout_seconds: 300
+  parallel_workers: 2
+
+classification:
+  split_method: repeated_kfold
+  folds: 2
+  repeats: 1
+  metrics:
+    - accuracy
+    - f1
+  model_pairs:
+    - single: logistic_regression
+      ensemble: gradient_boosting
+  datasets:
+    - id: heart_disease
+      source: uci
+      path: data/classification/heart_disease.csv
+      url: https://archive.ics.uci.edu/static/public/45/data.csv
+      target: num
+      force_binary: true
+      binary_threshold: 0
+
+regression:
+  split_method: repeated_kfold
+  folds: 2
+  repeats: 1
+  metrics:
+    - rmse
+    - mae
+  model_pairs:
+    - single: linear_regression
+      ensemble: gradient_boosting_regressor
+  datasets:
+    - id: insurance
+      source: kaggle
+      path: data/regression/insurance.csv
+      url: https://raw.githubusercontent.com/stedy/Machine-Learning-with-R-datasets/master/insurance.csv
+      target: charges
+
+timeseries:
+  split_method: rolling_origin
+  splits: 2
+  metrics:
+    - rmse
+    - mae
+  model_pairs:
+    - single: exp_smoothing
+      ensemble: gbm_lag
+  datasets:
+    - id: melbourne_temp
+      source: other
+      path: data/timeseries/melbourne_temp.csv
+      url: https://raw.githubusercontent.com/jbrownlee/Datasets/master/daily-min-temperatures.csv
+      target: Temp
+      time_col: Date

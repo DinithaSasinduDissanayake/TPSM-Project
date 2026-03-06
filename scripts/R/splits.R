@@ -1,10 +1,3 @@
-get_base_seed <- function(dataset_id = NULL, base = 42) {
-  if (!is.null(dataset_id)) {
-    base + sum(as.numeric(charToRaw(dataset_id))) %% 100000
-  } else {
-    base
-  }
-}
 
 make_splits <- function(task_name, df, split_cfg, target_col = NULL, dataset_id = NULL) {
   base_seed <- get_base_seed(dataset_id)
@@ -40,9 +33,9 @@ make_repeated_kfold_splits <- function(df, target_col, k, repeats, use_stratify 
         idxs <- which(y == cls)
         if (length(idxs) < k) {
           warning(sprintf(
-            "Class '%s' has only %d samples, fewer than k=%d folds. " +
-            "Some folds will have zero samples of this class, affecting reliability of metrics.",
-            cls, length(idxs), k
+            "Class '%s' has only %d samples, fewer than k=%d folds. %s",
+            cls, length(idxs), k,
+            "Some folds will have zero samples of this class, affecting reliability of metrics."
           ))
         }
         fold_ids[idxs] <- sample(rep(seq_len(k), length.out = length(idxs)))

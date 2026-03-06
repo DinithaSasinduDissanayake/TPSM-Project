@@ -1,0 +1,30 @@
+global:
+  stop_on_first_fail: false
+  timeout_seconds: 300
+  parallel_workers: 1
+classification:
+  split_method: repeated_kfold
+  folds: 10
+  repeats: 1
+  metrics:
+  - accuracy
+  - precision
+  - recall
+  - f1
+  - roc_auc
+  - logloss
+  model_pairs:
+  - single: logistic_regression
+    ensemble: gradient_boosting
+  - single: decision_tree
+    ensemble: adaboost
+  - single: naive_bayes
+    ensemble: gradient_boosting
+  datasets:
+  - id: dry_bean
+    source: uci
+    path: data/classification/dry_bean.csv
+    url: https://archive.ics.uci.edu/static/public/602/dry+bean+dataset.zip
+    target: Class
+    force_binary: false
+    zip_file: DryBeanDataset/Dry_Bean_Dataset.xlsx

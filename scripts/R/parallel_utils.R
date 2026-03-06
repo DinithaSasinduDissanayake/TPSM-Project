@@ -29,8 +29,9 @@ download_with_retry <- function(url, dest, max_retries = 3, timeout = 60) {
   for (i in seq_len(max_retries)) {
     tryCatch({
       utils::download.file(url, dest, mode = "wb", quiet = TRUE, timeout = timeout)
-      if (file.info(dest)$size > 100) {
-        first_bytes <- readBin(dest, raw(), n = min(200, file.info(dest)$size))
+      fsize <- file.info(dest)$size
+      if (fsize > 100) {
+        first_bytes <- readBin(dest, raw(), n = min(200, fsize))
         first_str <- tryCatch(
           rawToChar(first_bytes),
           error = function(e) ""
@@ -70,15 +71,20 @@ run_dataset_task <- function(task, ds, run_ctx, stop_on_fail, timeout_sec) {
     error_message = NULL
   )
 
-  write_heartbeat(run_ctx, ds$id)
-  run_ctx$state$last_dataset <<- ds$id
+  tryCatch({
+    write_heartbeat(run_ctx, ds$id)
+    run_ctx$state$last_dataset <<- ds$id
+  }, error = function(e) {})
 
   dataset_start_time <- Sys.time()
-  log_event(run_ctx, "info", "dataset_start", list(
-    task = task$name,
-    dataset = ds$id,
-    n_workers = if (exists("parallel_workers")) get("parallel_workers", envir = globalenv()) else 1
-  ))
+  tryCatch(
+    log_event(run_ctx, "info", "dataset_start", list(
+      task = task$name,
+      dataset = ds$id,
+      n_workers = if (exists("parallel_workers")) get("parallel_workers", envir = globalenv()) else 1
+    )),
+    error = function(e) {}
+  )
 
   load_start <- Sys.time()
   dataset <- tryCatch(
@@ -282,7 +288,6 @@ evaluate_models_on_split <- function(task, dataset_df, ds_cfg, split, model_name
     model_seed <- make_split_seed(base_seed, split$repeat_id, split$fold) +
       sum(as.numeric(charToRaw(model_name)))
     RNGkind("Mersenne-Twister", normal.kind = "Inversion", sample.kind = "Rejection")
-    set.seed(NULL)
     set.seed(model_seed)
     
     model_out <- NULL

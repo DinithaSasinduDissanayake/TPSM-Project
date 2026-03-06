@@ -1,0 +1,48 @@
+global:
+  stop_on_first_fail: false
+  timeout_seconds: 300
+  parallel_workers: 1
+classification:
+  split_method: repeated_kfold
+  folds: 10
+  repeats: 1
+  metrics:
+  - accuracy
+  - precision
+  - recall
+  - f1
+  - roc_auc
+  - logloss
+  model_pairs:
+  - single: logistic_regression
+    ensemble: gradient_boosting
+  - single: decision_tree
+    ensemble: adaboost
+  - single: naive_bayes
+    ensemble: gradient_boosting
+  datasets:
+  - id: adult_census
+    source: uci
+    path: data/classification/adult_census.csv
+    url: https://archive.ics.uci.edu/ml/machine-learning-databases/adult/adult.data
+    target: income
+    separator: ','
+    force_binary: true
+    binary_positive_vals:
+    - '>50K'
+    header_names:
+    - age
+    - workclass
+    - fnlwg
+    - education
+    - education_num
+    - marital_status
+    - occupation
+    - relationship
+    - race
+    - sex
+    - capital_gain
+    - capital_loss
+    - hours_per_week
+    - native_country
+    - income

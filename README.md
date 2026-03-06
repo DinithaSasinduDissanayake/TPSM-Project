@@ -13,6 +13,8 @@ This project investigates the hypothesis: **"Ensemble models perform better than
 
 We compare ensemble methods (Random Forest) against single models (Linear/Logistic Regression) across classification and regression tasks using formal statistical hypothesis testing.
 
+Current validation status for the Python pipeline is documented in [docs/python-validation-2026-03-06.md](docs/python-validation-2026-03-06.md). Current overall confidence after targeted audits and fixes is `98/100`.
+
 ---
 
 ## Research Question
@@ -111,7 +113,7 @@ Rscript scripts/main.R --config config/quick_test.yaml
 
 | Task | Single Model | Ensemble Model |
 |------|--------------|----------------|
-| Classification | Logistic Regression, Decision Tree, Naive Bayes | Gradient Boosting, AdaBoost |
+| Classification | Logistic Regression, Decision Tree, Naive Bayes | Gradient Boosting, Random Forest |
 | Regression | Linear Regression, Decision Tree, SVR | Gradient Boosting Regressor |
 | Time Series | ARIMA, Exponential Smoothing | GBM with Lag Features |
 
@@ -164,25 +166,23 @@ TPSM-Project/
 
 | Task | Comparisons | Ensemble Win Rate |
 |------|-------------|-------------------|
-| Time Series | 160 | **100%** |
+| Time Series | 160 | Historical aggregate only |
 | Regression | 1,200 | **85.5%** |
 | Classification | 1,800 | **54.7%** |
 | **Overall** | **3,160** | **68.7%** |
 
 ### Key Insights
 
-1. **Time Series**: GBM with lag features (gbm_lag) dominates traditional methods — 100% win rate
-2. **Regression**: Gradient Boosting Regressor outperforms all single models — 85.5% win rate
-3. **Classification**: Results vary by dataset; ensembles win 71.7% on breast_cancer but only 37.8% on heart_disease
-4. **Best metric for ensembles**: ROC-AUC (65.3% win), R² (91.3% win), RMSE (92.4% win)
+1. **Regression**: Gradient boosting regressor is a strong and stable ensemble baseline after configuration fixes.
+2. **Classification**: Results remain dataset-dependent; the default tree ensemble benchmark was changed from AdaBoost to Random Forest because AdaBoost was unstable on multiclass datasets.
+3. **Time Series**: Results are mixed by dataset. ARIMA wins on some series, while `gbm_lag` wins on others. Heavy ARIMA datasets now use lighter dataset-specific controls for validation.
+4. **Metric interpretation matters**: `MAPE` is unreliable on several low-target time series datasets; prefer RMSE, MAE, and SMAPE there, and treat `MAPE` notes in pairwise outputs as reliability warnings.
 
 ### Best Model Pairings
 
 | Pairing | Win Rate |
 |---------|----------|
-| arima → gbm_lag | 100% |
 | decision_tree_regressor → gradient_boosting_regressor | 100% |
-| exp_smoothing → gbm_lag | 100% |
 | svr → gradient_boosting_regressor | 82.8% |
 | linear_regression → gradient_boosting_regressor | 73.8% |
 

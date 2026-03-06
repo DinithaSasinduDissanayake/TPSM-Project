@@ -46,7 +46,7 @@ Example:
 | Category | Models |
 |----------|--------|
 | Single | Logistic Regression, Decision Tree, Naive Bayes |
-| Ensemble | Gradient Boosting (gbm), AdaBoost |
+| Ensemble | Gradient Boosting (gbm), Random Forest |
 
 ### Regression
 | Category | Models |
@@ -60,7 +60,7 @@ Example:
 | Single | ARIMA, Exponential Smoothing |
 | Ensemble | GBM with Lag Features |
 
-**Total model pairs:** 3 per task type (classification: LR→GB, DT→AdaBoost, NB→GB; regression: LR→GBR, DT→GBR, SVR→GBR; timeseries: ARIMA→GBM_lag, ES→GBM_lag)
+**Total model pairs:** 3 per task type (classification: LR→GB, DT→RF, NB→GB; regression: LR→GBR, DT→GBR, SVR→GBR; timeseries: ARIMA→GBM_lag, ES→GBM_lag)
 
 ---
 
@@ -162,10 +162,32 @@ Example:
 - [x] Models trained and evaluated (3,160 comparisons generated)
 - [x] Hypothesis testing completed
 - [x] Results documented
+- [x] Python pipeline validated and patched after targeted audits
+
+See [python-validation-2026-03-06.md](python-validation-2026-03-06.md) for the current validation record and operational caveats.
 
 ---
 
 ## Known Limitations
+
+### Python Pipeline Caveats (2026-03-06)
+**Severity:** Medium | **Confidence:** 95% | **Status:** Fixed / documented
+
+**Resolved issues:**
+- leakage-safe split preprocessing added
+- `housing_prices` date handling fixed
+- binary coercion bug fixed for classification
+- `air_quality` schema mismatch fixed for timeseries
+- `decision_tree vs adaboost` replaced with `decision_tree vs random_forest`
+
+**Remaining caveats:**
+- `metro_traffic` and `household_power` are very expensive with rolling-origin ARIMA
+- `MAPE` is not reliable on low-target time series datasets such as `household_power` and `air_quality`
+
+**Operational controls now in shared config:**
+- `metro_traffic` and `household_power` use lighter time-series validation settings
+- current overrides: `splits_override=3`, `max_ts_train_rows=12000`, `arima_max_order=3`
+- pairwise rows now carry `MAPE`/`SMAPE` reliability notes when low-target risk is detected
 
 ### Ordinal Encoding Bias (H1)
 **Severity:** Medium | **Confidence:** 85% | **Status:** Documented (not fixed)
@@ -193,4 +215,3 @@ Example:
 - Logistic Regression vs Gradient Boosting
 - Linear Regression vs Gradient Boosting Regressor
 - SVR vs Gradient Boosting Regressor
-

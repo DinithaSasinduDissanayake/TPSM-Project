@@ -268,3 +268,38 @@ TPSM Project Development Journal
 - Analyze run results to identify any remaining issues
 - Fix issues and re-run iteratively overnight
 
+---
+
+## 2026-03-06T13:37:48+05:30
+
+**Task:** Consolidate R and Python pipeline updates, add Python parallel validation, and preserve all pending repo work in git
+
+**What was done:**
+- Kept the existing R pipeline, documentation, config, dataset, and validation changes together for commit safety
+- Added the Python pipeline implementation under `scripts/python/` with thread-safe logging and dataset-level threaded execution
+- Added `config/mini_smoke.yaml` and used it to verify sequential vs parallel Python outputs and pause behavior
+- Added repo-local process files `AGENTS.md` and `LESSONS_LEARNED.md` to support future commit and workflow rules
+- Preserved pending logs, data assets, configs, docs, and analysis artifacts instead of discarding any uncommitted work
+
+**Code and project changes:**
+- `scripts/python/main.py`: Added helper-based execution flow, worker pause gate, collector heartbeat updates, and thread pool support
+- `scripts/python/writer.py`: Added locking around log, heartbeat, and manifest writes
+- `scripts/python/`: Added Python pipeline modules, validation helpers, and supporting scripts
+- `config/mini_smoke.yaml`: Added a minimal cross-task verification config
+- `scripts/R/*.R`, `scripts/main.R`, `README.md`, `docs/*.md`, and `config/datasets.yaml`: Preserved and committed alongside the Python additions
+
+**Verification completed:**
+- Python syntax validation with `py_compile`
+- Sequential mini smoke run completed successfully
+- Parallel mini smoke run completed successfully
+- Key-based comparison confirmed matching model and pairwise outputs between workers 1 and 2
+- Pause file check confirmed datasets waited until resume before starting
+
+**Status:**
+- Working tree consolidated for preservation ✅
+- Python parallel rollout implemented and verified ✅
+- R and Python changes prepared together for remote backup ✅
+
+**Next steps:**
+- Push the consolidated commit to `origin/dev`
+- Optionally follow with a cleanup commit to separate generated artifacts from source changes later

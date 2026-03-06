@@ -1,0 +1,48 @@
+Download attempt 1 failed: cannot open URL 'https://archive.ics.uci.edu/ml/machine-learning-databases/00602/Dry_Bean_Dataset.xlsx'
+Retrying in 2 seconds...
+Download attempt 2 failed: cannot open URL 'https://archive.ics.uci.edu/ml/machine-learning-databases/00602/Dry_Bean_Dataset.xlsx'
+Retrying in 4 seconds...
+Download attempt 3 failed: cannot open URL 'https://archive.ics.uci.edu/ml/machine-learning-databases/00602/Dry_Bean_Dataset.xlsx'
+Download attempt 1 failed: cannot open URL 'https://archive.ics.uci.edu/ml/machine-learning-databases/00459/Avila.zip'
+Retrying in 2 seconds...
+Download attempt 2 failed: cannot open URL 'https://archive.ics.uci.edu/ml/machine-learning-databases/00459/Avila.zip'
+Retrying in 4 seconds...
+Download attempt 3 failed: cannot open URL 'https://archive.ics.uci.edu/ml/machine-learning-databases/00459/Avila.zip'
+Timing stopped at: 7.211 0.126 7.788
+Timing stopped at: 6.338 0.043 6.836
+Timing stopped at: 6.322 0.056 6.775
+Timing stopped at: 6.751 0.039 7.169
+Timing stopped at: 7.531 0.018 7.982
+Timing stopped at: 5.962 0.024 6.213
+Timing stopped at: 5.974 0.051 6.226
+Timing stopped at: 6.396 0.038 6.657
+Timing stopped at: 6.475 0.033 6.801
+Timing stopped at: 6.269 0.023 6.505
+Timing stopped at: 8.392 0.11 9.065
+Timing stopped at: 7.703 0.039 8.209
+Timing stopped at: 6.942 0.026 7.344
+Timing stopped at: 7.752 0.042 8.246
+Timing stopped at: 8.22 0.025 8.693
+Timing stopped at: 7.09 0.027 7.374
+Timing stopped at: 7.423 0.027 7.742
+Timing stopped at: 7.487 0.049 7.805
+Timing stopped at: 7.479 0.031 7.771
+Timing stopped at: 7.381 0.035 7.667
+There were 50 or more warnings (use warnings() to see the first 50)
+Warning messages:
+1: In handle_error(ds_result$error_message, list(task = ds_result$task_name,  :
+  load: Target column 'TRUE' not found for dataset 'bank_marketing'
+2: In handle_error(ds_result$error_message, list(task = ds_result$task_name,  :
+  split: non-numeric argument to binary operator
+3: In handle_error(ds_result$error_message, list(task = ds_result$task_name,  :
+  split: non-numeric argument to binary operator
+4: In handle_error(ds_result$error_message, list(task = ds_result$task_name,  :
+  load: Failed to download dataset after retries: dry_bean
+5: In handle_error(ds_result$error_message, list(task = ds_result$task_name,  :
+  load: Failed to download dataset after retries: avila
+6: In handle_error(ds_result$error_message, list(task = ds_result$task_name,  :
+  load: line 1 did not have 6 elements
+7: In handle_error(ds_result$error_message, list(task = ds_result$task_name,  :
+  load: Target column 'CO.GT' not found for dataset 'air_quality'
+8: In handle_error(ds_result$error_message, list(task = ds_result$task_name,  :
+  load: Dataset 'household_power' has only 1 column(s) — likely wrong separator. Check ds_cfg$separator.
