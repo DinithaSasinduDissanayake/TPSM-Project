@@ -97,14 +97,17 @@ def main():
     successful = [0]
     stopped_early = [False]
     stop_logged = [False]
+    stop_reason = [None]
 
     def log_fn(level, event, payload):
         logger.log(level, event, payload)
 
-    def control_fn():
-        """Honor both control files and in-process stop requests."""
-        if stop_event.is_set():
-            return False
+    def worker_control_fn():
+        """Control function for running dataset tasks.
+
+        Internal stop_event cancels pending jobs only; already-running jobs keep draining.
+        External STOP/PAUSE files still apply to active jobs.
+        """
         return logger.wait_if_paused()
 
     def log_run_stopped(reason):
@@ -113,6 +116,7 @@ def main():
             if stop_logged[0]:
                 return
             stop_logged[0] = True
+            stop_reason[0] = reason
         logger.log("warning", "run_stopped", {"reason": reason})
 
     def collect_result(result):
@@ -165,7 +169,7 @@ def main():
 
     def _run_single_job(job):
         """Run a single dataset job, honoring pause/stop before dataset start."""
-        if not control_fn():
+        if stop_event.is_set():
             return {
                 "dataset_id": job["ds"]["id"],
                 "task_name": job["task"]["name"],
@@ -176,6 +180,21 @@ def main():
                 "error_message": None,
                 "elapsed_sec": 0,
                 "stopped": True,
+                "cancelled": True,
+            }
+
+        if not logger.wait_if_paused():
+            return {
+                "dataset_id": job["ds"]["id"],
+                "task_name": job["task"]["name"],
+                "model_runs": [],
+                "pairwise_rows": [],
+                "warnings": [],
+                "failed": False,
+                "error_message": None,
+                "elapsed_sec": 0,
+                "stopped": True,
+                "cancelled": False,
             }
 
         result = run_dataset_task(
@@ -184,9 +203,10 @@ def main():
             log_fn,
             timeout_sec,
             run_id=run_id,
-            control_fn=control_fn,
+            control_fn=worker_control_fn,
         )
         result["stopped"] = False
+        result["cancelled"] = False
         return result
 
     def _maybe_write_partial():
@@ -201,7 +221,8 @@ def main():
             if result.get("stopped"):
                 stopped_early[0] = True
                 stop_event.set()
-                log_run_stopped("control_file_before_dataset")
+                if not result.get("cancelled"):
+                    log_run_stopped("control_file_before_dataset")
                 break
 
             success = collect_result(result)
@@ -238,6 +259,7 @@ def main():
                         "error_message": str(exc),
                         "elapsed_sec": 0,
                         "stopped": False,
+                        "cancelled": False,
                     }
 
                 if result.get("stopped"):
@@ -246,7 +268,8 @@ def main():
                     for pending_future in future_to_job:
                         if not pending_future.done():
                             pending_future.cancel()
-                    log_run_stopped("control_file_before_dataset")
+                    if not result.get("cancelled"):
+                        log_run_stopped("control_file_before_dataset")
                     continue
 
                 success = collect_result(result)
@@ -279,6 +302,7 @@ def main():
         "successful_datasets": successful[0],
         "failed_datasets": len(failed_datasets),
         "stopped_early": stopped_early[0],
+        "stop_reason": stop_reason[0],
         "total_warnings": len(all_warnings),
         "run_id": run_id,
         "output_dir": logger.run_dir,
