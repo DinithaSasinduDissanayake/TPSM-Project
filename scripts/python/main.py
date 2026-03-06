@@ -13,7 +13,6 @@ import os
 import sys
 import threading
 import time
-import warnings
 
 # Ensure project root is on path
 project_root = os.path.dirname(
@@ -93,10 +92,28 @@ def main():
     failed_datasets = []
     total = len(all_jobs)
     result_lock = threading.Lock()
+    stop_event = threading.Event()
     completed = [0]
+    successful = [0]
+    stopped_early = [False]
+    stop_logged = [False]
 
     def log_fn(level, event, payload):
         logger.log(level, event, payload)
+
+    def control_fn():
+        """Honor both control files and in-process stop requests."""
+        if stop_event.is_set():
+            return False
+        return logger.wait_if_paused()
+
+    def log_run_stopped(reason):
+        """Log run_stopped only once."""
+        with result_lock:
+            if stop_logged[0]:
+                return
+            stop_logged[0] = True
+        logger.log("warning", "run_stopped", {"reason": reason})
 
     def collect_result(result):
         """Collect a single result into the aggregated lists."""
@@ -120,6 +137,7 @@ def main():
                 pairwise_rows.extend(result["pairwise_rows"])
                 all_warnings.extend(result["warnings"])
                 status = "success"
+                successful[0] += 1
                 extra = {
                     "n_model_runs": len(result["model_runs"]),
                     "n_pairwise_rows": len(result["pairwise_rows"]),
@@ -147,7 +165,7 @@ def main():
 
     def _run_single_job(job):
         """Run a single dataset job, honoring pause/stop before dataset start."""
-        if not logger.wait_if_paused():
+        if not control_fn():
             return {
                 "dataset_id": job["ds"]["id"],
                 "task_name": job["task"]["name"],
@@ -166,7 +184,7 @@ def main():
             log_fn,
             timeout_sec,
             run_id=run_id,
-            control_fn=logger.wait_if_paused,
+            control_fn=control_fn,
         )
         result["stopped"] = False
         return result
@@ -181,13 +199,15 @@ def main():
         for job in all_jobs:
             result = _run_single_job(job)
             if result.get("stopped"):
-                logger.log(
-                    "warning", "run_stopped", {"reason": "control_file_before_dataset"}
-                )
+                stopped_early[0] = True
+                stop_event.set()
+                log_run_stopped("control_file_before_dataset")
                 break
 
             success = collect_result(result)
             if not success and stop_on_fail:
+                stopped_early[0] = True
+                stop_event.set()
                 logger.log("error", "stopping_on_fail", {"dataset": job["ds"]["id"]})
                 break
 
@@ -205,6 +225,8 @@ def main():
                 job = future_to_job[future]
                 try:
                     result = future.result()
+                except concurrent.futures.CancelledError:
+                    continue
                 except Exception as exc:
                     result = {
                         "dataset_id": job["ds"]["id"],
@@ -219,14 +241,25 @@ def main():
                     }
 
                 if result.get("stopped"):
-                    logger.log(
-                        "warning",
-                        "run_stopped",
-                        {"reason": "control_file_before_dataset"},
-                    )
-                    break
+                    stopped_early[0] = True
+                    stop_event.set()
+                    for pending_future in future_to_job:
+                        if not pending_future.done():
+                            pending_future.cancel()
+                    log_run_stopped("control_file_before_dataset")
+                    continue
 
-                collect_result(result)
+                success = collect_result(result)
+                if not success and stop_on_fail:
+                    stopped_early[0] = True
+                    stop_event.set()
+                    for pending_future in future_to_job:
+                        if not pending_future.done():
+                            pending_future.cancel()
+                    logger.log(
+                        "error", "stopping_on_fail", {"dataset": job["ds"]["id"]}
+                    )
+
                 try:
                     _maybe_write_partial()
                 except Exception:
@@ -238,13 +271,14 @@ def main():
     write_failed_datasets(logger, failed_datasets)
 
     # Run summary
-    run_end_time = time.time()
     summary = {
         "model_run_rows": len(model_runs),
         "pairwise_rows": len(pairwise_rows),
         "total_datasets": total,
-        "successful_datasets": total - len(failed_datasets),
+        "completed_datasets": completed[0],
+        "successful_datasets": successful[0],
         "failed_datasets": len(failed_datasets),
+        "stopped_early": stopped_early[0],
         "total_warnings": len(all_warnings),
         "run_id": run_id,
         "output_dir": logger.run_dir,
