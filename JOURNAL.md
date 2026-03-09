@@ -4,7 +4,30 @@ TPSM Project Development Journal
 
 ---
 
-## 2026-03-09T14:35:00+05:30
+## 2026-03-09T14:50:00+05:30
+
+**Task:** Full GUI aesthetic overhaul — ground-up rewrite
+
+**What was done:**
+- Complete HTML/CSS rewrite of both `render_index` and `render_run_detail`
+- Added sticky nav bar with logo, pill badge, and live auto-refresh indicator
+- Added stats strip (Total / Running / Completed / Other)
+- New "Active Run" hero card with glow progress bar and gradient fill
+- Task type selector redesigned as a segmented toggle button group with icons
+- Dataset checkboxes redesigned as styled toggle tiles
+- Advanced Settings uses styled `<details>` accordion with 2-col grid inputs
+- Launch button is full-width gradient CTA
+- Run History table uses inline CSS progress bars (no `<progress>` element)
+- Run Detail: KV stat grid, terminal-style log viewer, 2-col layout
+- All colors moved to CSS variables; shared CSS extracted to `_SHARED_CSS` constant
+- Color-coded animated badges with dot indicators for all run states
+
+**Code changes:**
+- `scripts/python/gui.py`: `_SHARED_CSS` constant added; `render_index` and `render_run_detail` fully rewritten
+
+---
+
+
 
 **Task:** Modernize TPSM Runner GUI aesthetics
 
