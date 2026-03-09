@@ -105,6 +105,20 @@ Rscript scripts/main.R --task classification --workers 4
 Rscript scripts/main.R --config config/quick_test.yaml
 ```
 
+### Local GUI Launcher
+
+For the Python resumable runner UI on Linux, you can use the repo-local launchers:
+
+- [TPSM Runner.desktop](/home/sasindu/Documents/SLIIT Materials/TPSM-Project/TPSM Runner.desktop): starts the local GUI server and opens the browser
+- [Open TPSM Runner.desktop](/home/sasindu/Documents/SLIIT Materials/TPSM-Project/Open TPSM Runner.desktop): opens the web view at `http://127.0.0.1:8787`
+
+Shell launchers:
+
+```bash
+./scripts/launch_tpsm_gui.sh
+./scripts/open_tpsm_gui.sh
+```
+
 ---
 
 ## Technical Approach

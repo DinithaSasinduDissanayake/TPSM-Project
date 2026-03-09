@@ -302,7 +302,16 @@ def evaluate_models_on_split(task_name, model_names, train_df, test_df, target,
     return model_rows, metric_results, split_warnings
 
 
-def run_dataset_task(task, ds_cfg, log_fn, timeout_sec=300, run_id="", control_fn=None):
+def run_dataset_task(
+    task,
+    ds_cfg,
+    log_fn,
+    timeout_sec=300,
+    run_id="",
+    control_fn=None,
+    completed_unit_ids=None,
+    on_split_complete=None,
+):
     """
     Run all models on all splits for a single dataset.
     Returns a result dict with model_runs, pairwise_rows, warnings, failed status.
@@ -316,6 +325,8 @@ def run_dataset_task(task, ds_cfg, log_fn, timeout_sec=300, run_id="", control_f
         "failed": False,
         "error_message": None,
         "elapsed_sec": 0,
+        "stopped": False,
+        "stop_reason": None,
     }
 
     start_time = time.time()
@@ -364,8 +375,20 @@ def run_dataset_task(task, ds_cfg, log_fn, timeout_sec=300, run_id="", control_f
         t3 = time.time()
         total_splits = len(splits)
         for split_idx, split_info in enumerate(splits, start=1):
-            if control_fn and not control_fn():
-                raise RuntimeError("Run stopped by control file")
+            split_info = dict(split_info)
+            split_info["split_index"] = split_idx
+            unit_id = (
+                f"{task['name']}::{ds_cfg['id']}::"
+                f"r{split_info['repeat_id']}::f{split_info['fold']}::i{split_idx}"
+            )
+            if completed_unit_ids and unit_id in completed_unit_ids:
+                continue
+            if control_fn:
+                action = control_fn()
+                if action in ("pause", "stop"):
+                    result["stopped"] = True
+                    result["stop_reason"] = action
+                    break
             split_start = time.time()
             train_raw = df.iloc[split_info["train_idx"]].reset_index(drop=True)
             test_raw = df.iloc[split_info["test_idx"]].reset_index(drop=True)
@@ -374,20 +397,25 @@ def run_dataset_task(task, ds_cfg, log_fn, timeout_sec=300, run_id="", control_f
             )
 
             # MAPE becomes unstable with many low denominators; emit a warning for audit context.
+            low_warn = None
             if task["name"] in ("regression", "timeseries"):
                 y_true = pd.to_numeric(test_df[ds_cfg["target"]], errors="coerce")
                 valid = y_true.notna()
                 if valid.any():
                     low_pct = float((y_true[valid].abs() <= 10).mean() * 100.0)
                     if low_pct > 10.0:
-                        result["warnings"].append(
+                        low_warn = (
                             f"{ds_cfg['id']} split r{split_info['repeat_id']}f{split_info['fold']}: "
                             f"MAPE low-target risk ({low_pct:.1f}% <= 10)"
                         )
+                        result["warnings"].append(low_warn)
                         metric_notes = split_info.setdefault("metric_notes", {})
                         metric_notes["mape"] = f"low_target_risk:{low_pct:.1f}%_<=10"
                         metric_notes["smape"] = f"low_target_context:{low_pct:.1f}%_<=10"
 
+            split_warnings = []
+            if task["name"] in ("regression", "timeseries") and low_warn:
+                split_warnings.append(low_warn)
             rows, metric_results, split_warns = evaluate_models_on_split(
                 task["name"], model_names, train_df, test_df,
                 ds_cfg["target"], ds_cfg_with_pairs, split_info, task.get("metrics", []),
@@ -395,8 +423,10 @@ def run_dataset_task(task, ds_cfg, log_fn, timeout_sec=300, run_id="", control_f
             )
             result["model_runs"].extend(rows)
             result["warnings"].extend(split_warns)
+            split_warnings.extend(split_warns)
 
             # Build pairwise comparisons
+            pairwise_rows = []
             for pair in task.get("model_pairs", []):
                 pair_rows = build_pairwise_rows(
                     pair, metric_results, split_info, ds_cfg, task["name"],
@@ -404,8 +434,25 @@ def run_dataset_task(task, ds_cfg, log_fn, timeout_sec=300, run_id="", control_f
                     run_id=run_id
                 )
                 result["pairwise_rows"].extend(pair_rows)
+                pairwise_rows.extend(pair_rows)
 
             split_elapsed = time.time() - split_start
+            if on_split_complete:
+                on_split_complete(
+                    {
+                        "unit_id": unit_id,
+                        "task_name": task["name"],
+                        "dataset_id": ds_cfg["id"],
+                        "split_index": split_idx,
+                        "total_splits": total_splits,
+                        "fold": split_info["fold"],
+                        "repeat_id": split_info["repeat_id"],
+                        "elapsed_sec": round(split_elapsed, 4),
+                    },
+                    rows,
+                    pairwise_rows,
+                    split_warnings,
+                )
             if (
                 total_splits <= 10
                 or split_idx == 1
@@ -423,6 +470,19 @@ def run_dataset_task(task, ds_cfg, log_fn, timeout_sec=300, run_id="", control_f
                     "train_rows": len(train_df),
                     "test_rows": len(test_df),
                 })
+
+        if result["stopped"]:
+            result["elapsed_sec"] = time.time() - start_time
+            log_fn("info", "dataset_interrupted", {
+                "task": task["name"],
+                "dataset": ds_cfg["id"],
+                "elapsed_sec": round(result["elapsed_sec"], 4),
+                "stop_reason": result["stop_reason"],
+                "n_model_runs": len(result["model_runs"]),
+                "n_pairwise_rows": len(result["pairwise_rows"]),
+                "n_warnings": len(result["warnings"]),
+            })
+            return result
 
         eval_sec = time.time() - t3
 

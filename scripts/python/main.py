@@ -1,329 +1,276 @@
 #!/usr/bin/env python3
 """
-TPSM Pipeline - Main entry point.
+TPSM Pipeline - Resumable main entry point.
 
 Usage:
     python -m scripts.python.main --config config/smoke_test.yaml --output-dir outputs/py_test
-    python -m scripts.python.main --config config/datasets.yaml --output-dir outputs/py_full --workers 4
+    python -m scripts.python.main --resume-run outputs/py_test/20260309T120000
 """
 
+from __future__ import annotations
+
 import argparse
-import concurrent.futures
 import os
 import sys
-import threading
-import time
+from typing import Any
 
-# Ensure project root is on path
-project_root = os.path.dirname(
-    os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-)
+project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.insert(0, project_root)
 
 from scripts.python.config import load_config
 from scripts.python.pipeline import run_dataset_task
+from scripts.python.run_state import RunStateStore, create_initial_state, write_yaml_snapshot
 from scripts.python.writer import (
     RunLogger,
     make_run_id,
-    write_outputs,
-    write_partial_outputs,
-    write_warnings_report,
+    write_df_output,
     write_failed_datasets,
+    write_warnings_report,
 )
 
 
-def main():
-    parser = argparse.ArgumentParser(description="TPSM Pipeline (Python)")
-    parser.add_argument("--config", required=True, help="Path to YAML config file")
-    parser.add_argument(
-        "--output-dir", default="outputs/python_run", help="Output directory"
-    )
-    parser.add_argument(
-        "--workers", type=int, default=1, help="Number of parallel workers"
-    )
-    parser.add_argument(
-        "--fast", action="store_true", help="Enable fast mode (auto-detect workers)"
-    )
-    parser.add_argument(
-        "--timeout", type=int, default=300, help="Timeout per dataset (seconds)"
-    )
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description="TPSM Pipeline (Python, resumable)")
+    parser.add_argument("--config", help="Path to YAML config file")
+    parser.add_argument("--output-dir", default="outputs/python_run", help="Output directory root")
+    parser.add_argument("--timeout", type=int, default=300, help="Timeout per dataset (seconds)")
+    parser.add_argument("--workers", type=int, default=1, help="Ignored in resumable v1; runner is sequential")
+    parser.add_argument("--fast", action="store_true", help="Ignored in resumable v1")
+    parser.add_argument("--resume-run", help="Resume an existing run directory")
+    parser.add_argument("--run-id", help="Optional fixed run id for externally orchestrated launches")
     args = parser.parse_args()
+    if not args.resume_run and not args.config:
+        parser.error("either --config or --resume-run is required")
+    return args
 
-    # Load config
+
+def _iter_tasks(cfg: dict[str, Any]):
+    for task in cfg["tasks"]:
+        for ds in task["datasets"]:
+            yield task, ds
+
+
+def _finalize_outputs(logger: RunLogger, store: RunStateStore) -> dict[str, Any]:
+    model_df, pair_df, warnings_list = store.aggregate_outputs()
+    write_df_output(model_df, os.path.join(logger.run_dir, "model_runs.csv"))
+    write_df_output(pair_df, os.path.join(logger.run_dir, "pairwise_differences.csv"))
+    write_warnings_report(logger, warnings_list)
+    failed_path = os.path.join(store.state_dir, "failed_datasets.json")
+    failed_rows = []
+    if os.path.exists(failed_path):
+        import json
+
+        with open(failed_path, "r", encoding="utf-8") as f:
+            failed_rows = json.load(f)
+    write_failed_datasets(logger, failed_rows)
+    return {
+        "model_run_rows": int(len(model_df)),
+        "pairwise_rows": int(len(pair_df)),
+        "total_warnings": len(warnings_list),
+        "failed_rows": len(failed_rows),
+    }
+
+
+def _append_failed_dataset(store: RunStateStore, row: dict[str, Any]) -> None:
+    import json
+
+    path = os.path.join(store.state_dir, "failed_datasets.json")
+    rows = []
+    if os.path.exists(path):
+        with open(path, "r", encoding="utf-8") as f:
+            rows = json.load(f)
+    rows.append(row)
+    tmp = f"{path}.tmp"
+    with open(tmp, "w", encoding="utf-8") as f:
+        json.dump(rows, f, indent=2)
+    os.replace(tmp, path)
+
+
+def _control_action(logger: RunLogger) -> str:
+    return logger.requested_action() or "run"
+
+
+def _load_or_init_run(args: argparse.Namespace):
+    if args.resume_run:
+        run_dir = os.path.abspath(args.resume_run)
+        logger = RunLogger.from_run_dir(run_dir)
+        store = RunStateStore(run_dir)
+        if not store.exists():
+            raise FileNotFoundError(f"No resumable state found in {run_dir}")
+        state = store.mark_resumable(store.load())
+        store.save(state)
+        cfg = load_config(state["config_snapshot_path"])
+        return logger, store, state, cfg
+
     cfg = load_config(args.config)
-    timeout_sec = args.timeout or cfg.get("timeout_seconds", 300)
-    stop_on_fail = cfg.get("stop_on_first_fail", False)
-
-    # Determine workers
-    workers = args.workers
-    if args.fast and workers <= 1:
-        workers = max(1, (os.cpu_count() or 1) - 2)
-
-    # Initialize run
-    run_id = make_run_id()
+    run_id = args.run_id or make_run_id()
     logger = RunLogger(args.output_dir, run_id)
+    store = RunStateStore(logger.run_dir)
+    snapshot_path = os.path.join(logger.run_dir, "config_snapshot.yaml")
+    write_yaml_snapshot(snapshot_path, _config_to_yaml_like(cfg))
+    state = create_initial_state(
+        run_id=run_id,
+        run_dir=logger.run_dir,
+        config_snapshot_path=snapshot_path,
+        config_source_path=os.path.abspath(args.config),
+        cfg=cfg,
+    )
+    store.save(state)
+    return logger, store, state, cfg
+
+
+def _config_to_yaml_like(cfg: dict[str, Any]) -> dict[str, Any]:
+    """Serialize loaded config back to yaml-like shape for durable snapshots."""
+    out: dict[str, Any] = {
+        "global": {
+            "stop_on_first_fail": cfg.get("stop_on_first_fail", False),
+            "timeout_seconds": cfg.get("timeout_seconds", 300),
+            "parallel_workers": 1,
+        }
+    }
+    for task in cfg["tasks"]:
+        block = {
+            "split_method": task["split"]["method"],
+            "folds": task["split"].get("folds"),
+            "repeats": task["split"].get("repeats"),
+            "splits": task["split"].get("splits"),
+            "metrics": task.get("metrics", []),
+            "model_pairs": task.get("model_pairs", []),
+            "datasets": task.get("datasets", []),
+        }
+        out[task["name"]] = block
+    return out
+
+
+def main() -> int:
+    args = parse_args()
+    logger, store, state, cfg = _load_or_init_run(args)
 
     logger.log(
         "info",
         "run_start",
         {
-            "run_id": run_id,
-            "stop_on_fail": stop_on_fail,
-            "timeout_sec": timeout_sec,
-            "parallel_workers": workers,
-            "fast_mode": args.fast,
+            "run_id": state["run_id"],
             "python": True,
+            "timeout_sec": args.timeout,
+            "worker_mode": "sequential",
             "control_files": logger.control_paths(),
+            "resume": bool(args.resume_run),
         },
     )
 
-    # Build job list
-    all_jobs = []
-    for task in cfg["tasks"]:
-        for ds in task["datasets"]:
-            all_jobs.append({"task": task, "ds": ds})
+    if args.workers > 1 or args.fast:
+        logger.log(
+            "warning",
+            "sequential_only_mode",
+            {
+                "requested_workers": args.workers,
+                "fast_mode": args.fast,
+                "message": "Resumable v1 runs sequentially for reliable checkpoint/resume.",
+            },
+        )
 
-    logger.log("info", "task_start", {"task": "ALL", "n_datasets": len(all_jobs)})
+    state = store.load()
+    store.set_runner_started(state, os.getpid())
+    stop_on_fail = cfg.get("stop_on_first_fail", False)
 
-    # State
-    model_runs = []
-    pairwise_rows = []
-    all_warnings = []
-    failed_datasets = []
-    total = len(all_jobs)
-    result_lock = threading.Lock()
-    stop_event = threading.Event()
-    completed = [0]
-    successful = [0]
-    stopped_early = [False]
-    stop_logged = [False]
-    stop_reason = [None]
+    if _control_action(logger) == "pause":
+        logger.log("info", "run_paused", {"reason": "pause_requested_before_start"})
+        state = store.load()
+        store.set_runner_stopped(state, "paused")
+        return 0
+    if _control_action(logger) == "stop":
+        logger.log("info", "run_stopped", {"reason": "stop_requested_before_start"})
+        state = store.load()
+        store.set_runner_stopped(state, "stopped")
+        return 0
 
-    def log_fn(level, event, payload):
-        logger.log(level, event, payload)
+    for task, ds in _iter_tasks(cfg):
+        state = store.load()
+        completed_unit_ids = store.completed_unit_ids_for_dataset(state, task["name"], ds["id"])
 
-    def worker_control_fn():
-        """Control function for running dataset tasks.
-
-        Internal stop_event cancels pending jobs only; already-running jobs keep draining.
-        External STOP/PAUSE files still apply to active jobs.
-        """
-        return logger.wait_if_paused()
-
-    def log_run_stopped(reason):
-        """Log run_stopped only once."""
-        with result_lock:
-            if stop_logged[0]:
-                return
-            stop_logged[0] = True
-            stop_reason[0] = reason
-        logger.log("warning", "run_stopped", {"reason": reason})
-
-    def collect_result(result):
-        """Collect a single result into the aggregated lists."""
-        with result_lock:
-            i = completed[0]
-            completed[0] += 1
-
-            if result["failed"]:
-                failed_datasets.append(
-                    {
-                        "dataset": result["dataset_id"],
-                        "task": result["task_name"],
-                        "error": result["error_message"],
-                        "elapsed_sec": result["elapsed_sec"],
-                    }
-                )
-                status = "failed"
-                extra = {}
-            else:
-                model_runs.extend(result["model_runs"])
-                pairwise_rows.extend(result["pairwise_rows"])
-                all_warnings.extend(result["warnings"])
-                status = "success"
-                successful[0] += 1
-                extra = {
-                    "n_model_runs": len(result["model_runs"]),
-                    "n_pairwise_rows": len(result["pairwise_rows"]),
-                }
-
+        def on_split_complete(meta, rows, pair_rows, split_warnings):
             logger.log(
-                "info",
-                "progress",
+                "debug",
+                "split_checkpoint",
                 {
-                    "completed": i + 1,
-                    "total": total,
-                    "pct": round(100 * (i + 1) / total, 1),
-                    "last_dataset": result["dataset_id"],
-                    "last_status": status,
-                    **extra,
+                    **meta,
+                    "n_model_runs": len(rows),
+                    "n_pairwise_rows": len(pair_rows),
+                    "n_warnings": len(split_warnings),
                 },
             )
+            store.write_split_parts(meta["unit_id"], rows, pair_rows, split_warnings)
+            current = store.load()
+            store.mark_unit_completed(current, meta["unit_id"])
 
-            try:
-                logger.write_heartbeat(result["dataset_id"])
-            except Exception:
-                pass
+        def control_fn():
+            return _control_action(logger)
 
-            return status == "success"
-
-    def _run_single_job(job):
-        """Run a single dataset job, honoring pause/stop before dataset start."""
-        if stop_event.is_set():
-            return {
-                "dataset_id": job["ds"]["id"],
-                "task_name": job["task"]["name"],
-                "model_runs": [],
-                "pairwise_rows": [],
-                "warnings": [],
-                "failed": False,
-                "error_message": None,
-                "elapsed_sec": 0,
-                "stopped": True,
-                "cancelled": True,
-            }
-
-        if not logger.wait_if_paused():
-            return {
-                "dataset_id": job["ds"]["id"],
-                "task_name": job["task"]["name"],
-                "model_runs": [],
-                "pairwise_rows": [],
-                "warnings": [],
-                "failed": False,
-                "error_message": None,
-                "elapsed_sec": 0,
-                "stopped": True,
-                "cancelled": False,
-            }
-
-        result = run_dataset_task(
-            job["task"],
-            job["ds"],
-            log_fn,
-            timeout_sec,
-            run_id=run_id,
-            control_fn=worker_control_fn,
+        dataset_result = run_dataset_task(
+            task,
+            ds,
+            logger.log,
+            args.timeout,
+            run_id=state["run_id"],
+            control_fn=control_fn,
+            completed_unit_ids=completed_unit_ids,
+            on_split_complete=on_split_complete,
         )
-        result["stopped"] = False
-        result["cancelled"] = False
-        return result
 
-    def _maybe_write_partial():
-        """Write partial outputs every five collected results."""
-        with result_lock:
-            if completed[0] and completed[0] % 5 == 0:
-                write_partial_outputs(logger, model_runs, pairwise_rows)
+        state = store.load()
+        if dataset_result.get("stopped"):
+            status = "paused" if dataset_result.get("stop_reason") == "pause" else "stopped"
+            logger.log("info", f"run_{status}", {"reason": f"{status}_after_split"})
+            store.set_runner_stopped(state, status)
+            summary = _finalize_outputs(logger, store)
+            logger.write_manifest({"config_path": state["config_snapshot_path"], "parallel_workers": 1}, summary)
+            return 0
 
-    if workers <= 1:
-        for job in all_jobs:
-            result = _run_single_job(job)
-            if result.get("stopped"):
-                stopped_early[0] = True
-                stop_event.set()
-                if not result.get("cancelled"):
-                    log_run_stopped("control_file_before_dataset")
-                break
+        if dataset_result["failed"]:
+            logger.log(
+                "error",
+                "dataset_failed",
+                {
+                    "task": task["name"],
+                    "dataset": ds["id"],
+                    "error_message": dataset_result["error_message"],
+                },
+            )
+            store.mark_dataset_failed(state, task["name"], ds["id"])
+            _append_failed_dataset(
+                store,
+                {
+                    "dataset": ds["id"],
+                    "task": task["name"],
+                    "error": dataset_result["error_message"],
+                    "elapsed_sec": dataset_result["elapsed_sec"],
+                },
+            )
+            if stop_on_fail:
+                store.set_runner_stopped(store.load(), "failed")
+                summary = _finalize_outputs(logger, store)
+                logger.write_manifest({"config_path": state["config_snapshot_path"], "parallel_workers": 1}, summary)
+                return 1
 
-            success = collect_result(result)
-            if not success and stop_on_fail:
-                stopped_early[0] = True
-                stop_event.set()
-                logger.log("error", "stopping_on_fail", {"dataset": job["ds"]["id"]})
-                break
-
-            try:
-                _maybe_write_partial()
-            except Exception:
-                pass
-    else:
-        logger.log("info", "parallel_start", {"workers": workers, "total_jobs": total})
-        with concurrent.futures.ThreadPoolExecutor(max_workers=workers) as executor:
-            future_to_job = {
-                executor.submit(_run_single_job, job): job for job in all_jobs
-            }
-            for future in concurrent.futures.as_completed(future_to_job):
-                job = future_to_job[future]
-                try:
-                    result = future.result()
-                except concurrent.futures.CancelledError:
-                    continue
-                except Exception as exc:
-                    result = {
-                        "dataset_id": job["ds"]["id"],
-                        "task_name": job["task"]["name"],
-                        "model_runs": [],
-                        "pairwise_rows": [],
-                        "warnings": [],
-                        "failed": True,
-                        "error_message": str(exc),
-                        "elapsed_sec": 0,
-                        "stopped": False,
-                        "cancelled": False,
-                    }
-
-                if result.get("stopped"):
-                    stopped_early[0] = True
-                    stop_event.set()
-                    for pending_future in future_to_job:
-                        if not pending_future.done():
-                            pending_future.cancel()
-                    if not result.get("cancelled"):
-                        log_run_stopped("control_file_before_dataset")
-                    continue
-
-                success = collect_result(result)
-                if not success and stop_on_fail:
-                    stopped_early[0] = True
-                    stop_event.set()
-                    for pending_future in future_to_job:
-                        if not pending_future.done():
-                            pending_future.cancel()
-                    logger.log(
-                        "error", "stopping_on_fail", {"dataset": job["ds"]["id"]}
-                    )
-
-                try:
-                    _maybe_write_partial()
-                except Exception:
-                    pass
-
-    # Write final outputs
-    write_outputs(logger, model_runs, pairwise_rows)
-    write_warnings_report(logger, all_warnings)
-    write_failed_datasets(logger, failed_datasets)
-
-    # Run summary
-    summary = {
-        "model_run_rows": len(model_runs),
-        "pairwise_rows": len(pairwise_rows),
-        "total_datasets": total,
-        "completed_datasets": completed[0],
-        "successful_datasets": successful[0],
-        "failed_datasets": len(failed_datasets),
-        "stopped_early": stopped_early[0],
-        "stop_reason": stop_reason[0],
-        "total_warnings": len(all_warnings),
-        "run_id": run_id,
-        "output_dir": logger.run_dir,
-    }
-
+    state = store.load()
+    store.set_runner_stopped(state, "completed")
+    summary = _finalize_outputs(logger, store)
+    summary["run_id"] = state["run_id"]
+    summary["output_dir"] = logger.run_dir
     logger.log("info", "run_complete", summary)
-    logger.write_manifest(
-        {"config_path": args.config, "parallel_workers": workers}, summary
-    )
+    logger.write_manifest({"config_path": state["config_snapshot_path"], "parallel_workers": 1}, summary)
 
     print(f"\n{'=' * 60}")
-    print(f"Run complete: {run_id}")
-    print(f"  Datasets: {summary['successful_datasets']}/{total} successful")
-    print(f"  Failed:   {summary['failed_datasets']}")
+    print(f"Run complete: {state['run_id']}")
     print(f"  Model runs: {summary['model_run_rows']}")
     print(f"  Pairwise:   {summary['pairwise_rows']}")
     print(f"  Output:     {logger.run_dir}")
     print(f"  Pause file: {logger.pause_path}")
     print(f"  Stop file:  {logger.stop_path}")
     print(f"{'=' * 60}")
+    return 0
 
 
 if __name__ == "__main__":
-    main()
+    raise SystemExit(main())

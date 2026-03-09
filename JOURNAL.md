@@ -327,3 +327,28 @@ TPSM Project Development Journal
 **Next steps:**
 - Push the updated PR branch to GitHub
 - Refresh PR review state after the new commit lands
+
+---
+
+## 14:30
+
+**Task:** Add Python resumable runner with local GUI
+
+**What was done:**
+- Implemented `scripts/python/main.py` with resumable execution
+- Added `scripts/python/run_state.py` for state management
+- Added `scripts/python/gui.py` for local web UI dashboard
+- Created `.desktop` launchers and shell scripts for easy access
+
+**Features:**
+- Resumable pipeline runs (pause/resume/stop support)
+- Local web dashboard at `http://127.0.0.1:8787`
+- Real-time progress tracking and run history
+- Desktop integration (Ubuntu .desktop files)
+
+**Code changes:**
+- `scripts/python/main.py`: Resumable runner entry point
+- `scripts/python/run_state.py`: State store and checkpointing
+- `scripts/python/gui.py`: HTTP server with HTML dashboard
+- `scripts/python/writer.py`: Added `write_df_output`, `from_run_dir`
+- `scripts/python/pipeline.py`: Added `completed_unit_ids`, `on_split_complete` callbacks

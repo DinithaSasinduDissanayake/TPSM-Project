@@ -6,7 +6,6 @@ import csv
 import datetime
 import threading
 import pandas as pd
-import time
 
 
 def utc_now() -> str:
@@ -31,6 +30,10 @@ class RunLogger:
         self.log_path = os.path.join(self.run_dir, "run_log.txt")
         self.pause_path = os.path.join(self.run_dir, "PAUSE")
         self.stop_path = os.path.join(self.run_dir, "STOP")
+
+    @classmethod
+    def from_run_dir(cls, run_dir: str):
+        return cls(os.path.dirname(run_dir), os.path.basename(run_dir))
 
     def log(self, level: str, event: str, payload: dict | None = None):
         """Write a log event."""
@@ -72,20 +75,21 @@ class RunLogger:
             "stop_file": self.stop_path,
         }
 
-    def wait_if_paused(self, poll_sec: float = 2.0) -> bool:
-        """Wait while PAUSE exists. Return False if STOP is requested."""
-        paused = False
-        while os.path.exists(self.pause_path):
-            if not paused:
-                self.log("info", "run_paused", self.control_paths())
-                paused = True
-            if os.path.exists(self.stop_path):
-                self.log("warning", "run_stop_requested", self.control_paths())
-                return False
-            time.sleep(poll_sec)
-        if paused:
-            self.log("info", "run_resumed", self.control_paths())
-        return not os.path.exists(self.stop_path)
+    def requested_action(self) -> str | None:
+        """Return current control request if any."""
+        if os.path.exists(self.stop_path):
+            return "stop"
+        if os.path.exists(self.pause_path):
+            return "pause"
+        return None
+
+    def clear_pause(self) -> None:
+        if os.path.exists(self.pause_path):
+            os.remove(self.pause_path)
+
+    def clear_stop(self) -> None:
+        if os.path.exists(self.stop_path):
+            os.remove(self.stop_path)
 
 
 def write_csv_output(rows: list[dict], filepath: str):
@@ -93,6 +97,13 @@ def write_csv_output(rows: list[dict], filepath: str):
     if not rows:
         return
     df = pd.DataFrame(rows)
+    df.to_csv(filepath, index=False)
+
+
+def write_df_output(df: pd.DataFrame, filepath: str):
+    """Write a dataframe to CSV if it has rows."""
+    if df is None or df.empty:
+        return
     df.to_csv(filepath, index=False)
 
 
