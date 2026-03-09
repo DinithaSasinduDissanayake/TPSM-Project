@@ -4,6 +4,32 @@ TPSM Project Development Journal
 
 ---
 
+## 2026-03-09T14:35:00+05:30
+
+**Task:** Modernize TPSM Runner GUI aesthetics
+
+**What was done:**
+- Replaced basic HTML/CSS with modern dark theme
+- Added custom CSS variables for consistent colors
+- Improved typography (Inter/system-ui)
+- Added status badges with color coding
+- Enhanced progress bars with gradients
+- Improved card layouts and spacing
+- Updated Run Detail view with summary grid
+
+**Code changes:**
+- `scripts/python/gui.py`: Complete CSS overhaul in `render_index` and `render_run_detail`
+
+**Visual improvements:**
+- Dark slate background (#0f172a)
+- Glassmorphism cards with subtle borders
+- Animated progress bars with gradient fill
+- Color-coded status badges (running=blue, completed=green, stopped=red, paused=yellow)
+- Better hover effects on buttons and table rows
+- Improved dataset selection grid
+
+---
+
 ## 2026-03-03T17:30:00+05:30
 
 **Task:** Add `--fast` mode to TPSM R pipeline with aggressive parallelization

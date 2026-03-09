@@ -14,7 +14,9 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 import yaml
 
-project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+project_root = os.path.dirname(
+    os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+)
 sys.path.insert(0, project_root)
 
 from scripts.python.run_state import load_json, utc_now
@@ -52,7 +54,9 @@ def _apply_task_filter(raw_cfg: dict, selected_tasks: set[str], dataset_ids: set
             continue
         if dataset_ids:
             raw_cfg[task_name]["datasets"] = [
-                ds for ds in raw_cfg[task_name].get("datasets", []) if ds["id"] in dataset_ids
+                ds
+                for ds in raw_cfg[task_name].get("datasets", [])
+                if ds["id"] in dataset_ids
             ]
 
 
@@ -151,8 +155,12 @@ def _current_dataset_summary(run_dir: str):
     if current:
         return current
     datasets = state.get("datasets", {})
-    pending = [d for d in datasets.values() if d["status"] in ("running", "paused", "pending")]
-    pending.sort(key=lambda x: (x["status"] != "running", x["task_name"], x["dataset_id"]))
+    pending = [
+        d for d in datasets.values() if d["status"] in ("running", "paused", "pending")
+    ]
+    pending.sort(
+        key=lambda x: (x["status"] != "running", x["task_name"], x["dataset_id"])
+    )
     if pending:
         d = pending[0]
         return f"{d['task_name']} / {d['dataset_id']} ({d['completed_units']}/{d['total_units']} splits)"
@@ -174,7 +182,14 @@ def _tail_log(run_dir: str, n: int = 40):
     return out
 
 
-def _spawn_runner(args, run_id: str, run_dir: str, snapshot_path: str, timeout: int, resume: bool = False):
+def _spawn_runner(
+    args,
+    run_id: str,
+    run_dir: str,
+    snapshot_path: str,
+    timeout: int,
+    resume: bool = False,
+):
     python_bin = sys.executable
     if resume:
         cmd = [python_bin, "-m", "scripts.python.main", "--resume-run", run_dir]
@@ -204,16 +219,21 @@ def _spawn_runner(args, run_id: str, run_dir: str, snapshot_path: str, timeout: 
 def render_index(output_root: str) -> str:
     runs = _list_runs(output_root)
     active_run = _find_active_run(output_root)
-    history_runs = [run for run in runs if not active_run or run["run_id"] != active_run["run_id"]]
+    history_runs = [
+        run for run in runs if not active_run or run["run_id"] != active_run["run_id"]
+    ]
     table_rows = []
     for run in history_runs:
         pct = run["progress"].get("pct_complete", 0.0)
+        status = run["status"]
         alive = "yes" if run["runner_alive"] else "no"
+        status_badge = f"badge-{status}"
+        alive_badge = f"badge-yes" if run["runner_alive"] else "badge-no"
         table_rows.append(
             f"<tr><td><a href='/runs/{html.escape(run['run_id'])}'>{html.escape(run['run_id'])}</a></td>"
-            f"<td>{html.escape(run['status'])}</td>"
-            f"<td><progress max='100' value='{pct:.2f}'></progress> {pct:.2f}%</td>"
-            f"<td>{alive}</td>"
+            f"<td><span class='badge {status_badge}'>{html.escape(status)}</span></td>"
+            f"<td><div class='progress-wrap'><progress max='100' value='{pct:.2f}'></progress><span>{pct:.1f}%</span></div></td>"
+            f"<td><span class='badge {alive_badge}'>{alive}</span></td>"
             f"<td>{html.escape(str(run['updated_at_utc']))}</td></tr>"
         )
     dataset_catalog = _dataset_catalog()
@@ -229,19 +249,21 @@ def render_index(output_root: str) -> str:
         )
     if active_run:
         pct = active_run["progress"].get("pct_complete", 0.0)
+        status = active_run["status"]
+        status_badge = f"badge-{status}"
+        alive_badge = "badge-yes" if active_run["runner_alive"] else "badge-no"
         active_html = f"""
 <div class='hero card'>
 <h2>Current Run</h2>
-<p class='big'>{html.escape(active_run['status'].title())}</p>
-<p><progress max='100' value='{pct:.2f}'></progress> <strong>{pct:.2f}%</strong></p>
-<p>Current work: <code>{html.escape(_current_dataset_summary(active_run['run_dir']) or '-')}</code></p>
-<p>Runner alive: {'yes' if active_run['runner_alive'] else 'no'}</p>
-<p>Updated: {html.escape(str(active_run['updated_at_utc']))}</p>
+<p class='big' style='color:var(--{"running" if status == "running" else "warning" if status == "paused" else "text"})'><span class='badge {status_badge}'>{html.escape(status)}</span></p>
+<div class='progress-wrap'><progress max='100' value='{pct:.2f}'></progress><strong>{pct:.1f}%</strong></div>
+<p style='color:var(--text-muted);margin-top:16px'><strong>Current work:</strong> <code>{html.escape(_current_dataset_summary(active_run["run_dir"]) or "-")}</code></p>
+<p style='color:var(--text-muted)'><strong>Runner:</strong> <span class='badge {alive_badge}'>{"yes" if active_run["runner_alive"] else "no"}</span> &nbsp;|&nbsp; <strong>Updated:</strong> {html.escape(str(active_run["updated_at_utc"]))}</p>
 <div class='actions'>
 <a class='btn' href='/runs/{html.escape(active_run["run_id"])}'>Open Current Run</a>
 <form method='post' action='/runs/{html.escape(active_run["run_id"])}/pause'><button type='submit'>Pause</button></form>
 <form method='post' action='/runs/{html.escape(active_run["run_id"])}/resume'><button type='submit'>Resume</button></form>
-<form method='post' action='/runs/{html.escape(active_run["run_id"])}/stop'><button type='submit'>Stop</button></form>
+<form method='post' action='/runs/{html.escape(active_run["run_id"])}/stop'><button type='submit' class='danger'>Stop</button></form>
 </div>
 </div>
 <div class='card muted'>
@@ -273,7 +295,7 @@ def render_index(output_root: str) -> str:
 <div class='dataset-wrap'>
 <h3>Datasets</h3>
 <p class='muted-text'>All datasets are selected by default. Deselect any you do not want.</p>
-{''.join(dataset_sections)}
+{"".join(dataset_sections)}
 </div>
 </details>
 <button class='primary' type='submit'>Start Run</button>
@@ -283,15 +305,38 @@ def render_index(output_root: str) -> str:
     return f"""<!doctype html>
 <html><head><meta charset='utf-8'><meta http-equiv='refresh' content='5'><title>TPSM Runner</title>
 <style>
-body{{font-family:sans-serif;max-width:1100px;margin:20px auto;padding:0 16px;background:#f6f6f4;color:#1d1d1b}}
-table{{border-collapse:collapse;width:100%}}td,th{{border:1px solid #ccc;padding:6px;text-align:left}}
-.row{{display:flex;gap:24px;align-items:flex-start;flex-wrap:wrap}}.card{{flex:1;border:1px solid #ccc;padding:16px;background:#fff;border-radius:10px}}
-.hero{{width:100%}} .muted{{opacity:.7}}
-input[type=text],input[type=number],select{{width:100%;padding:8px;margin:4px 0 10px;box-sizing:border-box}}
-.actions form{{display:inline-block;margin-right:8px}} .actions .btn, button{{padding:8px 12px;border:1px solid #333;background:#fff;cursor:pointer;text-decoration:none;color:#111;border-radius:6px}}
-button.primary{{background:#111;color:#fff}}
-.dataset-grid{{display:grid;grid-template-columns:repeat(2,minmax(180px,1fr));gap:6px 16px;margin:8px 0 12px}}
-.ds-item{{display:block}} .big{{font-size:1.5rem;font-weight:700}} .muted-text{{color:#666}} progress{{width:140px}}
+:root{{--bg:#0f172a;--card-bg:#1e293b;--text:#e2e8f0;--text-muted:#94a3b8;--accent:#38bdf8;--accent-hover:#0ea5e9;--border:#334155;--success:#22c55e;--warning:#f59e0b;--danger:#ef4444;--running:#3b82f6}}
+body{{font-family:'Inter',system-ui,-apple-system,sans-serif;max-width:1200px;margin:0 auto;padding:24px;background:var(--bg);color:var(--text);line-height:1.6}}
+h1{{font-size:1.75rem;font-weight:700;margin-bottom:24px;letter-spacing:-0.025em}}
+h2{{font-size:1.25rem;font-weight:600;margin-bottom:16px;color:var(--text)}}
+h3{{font-size:1rem;font-weight:600;margin:16px 0 8px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.05em;font-size:0.75rem}}
+a{{color:var(--accent);text-decoration:none}} a:hover{{text-decoration:underline}}
+.row{{display:flex;gap:24px;flex-wrap:wrap}}.card{{flex:1;min-width:320px;background:var(--card-bg);border:1px solid var(--border);padding:20px;border-radius:12px;box-shadow:0 4px 6px -1px rgba(0,0,0,0.3)}}
+.hero{{width:100%}}.muted{{opacity:0.7}}
+table{{border-collapse:collapse;width:100%;margin-top:12px}}td,th{{border-bottom:1px solid var(--border);padding:10px 8px;text-align:left;font-size:0.875rem}}
+th{{color:var(--text-muted);font-weight:500}}tr:hover{{background:rgba(255,255,255,0.02)}}
+input[type=text],input[type=number],select{{width:100%;padding:10px;margin:4px 0 16px;box-sizing:border-box;background:#0f172a;border:1px solid var(--border);color:var(--text);border-radius:8px;font-size:0.9rem}}
+input:focus,select:focus{{outline:none;border-color:var(--accent);box-shadow:0 0 0 2px rgba(56,189,248,0.2)}}
+label{{display:block;font-size:0.875rem;color:var(--text-muted);margin-bottom:4px;margin-top:12px}}
+label:first-of-type{{margin-top:0}}
+.actions{{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px}}
+.actions form{{display:inline-block;margin:0}}.actions .btn,button{{padding:10px 16px;border:none;border-radius:8px;cursor:pointer;text-decoration:none;font-size:0.875rem;font-weight:500;transition:all 0.2s}}
+.btn{{background:var(--card-bg);color:var(--text);border:1px solid var(--border)}}:hover .btn{{background:var(--border)}}
+button{{background:var(--accent);color:#fff}}button:hover{{background:var(--accent-hover);transform:translateY(-1px)}}
+button.danger{{background:var(--danger)}}button.danger:hover{{background:#dc2626}}
+.dataset-grid{{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px;margin:12px 0}}
+.ds-item{{display:flex;align-items:center;gap:8px;padding:8px 12px;background:rgba(255,255,255,0.03);border-radius:6px;cursor:pointer;transition:background 0.2s}}
+.ds-item:hover{{background:rgba(255,255,255,0.06)}}input[type=checkbox]{{width:auto;margin:0;accent-color:var(--accent)}}
+.big{{font-size:2rem;font-weight:700;margin:8px 0;letter-spacing:-0.025em}}progress{{width:100%;height:8px;border-radius:4px;appearance:none;-webkit-appearance:none}}
+progress::-webkit-progress-bar{{background:var(--border);border-radius:4px}}progress::-webkit-progress-value{{background:linear-gradient(90deg,var(--accent),#a78bfa);border-radius:4px;transition:width 0.3s}}
+.badge{{display:inline-block;padding:4px 10px;border-radius:9999px;font-size:0.75rem;font-weight:600;text-transform:capitalize}}
+.badge-running{{background:rgba(59,130,246,0.2);color:#60a5fa}}.badge-completed{{background:rgba(34,197,94,0.2);color:#4ade80}}
+.badge-stopped{{background:rgba(239,68,68,0.2);color:#f87171}}.badge-paused{{background:rgba(245,158,11,0.2);color:#fbbf24}}
+.badge-yes{{background:rgba(34,197,94,0.2);color:#4ade80}}.badge-no{{background:rgba(148,163,184,0.2);color:#94a3b8}}
+details{{margin-top:16px;background:rgba(0,0,0,0.2);border-radius:8px;padding:12px}}summary{{cursor:pointer;font-weight:500;color:var(--text-muted);list-style:none}}summary::before{{content:'▶';display:inline-block;margin-right:8px;font-size:0.7rem;transition:transform 0.2s}}details[open] summary::before{{transform:rotate(90deg)}}
+.adv-settings{{margin-top:12px;display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px}}
+.muted-text{{color:var(--text-muted);font-size:0.875rem;margin-bottom:12px}}
+.progress-wrap{{display:flex;align-items:center;gap:12px}}progress{{flex:1}}
 </style></head><body>
 <h1>TPSM Python Runner</h1>
 <div class='row'>
@@ -299,7 +344,7 @@ button.primary{{background:#111;color:#fff}}
 <div class='card'>
 <h2>Run History</h2>
 <table><thead><tr><th>Run</th><th>Status</th><th>Progress</th><th>Alive</th><th>Updated</th></tr></thead>
-<tbody>{''.join(table_rows) or '<tr><td colspan=5>No runs yet</td></tr>'}</tbody></table>
+<tbody>{"".join(table_rows) or '<tr><td colspan=5 style="text-align:center;color:var(--text-muted)">No runs yet</td></tr>'}</tbody></table>
 </div>
 </div>
 </body></html>"""
@@ -316,48 +361,76 @@ def render_run_detail(output_root: str, run_id: str) -> str:
     progress = state.get("progress", {})
     dataset_rows = []
     for ds in state.get("datasets", {}).values():
-        pct = (ds["completed_units"] / ds["total_units"] * 100.0) if ds["total_units"] else 0.0
+        pct = (
+            (ds["completed_units"] / ds["total_units"] * 100.0)
+            if ds["total_units"]
+            else 0.0
+        )
+        ds_status = ds["status"]
+        status_badge = f"badge-{ds_status}"
         dataset_rows.append(
             f"<tr><td>{html.escape(ds['task_name'])}</td><td>{html.escape(ds['dataset_id'])}</td>"
-            f"<td>{html.escape(ds['status'])}</td><td>{ds['completed_units']}/{ds['total_units']}</td>"
-            f"<td><progress max='100' value='{pct:.2f}'></progress> {pct:.2f}%</td></tr>"
+            f"<td><span class='badge {status_badge}'>{html.escape(ds_status)}</span></td><td>{ds['completed_units']}/{ds['total_units']}</td>"
+            f"<td><div class='progress-wrap'><progress max='100' value='{pct:.2f}'></progress><span>{pct:.1f}%</span></div></td></tr>"
         )
     log_html = "".join(
-        f"<li><code>{html.escape(item.get('timestamp_utc',''))}</code> "
-        f"<strong>{html.escape(item.get('event',''))}</strong> "
+        f"<li><code>{html.escape(item.get('timestamp_utc', ''))}</code> "
+        f"<strong>{html.escape(item.get('event', ''))}</strong> "
         f"{html.escape(json.dumps(item.get('data', {}), sort_keys=True))}</li>"
         for item in logs
     )
+    run_status = state["status"]
+    status_badge = f"badge-{run_status}"
+    alive = _is_pid_alive(state.get("runner_pid"))
+    alive_badge = "badge-yes" if alive else "badge-no"
     return f"""<!doctype html>
 <html><head><meta charset='utf-8'><meta http-equiv='refresh' content='5'><title>{html.escape(run_id)}</title>
 <style>
-body{{font-family:sans-serif;max-width:1200px;margin:20px auto;padding:0 16px}}
-table{{border-collapse:collapse;width:100%}}td,th{{border:1px solid #ccc;padding:6px;text-align:left}}
-.row{{display:flex;gap:24px;align-items:flex-start}}.card{{flex:1;border:1px solid #ccc;padding:16px}}
-.actions form{{display:inline-block;margin-right:8px}}
+:root{{--bg:#0f172a;--card-bg:#1e293b;--text:#e2e8f0;--text-muted:#94a3b8;--accent:#38bdf8;--accent-hover:#0ea5e9;--border:#334155;--success:#22c55e;--warning:#f59e0b;--danger:#ef4444;--running:#3b82f6}}
+body{{font-family:'Inter',system-ui,-apple-system,sans-serif;max-width:1200px;margin:0 auto;padding:24px;background:var(--bg);color:var(--text);line-height:1.6}}
+h1{{font-size:1.75rem;font-weight:700;margin-bottom:24px;letter-spacing:-0.025em}}
+h2{{font-size:1.25rem;font-weight:600;margin-bottom:16px}}
+a{{color:var(--accent);text-decoration:none}}a:hover{{text-decoration:underline}}
+.row{{display:flex;gap:24px;flex-wrap:wrap}}.card{{flex:1;min-width:320px;background:var(--card-bg);border:1px solid var(--border);padding:20px;border-radius:12px;box-shadow:0 4px 6px -1px rgba(0,0,0,0.3)}}
+table{{border-collapse:collapse;width:100%;margin-top:12px}}td,th{{border-bottom:1px solid var(--border);padding:10px 8px;text-align:left;font-size:0.875rem}}
+th{{color:var(--text-muted);font-weight:500}}tr:hover{{background:rgba(255,255,255,0.02)}}
+.actions{{display:flex;gap:10px;flex-wrap:wrap;margin:20px 0}}
+.actions form{{display:inline-block;margin:0}}button{{padding:10px 16px;border:none;border-radius:8px;cursor:pointer;font-size:0.875rem;font-weight:500;transition:all 0.2s;background:var(--accent);color:#fff}}button:hover{{background:var(--accent-hover);transform:translateY(-1px)}}
+button.danger{{background:var(--danger)}}button.danger:hover{{background:#dc2626}}
+progress{{width:100%;height:8px;border-radius:4px;appearance:none;-webkit-appearance:none}}progress::-webkit-progress-bar{{background:var(--border);border-radius:4px}}progress::-webkit-progress-value{{background:linear-gradient(90deg,var(--accent),#a78bfa);border-radius:4px;transition:width 0.3s}}
+.badge{{display:inline-block;padding:4px 10px;border-radius:9999px;font-size:0.75rem;font-weight:600;text-transform:capitalize}}
+.badge-running{{background:rgba(59,130,246,0.2);color:#60a5fa}}.badge-completed{{background:rgba(34,197,94,0.2);color:#4ade80}}
+.badge-stopped{{background:rgba(239,68,68,0.2);color:#f87171}}.badge-paused{{background:rgba(245,158,11,0.2);color:#fbbf24}}.badge-failed{{background:rgba(239,68,68,0.2);color:#f87171}}
+.badge-yes{{background:rgba(34,197,94,0.2);color:#4ade80}}.badge-no{{background:rgba(148,163,184,0.2);color:#94a3b8}}
+.progress-wrap{{display:flex;align-items:center;gap:12px}}progress{{flex:1}}
+.summary-grid{{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-top:16px}}
+.summary-item{{background:rgba(0,0,0,0.2);padding:12px;border-radius:8px}}.summary-item strong{{color:var(--text-muted);font-size:0.75rem;text-transform:uppercase;letter-spacing:0.05em;display:block;margin-bottom:4px}}
+code{{background:rgba(0,0,0,0.3);padding:2px 6px;border-radius:4px;font-size:0.85rem;word-break:break-all}}
+ul{{list-style:none;padding:0;margin:0}}li{{padding:8px 0;border-bottom:1px solid var(--border);font-size:0.875rem}}li:last-child{{border:none}}
 </style></head><body>
-<p><a href='/'>Back</a></p>
+<p><a href='/'>&larr; Back to Dashboard</a></p>
 <h1>Run {html.escape(run_id)}</h1>
 <div class='actions'>
 <form method='post' action='/runs/{html.escape(run_id)}/pause'><button type='submit'>Pause After Split</button></form>
 <form method='post' action='/runs/{html.escape(run_id)}/resume'><button type='submit'>Resume</button></form>
-<form method='post' action='/runs/{html.escape(run_id)}/stop'><button type='submit'>Stop After Split</button></form>
+<form method='post' action='/runs/{html.escape(run_id)}/stop'><button type='submit' class='danger'>Stop After Split</button></form>
 </div>
 <div class='row'>
 <div class='card'>
 <h2>Summary</h2>
-<p>Status: <strong>{html.escape(state['status'])}</strong></p>
-<p>Overall progress: <progress max='100' value='{progress.get('pct_complete', 0.0):.2f}'></progress> <strong>{progress.get('pct_complete', 0.0):.2f}%</strong></p>
-<p>Completed units: {progress.get('completed_units', 0)}/{progress.get('total_units', 0)}</p>
-<p>Completed datasets: {progress.get('completed_datasets', 0)}/{progress.get('total_datasets', 0)}</p>
-<p>Current unit: <code>{html.escape(current)}</code></p>
-<p>Runner alive: {'yes' if _is_pid_alive(state.get('runner_pid')) else 'no'}</p>
-<p>Updated: {html.escape(str(state.get('updated_at_utc')))}</p>
+<div class='summary-grid'>
+<div class='summary-item'><strong>Status</strong><span class='badge {status_badge}'>{html.escape(run_status)}</span></div>
+<div class='summary-item'><strong>Progress</strong><div class='progress-wrap'><progress max='100' value='{progress.get("pct_complete", 0.0):.2f}'></progress><span>{progress.get("pct_complete", 0.0):.1f}%</span></div></div>
+<div class='summary-item'><strong>Units</strong>{progress.get("completed_units", 0)} / {progress.get("total_units", 0)}</div>
+<div class='summary-item'><strong>Datasets</strong>{progress.get("completed_datasets", 0)} / {progress.get("total_datasets", 0)}</div>
+<div class='summary-item'><strong>Current Unit</strong><code>{html.escape(current)}</code></div>
+<div class='summary-item'><strong>Runner</strong><span class='badge {alive_badge}'>{"yes" if alive else "no"}</span> &nbsp;|&nbsp; {html.escape(str(state.get("updated_at_utc")))}</div>
+</div>
 </div>
 <div class='card'>
 <h2>Dataset Progress</h2>
 <table><thead><tr><th>Task</th><th>Dataset</th><th>Status</th><th>Units</th><th>Progress</th></tr></thead>
-<tbody>{''.join(dataset_rows)}</tbody></table>
+<tbody>{"".join(dataset_rows)}</tbody></table>
 </div>
 </div>
 <div class='card'>
@@ -403,14 +476,18 @@ class Handler(BaseHTTPRequestHandler):
             run_id = self.path.split("/runs/", 1)[1]
             return self._send_html(render_run_detail(self.args.output_root, run_id))
         if self.path == "/api/runs":
-            return self._send_json({"runs": _list_runs(self.args.output_root), "timestamp_utc": utc_now()})
+            return self._send_json(
+                {"runs": _list_runs(self.args.output_root), "timestamp_utc": utc_now()}
+            )
         if self.path.startswith("/api/runs/"):
             run_id = self.path.split("/api/runs/", 1)[1]
             run_dir = os.path.join(self.args.output_root, run_id)
             state_path = os.path.join(run_dir, "state", "run_state.json")
             if not os.path.exists(state_path):
                 return self._send_json({"error": "not_found"}, 404)
-            return self._send_json({"state": load_json(state_path), "logs": _tail_log(run_dir, 60)})
+            return self._send_json(
+                {"state": load_json(state_path), "logs": _tail_log(run_dir, 60)}
+            )
         return self._send_json({"error": "not_found"}, 404)
 
     def do_POST(self):
@@ -427,7 +504,9 @@ class Handler(BaseHTTPRequestHandler):
             with open(snapshot_path, "w", encoding="utf-8") as f:
                 yaml.safe_dump(raw_cfg, f, sort_keys=False)
             timeout = int(raw_cfg.get("global", {}).get("timeout_seconds", 300))
-            _spawn_runner(self.args, run_id, run_dir, snapshot_path, timeout, resume=False)
+            _spawn_runner(
+                self.args, run_id, run_dir, snapshot_path, timeout, resume=False
+            )
             return self._redirect(f"/runs/{run_id}")
 
         if self.path.startswith("/runs/"):
@@ -469,7 +548,9 @@ class Handler(BaseHTTPRequestHandler):
             with open(snapshot_path, "w", encoding="utf-8") as f:
                 yaml.safe_dump(raw_cfg, f, sort_keys=False)
             timeout = int(raw_cfg.get("global", {}).get("timeout_seconds", 300))
-            proc = _spawn_runner(self.args, run_id, run_dir, snapshot_path, timeout, resume=False)
+            proc = _spawn_runner(
+                self.args, run_id, run_dir, snapshot_path, timeout, resume=False
+            )
             return self._send_json(
                 {
                     "ok": True,
@@ -507,8 +588,12 @@ class Handler(BaseHTTPRequestHandler):
                 if os.path.exists(stop_path):
                     os.remove(stop_path)
                 if not _is_pid_alive(state.get("runner_pid")):
-                    proc = _spawn_runner(self.args, run_id, run_dir, "", 300, resume=True)
-                    return self._send_json({"ok": True, "status": "resumed", "pid": proc.pid})
+                    proc = _spawn_runner(
+                        self.args, run_id, run_dir, "", 300, resume=True
+                    )
+                    return self._send_json(
+                        {"ok": True, "status": "resumed", "pid": proc.pid}
+                    )
                 return self._send_json({"ok": True, "status": "already_running"})
         return self._send_json({"error": "bad_request"}, 400)
 
