@@ -303,3 +303,27 @@ TPSM Project Development Journal
 **Next steps:**
 - Push the consolidated commit to `origin/dev`
 - Optionally follow with a cleanup commit to separate generated artifacts from source changes later
+
+---
+
+## 18:50
+
+**Task:** Fix parallel stop-on-first-fail behavior so running datasets drain instead of failing synthetically
+
+**What was done:**
+- Updated `scripts/python/main.py` so internal stop-on-first-fail only cancels pending jobs and does not interrupt datasets already running through split evaluation
+- Kept external STOP/PAUSE file handling active for running jobs by separating the worker's in-flight control callback from the pending-job cancellation path
+- Added `stop_reason` to the final summary and preserved accurate `completed_datasets`, `successful_datasets`, and `stopped_early` accounting
+
+**Verification completed:**
+- `py_compile` passed for `scripts/python/main.py`
+- Sequential and parallel `config/mini_smoke.yaml` runs still matched exactly on row counts and metric values
+- STOP-before-start check produced zero completed, zero failed, and `stop_reason: control_file_before_dataset`
+
+**Status:**
+- Parallel control-flow fix implemented ✅
+- PR branch updated for review feedback ✅
+
+**Next steps:**
+- Push the updated PR branch to GitHub
+- Refresh PR review state after the new commit lands
