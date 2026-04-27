@@ -37,12 +37,11 @@ write.csv(stat_results, output_file, row.names = FALSE)
 cat("\n>>> Statistical results written to:", output_file, "\n")
 
 tasks <- unique(stat_results$task_type)
-metrics <- unique(stat_results$metric_name)
 
 for (task_type in tasks) {
-  task_metrics <- metrics
+  task_metrics <- unique(stat_results$metric_name[stat_results$task_type == task_type])
   if (!is.null(METRIC_FILTER)) {
-    task_metrics <- metrics[metrics %in% stat_results$metric_name[stat_results$task_type == task_type]]
+    task_metrics <- task_metrics[task_metrics == METRIC_FILTER]
   }
   
   for (metric in task_metrics) {

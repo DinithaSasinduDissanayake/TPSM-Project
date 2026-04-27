@@ -1,3 +1,5 @@
+`%>%` <- dplyr::`%>%`
+
 perform_statistical_tests <- function(df) {
   required_cols <- c("difference_value", "ensemble_better", "metric_name",
                      "dataset_id", "single_model_name", "ensemble_model_name",

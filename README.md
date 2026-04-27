@@ -103,6 +103,13 @@ Rscript scripts/main.R --task classification --workers 4
 Rscript scripts/main.R --config config/quick_test.yaml
 ```
 
+**Run the cheapest end-to-end validation path:**
+```bash
+Rscript scripts/main.R --config config/minimal_validation.yaml --output-dir .runtime/minimal_validation
+Rscript scripts/combine_outputs.R .runtime/minimal_validation
+Rscript scripts/analysis_statistical.R .runtime/minimal_validation/combined_pairwise_differences.csv .runtime/minimal_validation/analysis
+```
+
 ---
 
 ## Technical Approach
