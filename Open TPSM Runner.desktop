@@ -1,9 +1,0 @@
-[Desktop Entry]
-Version=1.0
-Type=Application
-Name=Open TPSM Runner
-Comment=Open the TPSM runner web view in the browser
-Exec=/home/sasindu/Documents/SLIIT\ Materials/TPSM-Project/scripts/open_tpsm_gui.sh
-Path=/home/sasindu/Documents/SLIIT Materials/TPSM-Project
-Terminal=false
-Categories=Development;

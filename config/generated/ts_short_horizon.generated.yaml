@@ -1,0 +1,22 @@
+global:
+  stop_on_first_fail: false
+  timeout_seconds: 300
+  parallel_workers: 1
+timeseries:
+  split_method: rolling_origin
+  splits: 24
+  metrics:
+  - rmse
+  - mae
+  model_pairs:
+  - single: arima
+    ensemble: gbm_lag
+  - single: exp_smoothing
+    ensemble: gbm_lag
+  datasets:
+  - id: melbourne_temp
+    source: other
+    path: data/timeseries/melbourne_temp.csv
+    url: https://raw.githubusercontent.com/jbrownlee/Datasets/master/daily-min-temperatures.csv
+    target: Temp
+    time_col: Date

@@ -1,9 +1,0 @@
-[Desktop Entry]
-Version=1.0
-Type=Application
-Name=TPSM Runner
-Comment=Start the TPSM Python runner GUI and open it in the browser
-Exec=/home/sasindu/Documents/SLIIT\ Materials/TPSM-Project/scripts/launch_tpsm_gui.sh
-Path=/home/sasindu/Documents/SLIIT Materials/TPSM-Project
-Terminal=false
-Categories=Development;

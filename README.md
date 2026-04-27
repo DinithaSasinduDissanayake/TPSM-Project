@@ -1,224 +1,227 @@
 # Ensemble Models vs Single Models
 
-> A statistical analysis comparing ensemble and single model performance on prediction tasks
+TPSM project for comparing ensemble models against single models across classification, regression, and time-series prediction tasks.
 
-[![R](https://img.shields.io/badge/R-4.x-blue.svg)](https://www.r-project.org/)
-[![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+Main question:
 
----
+> Do ensemble models consistently outperform single models, or does the advantage depend on dataset, task, and metric?
 
-## Overview
+## Repo Map
 
-This project investigates the hypothesis: **"Ensemble models perform better than single models in many prediction tasks."**
+Read this section first. Folder names match how the project is meant to be used.
 
-We compare ensemble methods (Random Forest) against single models (Linear/Logistic Regression) across classification and regression tasks using formal statistical hypothesis testing.
-
-Current validation status for the Python pipeline is documented in [docs/python-validation-2026-03-06.md](docs/python-validation-2026-03-06.md). Current overall confidence after targeted audits and fixes is `98/100`.
-
----
-
-## Research Question
-
-Do ensemble models consistently outperform single models, or does their advantage depend on specific conditions?
-
-### Hypotheses
-
-- **H₀:** Ensemble models do not improve performance over single models (μd = 0)
-- **H₁:** Ensemble models improve performance over single models (μd > 0)
-
----
-
-## Methodology
-
-| Step | Description |
-|------|-------------|
-| 1 | Dataset selection (classification + regression) |
-| 2 | Descriptive analysis of distributions |
-| 3 | Train single models (Linear/Logistic Regression) |
-| 4 | Train ensemble models (Random Forest) |
-| 5 | K-Fold cross-validation (K=5 or 10) |
-| 6 | Paired t-test for significance |
-| 7 | Interpretation of results |
-| 8 | Conclusion |
-
-See [methodology](docs/methodology.md) for detailed approach.
-
----
-
-## Usage
-
-### Basic Run
-
-```bash
-Rscript scripts/main.R
+```text
+code/          runnable Python/R/tools
+config/        production/smoke/debug/generated configs
+data/          datasets used by the pipelines
+outputs/       active outputs plus archived runs
+docs/          report, methodology, validation, figures
+presentation/  browser presentation versions
+logs/          archived logs
+archive/       old notes, old decks, scratch files
 ```
 
-This runs the full pipeline with default settings:
-- All tasks (classification, regression, timeseries)
-- Sequential processing (1 worker)
-- Output to `outputs/` directory
+Important deliverables:
 
-### CLI Options
-
-| Flag | Description | Example |
-|------|-------------|---------|
-| `--fast` | Enable fast mode (auto-detects CPU cores) | `--fast` |
-| `--workers <N>` | Set specific number of parallel workers | `--workers 8` |
-| `--task <name>` | Run only specific task (classification/regression/timeseries) | `--task classification` |
-| `--output-dir <path>` | Custom output directory | `--output-dir my_results` |
-| `--config <path>` | Use custom config file | `--config config/quick_test.yaml` |
-
-### Fast Mode
-
-The `--fast` flag enables dataset-level parallelism for faster execution:
-
-**When to use:**
-- Running with many datasets (10+ datasets)
-- Production runs with full dataset suite (25 datasets)
-
-**Performance expectations:**
-- With 25 datasets: **6-10x speedup** (20 min → 2-3 min)
-- With 3 datasets: Slower due to parallelization overhead
-
-**Worker count:**
-- Auto-detects CPU cores and sets workers to `cores - 2`
-- Can be overridden with `--workers <N>` flag
-
-**Reproducibility:**
-- Fast mode produces identical results to sequential mode
-- Verified across classification, regression, and timeseries tasks
-
-### Examples
-
-**Run all datasets in fast mode:**
-```bash
-Rscript scripts/main.R --fast
+```text
+docs/report/                         research reports
+docs/methodology/                    methodology and requirements
+docs/validation/                     validation notes
+docs/figures/                        generated charts and diagrams
+presentation/browser-deck-shadcn/    main future-facing browser deck
+presentation/slidev-deck/            Slidev browser deck experiment
+outputs/active/                      new runs
+outputs/archive/                     old complete runs
 ```
 
-**Run only classification task with 4 workers:**
-```bash
-Rscript scripts/main.R --task classification --workers 4
-```
+## Python Pipeline
 
-**Run with custom config:**
-```bash
-Rscript scripts/main.R --config config/quick_test.yaml
-```
-
-### Local GUI Launcher
-
-For the Python resumable runner UI on Linux, you can use the repo-local launchers:
-
-- [TPSM Runner.desktop](/home/sasindu/Documents/SLIIT Materials/TPSM-Project/TPSM Runner.desktop): starts the local GUI server and opens the browser
-- [Open TPSM Runner.desktop](/home/sasindu/Documents/SLIIT Materials/TPSM-Project/Open TPSM Runner.desktop): opens the web view at `http://127.0.0.1:8787`
-
-Shell launchers:
+Run a small smoke test:
 
 ```bash
-./scripts/launch_tpsm_gui.sh
-./scripts/open_tpsm_gui.sh
+python -m code.python.tpsm.main --config config/smoke/mini_smoke.yaml --output-dir outputs/active/python
 ```
 
----
+Run the full production config:
 
-## Technical Approach
+```bash
+python -m code.python.tpsm.main --config config/production/datasets.yaml --output-dir outputs/active/python
+```
 
-### Models Compared
+Resume a run:
 
-| Task | Single Model | Ensemble Model |
-|------|--------------|----------------|
+```bash
+python -m code.python.tpsm.main --resume-run outputs/active/python/<run-id>
+```
+
+Python output files:
+
+```text
+model_runs.csv
+pairwise_differences.csv
+analysis_ready_pairwise.csv
+run_manifest.json
+run_log.txt
+warnings_report.json
+failed_datasets.csv
+state/run_state.json
+```
+
+## R Pipeline
+
+Run a small smoke test:
+
+```bash
+Rscript code/r/main.R --config config/smoke/mini_smoke.yaml --output-dir outputs/active/r
+```
+
+Run the full production config:
+
+```bash
+Rscript code/r/main.R --config config/production/datasets.yaml --output-dir outputs/active/r
+```
+
+R output files:
+
+```text
+model_runs.csv
+pairwise_differences.csv
+run_manifest.json
+run_log.txt
+warnings_report.json
+```
+
+## GUI
+
+Start the local Python runner UI:
+
+```bash
+python -m code.python.tpsm.gui --output-root outputs/active/gui_runs
+```
+
+Or use the launcher:
+
+```bash
+./code/tools/launch_tpsm_gui.sh
+```
+
+Open the GUI page:
+
+```bash
+./code/tools/open_tpsm_gui.sh
+```
+
+Default URL:
+
+```text
+http://127.0.0.1:8787
+```
+
+GUI runs are Python runs stored under:
+
+```text
+outputs/active/gui_runs/
+```
+
+## Output Archive Behavior
+
+New output roots:
+
+```text
+outputs/active/python
+outputs/active/r
+outputs/active/gui_runs
+```
+
+Archive roots:
+
+```text
+outputs/archive/python
+outputs/archive/r
+outputs/archive/gui_runs
+```
+
+When a new complete run finishes, old complete runs in the same active output root are moved to the matching archive folder.
+
+Incomplete, paused, stopped, or failed runs stay in `outputs/active/` so they can be inspected or resumed.
+
+Old pre-reorganization outputs live in:
+
+```text
+outputs/archive/legacy/
+```
+
+## Presentation
+
+Main browser deck:
+
+```bash
+cd presentation/browser-deck-shadcn
+npm install
+npm run dev
+npm run build
+```
+
+Slidev experiment:
+
+```bash
+cd presentation/slidev-deck
+npm install
+npm run dev
+npm run build
+```
+
+The shadcn browser deck is the preferred direction for future presentation work. The Slidev deck is kept because presenter mode and export tooling may still be useful.
+
+## Validation After Changes
+
+Run path validation first:
+
+```bash
+python code/tools/validate_repo_paths.py
+```
+
+Run pipeline smoke checks:
+
+```bash
+python -m code.python.tpsm.main --config config/smoke/mini_smoke.yaml --output-dir outputs/active/python_validation
+Rscript code/r/main.R --config config/smoke/mini_smoke.yaml --output-dir outputs/active/r_validation
+```
+
+Run presentation builds:
+
+```bash
+cd presentation/browser-deck-shadcn && npm install && npm run build
+cd presentation/slidev-deck && npm install && npm run build
+```
+
+## Research Summary
+
+Models compared:
+
+| Task | Single Models | Ensemble Models |
+| --- | --- | --- |
 | Classification | Logistic Regression, Decision Tree, Naive Bayes | Gradient Boosting, Random Forest |
 | Regression | Linear Regression, Decision Tree, SVR | Gradient Boosting Regressor |
-| Time Series | ARIMA, Exponential Smoothing | GBM with Lag Features |
+| Time Series | ARIMA, Exponential Smoothing | GBM with lag features |
 
-### Tools
+Current interpretation:
 
-- **R** — primary language (recommended by lecturer)
-- **gbm** — gradient boosting for classification and regression
-- **rpart** — decision trees
-- **e1071** — SVR, Naive Bayes
-- **forecast** — time series (ARIMA, Exponential Smoothing)
-- **tidyverse** — data manipulation and visualization
-- **future/furrr** — parallel processing (for `--fast` mode)
-- **filelock** — safe concurrent file operations
-
-> "I don't restrict you to use the R. You can go with any analysis tool but I recommend you to use the R. R is having the most powerful statistical repositories."
->
-> — Mr. Samadhi Chathuranga Rathnayake
-> Week 1 Assignment Briefing
-
-### Statistical Validation
-
-- Paired t-test across K-fold results
-- Significance level: α = 0.05
-- Focus on interpretation, not just accuracy
-
----
-
-## Project Structure
-
-```
-TPSM-Project/
-├── README.md                 ← You are here
-├── TEAM_GUIDE.md             ← Start here (for team)
-├── docs/
-│   ├── methodology.md        ← Detailed approach
-│   ├── requirements.md       ← Project requirements
-│   └── qa-log.md             ← Questions & answers
-├── notebooks/                ← Jupyter notebooks (TBD)
-├── data/                     ← Datasets (TBD)
-└── Group Assignment/         ← Official documents
-```
-
----
-
-## Key Findings
-
-*Generated 3,160 model comparisons across classification, regression, and time series tasks.*
-
-### Summary Results
-
-| Task | Comparisons | Ensemble Win Rate |
-|------|-------------|-------------------|
-| Time Series | 160 | Historical aggregate only |
-| Regression | 1,200 | **85.5%** |
-| Classification | 1,800 | **54.7%** |
-| **Overall** | **3,160** | **68.7%** |
-
-### Key Insights
-
-1. **Regression**: Gradient boosting regressor is a strong and stable ensemble baseline after configuration fixes.
-2. **Classification**: Results remain dataset-dependent; the default tree ensemble benchmark was changed from AdaBoost to Random Forest because AdaBoost was unstable on multiclass datasets.
-3. **Time Series**: Results are mixed by dataset. ARIMA wins on some series, while `gbm_lag` wins on others. Heavy ARIMA datasets now use lighter dataset-specific controls for validation.
-4. **Metric interpretation matters**: `MAPE` is unreliable on several low-target time series datasets; prefer RMSE, MAE, and SMAPE there, and treat `MAPE` notes in pairwise outputs as reliability warnings.
-
-### Best Model Pairings
-
-| Pairing | Win Rate |
-|---------|----------|
-| decision_tree_regressor → gradient_boosting_regressor | 100% |
-| svr → gradient_boosting_regressor | 82.8% |
-| linear_regression → gradient_boosting_regressor | 73.8% |
-
----
+- Ensembles often help, especially in regression.
+- Classification results are more dataset-dependent.
+- Time-series results are mixed.
+- Metric choice matters, especially for low-target time-series datasets.
+- Final claim should stay conditional, not universal.
 
 ## Team
 
-**The Outliers** — IT3011 Theory and Practices in Statistical Modelling
+The Outliers — IT3011 Theory and Practices in Statistical Modelling
 
 | Member | Role |
-|--------|------|
+| --- | --- |
 | Dinitha Sasindu Dissanayake | Member |
 | Sithmini Thennakoon | Member |
 | Piyumika Hansika | Leader |
 | Tharindu Kavinda | Member |
 
-*Sri Lanka Institute of Information Technology (SLIIT)*
-
----
-
-## Course Information
-
-- **Module:** IT3011 — Theory and Practices in Statistical Modelling
-- **Semester:** Y3S2 (Jan–June 2026)
-- **Assignment:** Group Project (15% of module)
+Sri Lanka Institute of Information Technology.

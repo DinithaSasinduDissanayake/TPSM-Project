@@ -25,10 +25,23 @@ __pycache__/
 *.pyc
 .venv*/
 .ruff_cache/
+.aider.chat.history.md
+.aider.tags.cache.v4/
+.serena/
+.venv/
+.venv_tpsm/
+.runtime/
+**/node_modules/
+**/dist/
 
 # Run outputs
-outputs/*
+outputs/**
+!outputs/
 !outputs/.gitkeep
+!outputs/active/
+!outputs/active/.gitkeep
+!outputs/archive/
+!outputs/archive/.gitkeep
 
 # Downloaded data files (excluding tracked baseline datasets)
 # Baseline datasets (tracked): heart_disease.csv, breast_cancer.csv, bank_marketing.csv,

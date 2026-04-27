@@ -1,0 +1,16 @@
+{
+  "name": "tpsm-slidev-deck",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "slidev --open false",
+    "build": "slidev build",
+    "export": "slidev export --format pdf --output dist/tpsm-presentation.pdf"
+  },
+  "dependencies": {
+    "@slidev/cli": "^52.2.3",
+    "@slidev/theme-default": "^0.25.0",
+    "vue": "^3.5.22"
+  },
+  "devDependencies": {}
+}

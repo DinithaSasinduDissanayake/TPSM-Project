@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>TPSM Browser Deck</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <main id="deck" aria-label="TPSM presentation">
+      <section class="slide cover active" data-title="Cover">
+        <div class="cover-media"></div>
+        <div class="cover-content">
+          <p class="eyebrow">TPSM Project</p>
+          <h1>Ensemble Models vs Single Models</h1>
+          <p class="lede">A browser-native presentation prototype focused on readable evidence, sharp pacing, and final-deck polish.</p>
+          <div class="tag-row">
+            <span>Classification</span>
+            <span>Regression</span>
+            <span>Paired Evidence</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="slide question" data-title="Problem">
+        <div class="split">
+          <div>
+            <p class="eyebrow">Problem Statement</p>
+            <h2>Do ensembles consistently beat single models?</h2>
+          </div>
+          <div class="question-stack">
+            <article>
+              <span>01</span>
+              <p>Does the result change by dataset?</p>
+            </article>
+            <article>
+              <span>02</span>
+              <p>Does the result change by metric?</p>
+            </article>
+            <article>
+              <span>03</span>
+              <p>Can the conclusion survive warnings and failed runs?</p>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section class="slide method" data-title="Method">
+        <header>
+          <p class="eyebrow">Evidence Pipeline</p>
+          <h2>Keep comparison fair before judging model quality.</h2>
+        </header>
+        <div class="method-grid">
+          <article>
+            <span class="step">1</span>
+            <h3>Same split</h3>
+            <p>Compare models on matched dataset splits so score differences are paired, not accidental.</p>
+          </article>
+          <article>
+            <span class="step">2</span>
+            <h3>Same metric</h3>
+            <p>Evaluate every model pair under the same task-specific metric definition.</p>
+          </article>
+          <article>
+            <span class="step">3</span>
+            <h3>Same dataset</h3>
+            <p>Aggregate after preserving dataset-level effects, warnings, and edge cases.</p>
+          </article>
+        </div>
+        <img class="method-diagram" src="./assets/images/diagrams/paired_comparison_logic.png" alt="Paired comparison logic" />
+      </section>
+
+      <section class="slide evidence" data-title="Task Win Rate">
+        <div class="chart-copy">
+          <p class="eyebrow">Descriptive Analysis</p>
+          <h2>Task-level results are useful, but not enough.</h2>
+          <p>Overall win rate gives a fast read. Final claim still needs metric and dataset breakdowns.</p>
+          <div class="insight">
+            <strong>Design note</strong>
+            <span>Charts should support one message per slide, not carry every conclusion alone.</span>
+          </div>
+        </div>
+        <figure class="chart-frame">
+          <img src="./assets/images/charts/analysis_winrate_by_task.png" alt="Analysis win rate by task" />
+        </figure>
+      </section>
+
+      <section class="slide evidence reverse" data-title="Dataset Spread">
+        <div class="chart-copy">
+          <p class="eyebrow">Dataset Effects</p>
+          <h2>Dataset extremes explain why the final claim must stay conditional.</h2>
+          <p>Some datasets reward ensembles strongly. Others reduce or reverse the advantage.</p>
+          <div class="metric-row">
+            <div><strong>Best use</strong><span>qualify conclusion</span></div>
+            <div><strong>Risk</strong><span>over-generalizing</span></div>
+          </div>
+        </div>
+        <figure class="chart-frame">
+          <img src="./assets/images/charts/analysis_dataset_winrate_extremes.png" alt="Dataset win rate extremes" />
+        </figure>
+      </section>
+
+      <section class="slide decision" data-title="Decision">
+        <div>
+          <p class="eyebrow">Final Decision</p>
+          <h2>Ensembles often help, but not always.</h2>
+          <p>The defendable conclusion is conditional: result depends on task, dataset, metric, and run quality.</p>
+        </div>
+        <img src="./assets/images/diagrams/final_message_map.png" alt="Final message map" />
+        <div class="decision-band">
+          <span>Fair comparisons built</span>
+          <span>Warnings retained</span>
+          <span>Claim stays conditional</span>
+        </div>
+      </section>
+    </main>
+
+    <nav class="hud" aria-label="Slide controls">
+      <button id="prev" type="button" aria-label="Previous slide">‹</button>
+      <span id="counter">1 / 6</span>
+      <button id="next" type="button" aria-label="Next slide">›</button>
+    </nav>
+
+    <script src="./script.js"></script>
+  </body>
+</html>

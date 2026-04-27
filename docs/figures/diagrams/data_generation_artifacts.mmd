@@ -1,0 +1,24 @@
+flowchart LR
+    A[Run finishes] --> B[Final artifacts]
+
+    B --> C1[model_runs.csv<br/>Every model result<br/>for every split and metric]
+    B --> C2[pairwise_differences.csv<br/>Single vs ensemble<br/>on same split]
+    B --> C3[warnings_report.json<br/>Quality and reliability warnings]
+    B --> C4[failed_datasets.csv<br/>Datasets that timed out or failed]
+    B --> C5[run_log.txt<br/>Timeline of what happened]
+    B --> C6[run_state.json<br/>Current progress and resumable state]
+
+    C1 --> D1[Use for raw performance tables<br/>and per-model summaries]
+    C2 --> D2[Use for hypothesis testing<br/>and direct comparison]
+    C3 --> D3[Use to explain weak metrics<br/>or risky results]
+    C4 --> D4[Use to report missing coverage]
+    C5 --> D5[Use to explain timing<br/>and run progress]
+    C6 --> D6[Use to resume or inspect<br/>current dataset and split]
+
+    classDef root fill:#F3E5F5,stroke:#6A1B9A,color:#4A148C,stroke-width:1.5px;
+    classDef artifact fill:#E8F0FE,stroke:#1565C0,color:#0D47A1,stroke-width:1.3px;
+    classDef meaning fill:#E8F5E9,stroke:#2E7D32,color:#1B5E20,stroke-width:1.3px;
+
+    class A,B root;
+    class C1,C2,C3,C4,C5,C6 artifact;
+    class D1,D2,D3,D4,D5,D6 meaning;
