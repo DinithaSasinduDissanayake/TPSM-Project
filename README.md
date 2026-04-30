@@ -11,6 +11,15 @@
 
 This project investigates the hypothesis: **"Ensemble models perform better than single models in many prediction tasks."**
 
+### Final outputs
+
+The cleaned CSVs used for the final analysis are in `final_outputs/`:
+- `final_cleaned_pairwise_differences.csv`
+- `final_cleaned_model_runs.csv`
+- `final_summary.csv`
+
+These files contain the final cleaned comparison data for the project scope used in the write-up.
+
 We compare ensemble methods (Random Forest) against single models (Linear/Logistic Regression) across classification and regression tasks using formal statistical hypothesis testing.
 
 ---
