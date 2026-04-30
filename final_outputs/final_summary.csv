@@ -1,0 +1,5 @@
+task_type,dataset_id,single_model_name,ensemble_model_name,n,win_rate,mean_diff
+classification,heart_disease,decision_tree,gradient_boosting,15,93.33333333333333,0.06988573303242945
+classification,heart_disease,logistic_regression,gradient_boosting,15,60.0,0.0026831268463302
+regression,insurance,decision_tree_regressor,gradient_boosting_regressor,15,100.0,408.66819769030263
+regression,insurance,linear_regression,gradient_boosting_regressor,15,100.0,1071.5858659961987
