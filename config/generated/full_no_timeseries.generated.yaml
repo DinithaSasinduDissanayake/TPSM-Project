@@ -1,0 +1,262 @@
+global:
+  stop_on_first_fail: false
+  timeout_seconds: 300
+  parallel_workers: 2
+classification:
+  split_method: repeated_kfold
+  folds: 10
+  repeats: 5
+  metrics:
+  - accuracy
+  - precision
+  - recall
+  - f1
+  - roc_auc
+  - logloss
+  model_pairs:
+  - single: logistic_regression
+    ensemble: gradient_boosting
+  - single: decision_tree
+    ensemble: random_forest
+  - single: naive_bayes
+    ensemble: gradient_boosting
+  datasets:
+  - id: heart_disease
+    source: uci
+    path: data/classification/heart_disease.csv
+    url: https://archive.ics.uci.edu/static/public/45/data.csv
+    target: num
+    force_binary: true
+    binary_threshold: 0
+  - id: breast_cancer
+    source: uci
+    path: data/classification/breast_cancer.csv
+    url: https://archive.ics.uci.edu/static/public/17/data.csv
+    target: Diagnosis
+  - id: bank_marketing
+    source: uci
+    path: data/classification/bank_marketing.csv
+    url: https://archive.ics.uci.edu/ml/machine-learning-databases/00222/bank.zip
+    target: y
+    timeout_seconds: 600
+    separator: ;
+    exclude_cols:
+    - duration
+    zip_file: bank-full.csv
+  - id: adult_census
+    source: uci
+    path: data/classification/adult_census.csv
+    url: https://archive.ics.uci.edu/ml/machine-learning-databases/adult/adult.data
+    target: income
+    separator: ','
+    force_binary: true
+    binary_positive_vals:
+    - '>50K'
+    header_names:
+    - age
+    - workclass
+    - fnlwg
+    - education
+    - education_num
+    - marital_status
+    - occupation
+    - relationship
+    - race
+    - sex
+    - capital_gain
+    - capital_loss
+    - hours_per_week
+    - native_country
+    - income
+  - id: magic_gamma
+    source: uci
+    path: data/classification/magic_gamma.csv
+    url: https://archive.ics.uci.edu/ml/machine-learning-databases/magic/magic04.data
+    target: class
+    timeout_seconds: 600
+    separator: ','
+    header_names:
+    - fLength
+    - fWidth
+    - fSize
+    - fConc
+    - fConc1
+    - fAsym
+    - fM3Long
+    - fM3Trans
+    - fAlpha
+    - fDist
+    - class
+  - id: letter_recognition
+    source: uci
+    path: data/classification/letter_recognition.csv
+    url: https://archive.ics.uci.edu/ml/machine-learning-databases/letter-recognition/letter-recognition.data
+    target: lettr
+    timeout_seconds: 600
+    separator: ','
+    force_binary: false
+    header_names:
+    - lettr
+    - x_box
+    - y_box
+    - width
+    - high
+    - onpix
+    - x_bar
+    - y_bar
+    - x2bar
+    - y2bar
+    - xybar
+    - x2ybr
+    - xy2br
+    - x_ege
+    - xegvy
+    - y_ege
+    - yegvx
+  - id: german_credit
+    source: uci
+    path: data/classification/german_credit.csv
+    url: https://archive.ics.uci.edu/ml/machine-learning-databases/statlog/german/german.data
+    target: Risk
+    force_binary: true
+    binary_positive_vals:
+    - '1'
+    - good
+    header_names:
+    - Status
+    - Duration
+    - CreditHistory
+    - Purpose
+    - CreditAmount
+    - Savings
+    - Employment
+    - InstallmentRate
+    - Residence
+    - Housing
+    - ExistingCredits
+    - Job
+    - Dependents
+    - Telephone
+    - Foreign
+    - Risk
+  - id: online_shoppers
+    source: uci
+    path: data/classification/online_shoppers.csv
+    url: https://archive.ics.uci.edu/ml/machine-learning-databases/00468/online_shoppers_intention.csv
+    target: Revenue
+  - id: dry_bean
+    source: uci
+    path: data/classification/dry_bean.csv
+    url: https://archive.ics.uci.edu/static/public/602/dry+bean+dataset.zip
+    target: Class
+    timeout_seconds: 600
+    force_binary: false
+    zip_file: DryBeanDataset/Dry_Bean_Dataset.xlsx
+  - id: avila
+    source: uci
+    path: data/classification/avila.csv
+    url: https://archive.ics.uci.edu/static/public/459/avila.zip
+    target: class
+    zip_file: avila/avila-tr.txt
+    header_names:
+    - F1
+    - F2
+    - F3
+    - F4
+    - F5
+    - F6
+    - F7
+    - F8
+    - F9
+    - F10
+    - class
+    force_binary: false
+regression:
+  split_method: repeated_kfold
+  folds: 10
+  repeats: 5
+  metrics:
+  - rmse
+  - mae
+  - r2
+  - mape
+  model_pairs:
+  - single: linear_regression
+    ensemble: gradient_boosting_regressor
+  - single: decision_tree_regressor
+    ensemble: gradient_boosting_regressor
+  - single: svr
+    ensemble: gradient_boosting_regressor
+  datasets:
+  - id: insurance
+    source: kaggle
+    path: data/regression/insurance.csv
+    url: https://raw.githubusercontent.com/stedy/Machine-Learning-with-R-datasets/master/insurance.csv
+    target: charges
+  - id: housing_prices
+    source: kaggle
+    path: data/regression/housing_prices.csv
+    url: https://raw.githubusercontent.com/datasets/house-prices-uk/main/data/data.csv
+    target: Price (All)
+  - id: wine_quality
+    source: uci
+    path: data/regression/wine_quality.csv
+    url: https://archive.ics.uci.edu/ml/machine-learning-databases/wine-quality/winequality-red.csv
+    target: quality
+    separator: ;
+  - id: abalone
+    source: uci
+    path: data/regression/abalone.csv
+    url: https://archive.ics.uci.edu/ml/machine-learning-databases/abalone/abalone.data
+    target: Rings
+    separator: ','
+    header_names:
+    - Sex
+    - Length
+    - Diameter
+    - Height
+    - Whole_weight
+    - Shucked_weight
+    - Viscera_weight
+    - Shell_weight
+    - Rings
+  - id: concrete_strength
+    source: uci
+    path: data/regression/concrete_strength.csv
+    url: https://archive.ics.uci.edu/ml/machine-learning-databases/concrete/compressive/Concrete_Data.xls
+    target: Concrete compressive strength(MPa, megapascals)
+    rename_target_from: Strength
+  - id: ccpp
+    source: uci
+    path: data/regression/ccpp.csv
+    url: https://archive.ics.uci.edu/ml/machine-learning-databases/00294/CCPP.zip
+    target: PE
+    zip_file: CCPP/Folds5x2_pp.xlsx
+  - id: bike_sharing
+    source: uci
+    path: data/regression/bike_sharing.csv
+    url: https://archive.ics.uci.edu/ml/machine-learning-databases/00275/Bike-Sharing-Dataset.zip
+    target: cnt
+    zip_file: hour.csv
+    exclude_cols:
+    - casual
+    - registered
+  - id: energy_efficiency
+    source: uci
+    path: data/regression/energy_efficiency.csv
+    url: https://archive.ics.uci.edu/ml/machine-learning-databases/00242/ENB2012_data.xlsx
+    target: Y1
+    exclude_cols:
+    - Y2
+  - id: airfoil
+    source: uci
+    path: data/regression/airfoil.csv
+    url: https://archive.ics.uci.edu/ml/machine-learning-databases/00291/airfoil_self_noise.dat
+    target: ScaledSoundPressureLevel
+    header_names:
+    - Frequency
+    - AngleOfAttack
+    - ChordLength
+    - FreeStreamVelocity
+    - SuctionSideDisplacement
+    - ScaledSoundPressureLevel

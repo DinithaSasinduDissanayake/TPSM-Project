@@ -1,0 +1,25 @@
+flowchart TD
+    A[Analysis phase] --> B1[Overall]
+    A --> B2[By metric]
+    A --> B3[By dataset]
+    A --> B4[By model pair]
+
+    B1 --> C1[Do ensembles win often?]
+    B1 --> C2[What is average improvement?]
+
+    B2 --> D1[Which metrics show biggest gain?]
+    B2 --> D2[Which metrics are unreliable?]
+
+    B3 --> E1[Which datasets favor ensembles?]
+    B3 --> E2[Which datasets stay mixed?]
+
+    B4 --> F1[Which upgrades help most?]
+    B4 --> F2[Which model pairs weak?]
+
+    classDef root fill:#F3E5F5,stroke:#6A1B9A,color:#4A148C,stroke-width:1.5px;
+    classDef group fill:#E8F0FE,stroke:#1565C0,color:#0D47A1,stroke-width:1.3px;
+    classDef question fill:#FFF8E1,stroke:#F9A825,color:#E65100,stroke-width:1.1px;
+
+    class A root;
+    class B1,B2,B3,B4 group;
+    class C1,C2,D1,D2,E1,E2,F1,F2 question;

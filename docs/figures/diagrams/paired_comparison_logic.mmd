@@ -1,0 +1,15 @@
+flowchart LR
+    A[Same dataset] --> B[Same split]
+    B --> C[Single model result]
+    B --> D[Ensemble model result]
+    C --> E[Compute difference]
+    D --> E
+    E --> F[One paired comparison row]
+    F --> G[Repeat across all splits]
+    G --> H[Statistical testing]
+
+    classDef root fill:#F3E5F5,stroke:#6A1B9A,color:#4A148C,stroke-width:1.5px;
+    classDef phase fill:#E8F0FE,stroke:#1565C0,color:#0D47A1,stroke-width:1.3px;
+    classDef result fill:#E8F5E9,stroke:#2E7D32,color:#1B5E20,stroke-width:1.1px;
+
+    class A,B,C,D,E,F,G,H phase;

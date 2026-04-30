@@ -1,0 +1,22 @@
+flowchart TD
+    A[Final message] --> B1[Regression]
+    A --> B2[Classification]
+    A --> B3[Caveats]
+
+    B1 --> C1[Ensembles often strong]
+    B1 --> C2[Many metrics improve]
+
+    B2 --> D1[Results depend on dataset]
+    B2 --> D2[No universal winner]
+
+    B3 --> E1[Warnings matter]
+    B3 --> E2[Timeouts and failures matter]
+    B3 --> E3[Metric choice matters]
+
+    classDef root fill:#F3E5F5,stroke:#6A1B9A,color:#4A148C,stroke-width:1.5px;
+    classDef group fill:#E8F0FE,stroke:#1565C0,color:#0D47A1,stroke-width:1.3px;
+    classDef point fill:#E8F5E9,stroke:#2E7D32,color:#1B5E20,stroke-width:1.1px;
+
+    class A root;
+    class B1,B2,B3 group;
+    class C1,C2,D1,D2,E1,E2,E3 point;

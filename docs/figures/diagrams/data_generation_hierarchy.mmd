@@ -1,0 +1,66 @@
+flowchart TD
+    A[Full experiment] --> B[Task types]
+
+    B --> C1[Classification]
+    B --> C2[Regression]
+
+    C1 --> D1[heart_disease]
+    C1 --> D2[breast_cancer]
+    C1 --> D3[bank_marketing]
+    C1 --> D4[adult_census]
+    C1 --> D5[magic_gamma]
+    C1 --> D6[letter_recognition]
+    C1 --> D7[german_credit]
+    C1 --> D8[online_shoppers]
+    C1 --> D9[dry_bean]
+    C1 --> D10[avila]
+
+    C2 --> E1[insurance]
+    C2 --> E2[housing_prices]
+    C2 --> E3[wine_quality]
+    C2 --> E4[abalone]
+    C2 --> E5[concrete_strength]
+    C2 --> E6[ccpp]
+    C2 --> E7[bike_sharing]
+    C2 --> E8[energy_efficiency]
+    C2 --> E9[airfoil]
+
+    D1 --> F1[Model pairs]
+    E1 --> G1[Model pairs]
+
+    F1 --> H1[logistic_regression vs gradient_boosting]
+    F1 --> H2[decision_tree vs random_forest]
+    F1 --> H3[naive_bayes vs gradient_boosting]
+
+    G1 --> I1[linear_regression vs gradient_boosting_regressor]
+    G1 --> I2[decision_tree_regressor vs gradient_boosting_regressor]
+    G1 --> I3[svr vs gradient_boosting_regressor]
+
+    H1 --> J1[Repeated k-fold splits]
+    H2 --> J1
+    H3 --> J1
+    I1 --> J2[Repeated k-fold splits]
+    I2 --> J2
+    I3 --> J2
+
+    J1 --> K1[Metrics and output rows]
+    J2 --> K2[Metrics and output rows]
+
+    K1 --> L1[model_runs.csv]
+    K1 --> L2[pairwise_differences.csv]
+    K2 --> L1
+    K2 --> L2
+
+    classDef root fill:#F3E5F5,stroke:#6A1B9A,color:#4A148C,stroke-width:1.5px;
+    classDef task fill:#E8F0FE,stroke:#1565C0,color:#0D47A1,stroke-width:1.5px;
+    classDef dataset fill:#FFF8E1,stroke:#F9A825,color:#E65100,stroke-width:1.2px;
+    classDef pair fill:#E8F5E9,stroke:#2E7D32,color:#1B5E20,stroke-width:1.2px;
+    classDef split fill:#FCE4EC,stroke:#C2185B,color:#880E4F,stroke-width:1.2px;
+    classDef artifact fill:#ECEFF1,stroke:#455A64,color:#263238,stroke-width:1.2px;
+
+    class A,B root;
+    class C1,C2 task;
+    class D1,D2,D3,D4,D5,D6,D7,D8,D9,D10,E1,E2,E3,E4,E5,E6,E7,E8,E9 dataset;
+    class F1,G1,H1,H2,H3,I1,I2,I3 pair;
+    class J1,J2,K1,K2 split;
+    class L1,L2 artifact;

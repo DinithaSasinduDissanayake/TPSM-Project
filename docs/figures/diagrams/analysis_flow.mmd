@@ -1,0 +1,25 @@
+flowchart LR
+    A[pairwise_differences.csv] --> B[Descriptive summaries]
+    B --> C[Statistical tests]
+    C --> D[Plots and charts]
+    D --> E[Findings and conclusion]
+
+    B --> B1[overall summary]
+    B --> B2[by metric]
+    B --> B3[by dataset]
+    B --> B4[by model pair]
+
+    C --> C1[paired difference values]
+    C --> C2[significance checks]
+
+    D --> D1[boxplots]
+    D --> D2[win-rate charts]
+    D --> D3[heatmaps]
+    D --> D4[forest and violin plots]
+
+    classDef root fill:#F3E5F5,stroke:#6A1B9A,color:#4A148C,stroke-width:1.5px;
+    classDef phase fill:#E8F0FE,stroke:#1565C0,color:#0D47A1,stroke-width:1.3px;
+    classDef detail fill:#E8F5E9,stroke:#2E7D32,color:#1B5E20,stroke-width:1.1px;
+
+    class A,B,C,D,E root;
+    class B1,B2,B3,B4,C1,C2,D1,D2,D3,D4 detail;
