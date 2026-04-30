@@ -1,0 +1,91 @@
+global:
+  stop_on_first_fail: false
+  timeout_seconds: 300
+  parallel_workers: 1
+
+classification:
+  split_method: repeated_kfold
+  folds: 3
+  repeats: 1
+  metrics:
+    - accuracy
+    - f1
+    - roc_auc
+  model_pairs:
+    - single: logistic_regression
+      ensemble: gradient_boosting
+    - single: decision_tree
+      ensemble: random_forest
+    - single: naive_bayes
+      ensemble: gradient_boosting
+  datasets:
+    - id: heart_disease
+      source: uci
+      path: data/classification/heart_disease.csv
+      url: https://archive.ics.uci.edu/static/public/45/data.csv
+      target: num
+      force_binary: true
+      binary_threshold: 0
+    - id: breast_cancer
+      source: uci
+      path: data/classification/breast_cancer.csv
+      url: https://archive.ics.uci.edu/static/public/17/data.csv
+      target: Diagnosis
+    - id: adult_census
+      source: uci
+      path: data/classification/adult_census.csv
+      url: https://archive.ics.uci.edu/ml/machine-learning-databases/adult/adult.data
+      target: income
+      separator: ","
+      force_binary: true
+      binary_positive_vals:
+        - ">50K"
+      header_names:
+        - age
+        - workclass
+        - fnlwg
+        - education
+        - education_num
+        - marital_status
+        - occupation
+        - relationship
+        - race
+        - sex
+        - capital_gain
+        - capital_loss
+        - hours_per_week
+        - native_country
+        - income
+
+regression:
+  split_method: repeated_kfold
+  folds: 3
+  repeats: 1
+  metrics:
+    - rmse
+    - mae
+    - r2
+  model_pairs:
+    - single: linear_regression
+      ensemble: gradient_boosting_regressor
+    - single: decision_tree_regressor
+      ensemble: gradient_boosting_regressor
+    - single: svr
+      ensemble: gradient_boosting_regressor
+  datasets:
+    - id: insurance
+      source: kaggle
+      path: data/regression/insurance.csv
+      url: https://raw.githubusercontent.com/stedy/Machine-Learning-with-R-datasets/master/insurance.csv
+      target: charges
+    - id: housing_prices
+      source: kaggle
+      path: data/regression/housing_prices.csv
+      url: https://raw.githubusercontent.com/datasets/house-prices-uk/main/data/data.csv
+      target: Price (All)
+    - id: wine_quality
+      source: uci
+      path: data/regression/wine_quality.csv
+      url: https://archive.ics.uci.edu/ml/machine-learning-databases/wine-quality/winequality-red.csv
+      target: quality
+      separator: ";"
