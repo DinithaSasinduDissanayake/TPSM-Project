@@ -1,0 +1,3 @@
+"task_type","comparison_count","ensemble_wins","single_wins","ties","ensemble_win_rate","mean_difference","median_difference","sd_difference","min_difference","max_difference"
+"regression",5400,4654,746,0,0.8619,1461.751142,0.696471,10121.62622,-8825.57045,104668.683603
+"classification",8550,7256,1033,261,0.8487,0.445416,0.079201,1.48876,-4.901586,16.687309
