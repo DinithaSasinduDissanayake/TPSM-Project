@@ -1,0 +1,4 @@
+"column_name","exists","is_numeric","missing_count"
+"difference_value",TRUE,TRUE,0
+"single_metric_value",TRUE,TRUE,0
+"ensemble_metric_value",TRUE,TRUE,0

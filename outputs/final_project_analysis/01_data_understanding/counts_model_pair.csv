@@ -1,0 +1,7 @@
+"value","count"
+"decision_tree__vs__random_forest",2850
+"logistic_regression__vs__gradient_boosting",2850
+"naive_bayes__vs__gradient_boosting",2850
+"decision_tree_regressor__vs__gradient_boosting_regressor",1800
+"linear_regression__vs__gradient_boosting_regressor",1800
+"svr__vs__gradient_boosting_regressor",1800

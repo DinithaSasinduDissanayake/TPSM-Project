@@ -1,0 +1,7 @@
+"check","result","detail"
+"time_series_rows_exist",FALSE,"time_series_rows = 0"
+"all_valid_pair_values_are_true",TRUE,"valid_pair_false_or_missing = 0"
+"ensemble_better_is_boolean",TRUE,"unique values = TRUE, FALSE"
+"difference_sign_matches_ensemble_better_except_ties",FALSE,"mismatch_count = 1"
+"numeric_metric_columns_are_numeric",TRUE,"checked columns = difference_value, single_metric_value, ensemble_metric_value"
+"required_columns_exist",TRUE,"checked columns = difference_value, ensemble_better, single_metric_value, ensemble_metric_value"
