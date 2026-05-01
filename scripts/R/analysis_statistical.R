@@ -8,6 +8,18 @@ perform_statistical_tests <- function(df) {
   if (length(missing) > 0) {
     stop("Missing columns in combined output: ", paste(missing, collapse = ", "))
   }
+
+  normalize_bool <- function(x) {
+    if (is.logical(x)) return(x)
+    tolower(as.character(x)) %in% c("true", "t", "1", "yes")
+  }
+
+  if ("valid_pair" %in% names(df)) {
+    df$valid_pair <- normalize_bool(df$valid_pair)
+  } else {
+    df$valid_pair <- TRUE
+  }
+  df$ensemble_better <- normalize_bool(df$ensemble_better)
   
   df_filtered <- df[df$valid_pair == TRUE, ]
   if (nrow(df_filtered) == 0) {

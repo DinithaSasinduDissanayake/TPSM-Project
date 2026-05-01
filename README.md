@@ -7,6 +7,31 @@
 
 ---
 
+## Phase 1 Recovery Status
+
+Start with [FINAL_PROJECT_MAP.md](FINAL_PROJECT_MAP.md).
+
+The current stable foundation is the recovered Python generator in
+`code/python/tpsm/` and the recovered no-time-series evidence CSV:
+
+```text
+outputs/archive/legacy/py_full_no_timeseries_probe/20260421T231947/analysis_ready_pairwise.csv
+```
+
+That CSV contains 13,950 paired comparisons across 19 classification/regression
+datasets. Time series is excluded from the final project direction.
+
+`final_outputs/` is a small later subset and should not be treated as the real
+project foundation for Phase 1.
+
+Safe tiny demo command:
+
+```bash
+.venv/bin/python -m code.python.tpsm.main --config config/generated/demo_no_timeseries_tiny.yaml --output-dir outputs/active/demo_no_timeseries_tiny_live
+```
+
+Do not run the full 19-dataset benchmark for a live demo.
+
 ## Overview
 
 This project investigates the hypothesis: **"Ensemble models perform better than single models in many prediction tasks."**
