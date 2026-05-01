@@ -67,7 +67,7 @@ format_percent <- function(x) {
 }
 
 plot_win_rate <- function(data, label_col, title, output_file, flag_mape = FALSE) {
-  data <- data[order(data$ensemble_win_rate), ]
+  data <- data[order(data$ensemble_win_rate_excluding_ties), ]
   data[[label_col]] <- factor(data[[label_col]], levels = data[[label_col]])
   data$bar_group <- "normal"
   if (flag_mape && "metric_name" %in% names(data)) {
@@ -76,7 +76,7 @@ plot_win_rate <- function(data, label_col, title, output_file, flag_mape = FALSE
 
   p <- ggplot2::ggplot(
     data,
-    ggplot2::aes(x = .data[[label_col]], y = ensemble_win_rate, fill = bar_group)
+    ggplot2::aes(x = .data[[label_col]], y = ensemble_win_rate_excluding_ties, fill = bar_group)
   ) +
     ggplot2::geom_col(width = 0.7) +
     ggplot2::geom_hline(yintercept = 0.5, linetype = "dashed", linewidth = 0.6) +
@@ -91,9 +91,9 @@ plot_win_rate <- function(data, label_col, title, output_file, flag_mape = FALSE
     ) +
     ggplot2::labs(
       title = title,
-      subtitle = "Dashed line = 50% reference. Ties are not counted as ensemble wins.",
+      subtitle = "Dashed line = 50% reference. Ties are excluded from the win-rate denominator.",
       x = NULL,
-      y = "Ensemble win rate"
+      y = "Ensemble win rate, excluding ties"
     ) +
     ggplot2::theme_minimal(base_size = 12) +
     ggplot2::theme(
@@ -236,7 +236,7 @@ ggplot2::ggsave(
 boxplot_data <- df
 boxplot_data$metric_name <- factor(
   boxplot_data$metric_name,
-  levels = summary_by_metric$metric_name[order(summary_by_metric$ensemble_win_rate)]
+  levels = summary_by_metric$metric_name[order(summary_by_metric$ensemble_win_rate_excluding_ties)]
 )
 
 boxplot_data <- dplyr::group_by(boxplot_data, metric_name)
@@ -289,7 +289,7 @@ win_loss_counts$win_status <- factor(
 )
 win_loss_counts$metric_name <- factor(
   win_loss_counts$metric_name,
-  levels = summary_by_metric$metric_name[order(summary_by_metric$ensemble_win_rate)]
+  levels = summary_by_metric$metric_name[order(summary_by_metric$ensemble_win_rate_excluding_ties)]
 )
 
 win_loss_plot <- ggplot2::ggplot(
@@ -329,13 +329,13 @@ ggplot2::ggsave(
 
 notes_path <- file.path(OUTPUT_DIR, "descriptive_plot_notes.md")
 
-task_top <- summary_by_task[order(summary_by_task$ensemble_win_rate, decreasing = TRUE), ][1, ]
-dataset_top <- summary_by_dataset[order(summary_by_dataset$ensemble_win_rate, decreasing = TRUE), ][1:5, ]
-dataset_bottom <- summary_by_dataset[order(summary_by_dataset$ensemble_win_rate), ][1:5, ]
-metric_top <- summary_by_metric[order(summary_by_metric$ensemble_win_rate, decreasing = TRUE), ][1:3, ]
-metric_bottom <- summary_by_metric[order(summary_by_metric$ensemble_win_rate), ][1:3, ]
-pair_top <- summary_by_model_pair[order(summary_by_model_pair$ensemble_win_rate, decreasing = TRUE), ][1, ]
-pair_bottom <- summary_by_model_pair[order(summary_by_model_pair$ensemble_win_rate), ][1, ]
+task_top <- summary_by_task[order(summary_by_task$ensemble_win_rate_excluding_ties, decreasing = TRUE), ][1, ]
+dataset_top <- summary_by_dataset[order(summary_by_dataset$ensemble_win_rate_excluding_ties, decreasing = TRUE), ][1:5, ]
+dataset_bottom <- summary_by_dataset[order(summary_by_dataset$ensemble_win_rate_excluding_ties), ][1:5, ]
+metric_top <- summary_by_metric[order(summary_by_metric$ensemble_win_rate_excluding_ties, decreasing = TRUE), ][1:3, ]
+metric_bottom <- summary_by_metric[order(summary_by_metric$ensemble_win_rate_excluding_ties), ][1:3, ]
+pair_top <- summary_by_model_pair[order(summary_by_model_pair$ensemble_win_rate_excluding_ties, decreasing = TRUE), ][1, ]
+pair_bottom <- summary_by_model_pair[order(summary_by_model_pair$ensemble_win_rate_excluding_ties), ][1, ]
 
 notes <- c(
   "# Phase 2A Step 3: Descriptive Plot Notes",
@@ -345,10 +345,10 @@ notes <- c(
   "",
   "## Plots Created",
   "",
-  "- `01_win_rate_by_task_type.png`: compares ensemble win rate for classification and regression.",
-  "- `02_win_rate_by_dataset.png`: compares ensemble win rate across datasets.",
-  "- `03_win_rate_by_metric.png`: compares ensemble win rate across metrics; MAPE is shown in a caution color.",
-  "- `04_win_rate_by_model_pair.png`: compares ensemble win rate across model pairs.",
+  "- `01_win_rate_by_task_type.png`: compares ensemble win rate excluding ties for classification and regression.",
+  "- `02_win_rate_by_dataset.png`: compares ensemble win rate excluding ties across datasets.",
+  "- `03_win_rate_by_metric.png`: compares ensemble win rate excluding ties across metrics; MAPE is shown in a caution color.",
+  "- `04_win_rate_by_model_pair.png`: compares ensemble win rate excluding ties across model pairs.",
   "- `05_histogram_difference_value.png`: zoomed raw histogram. Keep for internal checking only; not recommended for presentation.",
   "- `06_boxplot_difference_by_metric.png`: limited boxplot by metric. Values are clipped within each metric's 5th to 95th percentile for readability.",
   "- `07_faceted_histogram_difference_by_metric.png`: shows separate metric-wise distributions with free x-axis scales.",
@@ -368,7 +368,7 @@ notes <- c(
   "",
   paste0(
     "- The task-type plot shows the strongest task type is `", task_top$task_type,
-    "` with a win rate of ", format_percent(task_top$ensemble_win_rate), "."
+    "` with a non-tie win rate of ", format_percent(task_top$ensemble_win_rate_excluding_ties), "."
   ),
   paste0(
     "- Several datasets have very high ensemble win rates, including ",
@@ -388,11 +388,11 @@ notes <- c(
   ),
   paste0(
     "- The strongest model-pair win-rate plot is `", pair_top$model_pair,
-    "` at ", format_percent(pair_top$ensemble_win_rate), "."
+    "` at ", format_percent(pair_top$ensemble_win_rate_excluding_ties), "."
   ),
   paste0(
   "- The weakest model-pair win-rate plot is `", pair_bottom$model_pair,
-  "` at ", format_percent(pair_bottom$ensemble_win_rate), "."
+  "` at ", format_percent(pair_bottom$ensemble_win_rate_excluding_ties), "."
   ),
   "- The faceted histogram is the clearest plot for explaining `difference_value` shape by metric.",
   "- The task-type histogram shows why classification and regression should not be forced onto one raw x-axis.",
@@ -402,7 +402,7 @@ notes <- c(
   "",
   "- These plots are descriptive only. They do not test statistical significance.",
   "- The 50% reference line is visual guidance only, not a hypothesis test.",
-  "- Ties are not counted as ensemble wins.",
+  "- Ties are counted separately and excluded from plotted win-rate denominators.",
   "- MAPE is included but visually flagged because the generator warnings identified low-target MAPE risk.",
   "- `05_histogram_difference_value.png` is not recommended for presentation because it still mixes metric scales.",
   "- `06_boxplot_difference_by_metric.png` clips values within each metric for readability, so it should not be used to discuss extreme values.",

@@ -13,7 +13,8 @@ Step 1 context folder: outputs/final_project_analysis/01_data_understanding
 - Ensemble wins: 11910
 - Single-model wins: 1779
 - Ties: 261
-- Ensemble win rate: 85.38%
+- Ensemble win rate, all rows: 85.38%
+- Ensemble win rate, excluding ties: 87%
 - Mean difference_value: 566.112149
 - Median difference_value: 0.116074
 
@@ -21,8 +22,8 @@ This is descriptive analysis only. These values describe the generated compariso
 
 ## Task Types
 
-- regression: 5400 comparisons, 86.19% ensemble win rate
-- classification: 8550 comparisons, 84.87% ensemble win rate
+- classification: 8550 comparisons, 87.54% ensemble win rate excluding ties
+- regression: 5400 comparisons, 86.19% ensemble win rate excluding ties
 
 ## Datasets That Stand Out
 
@@ -35,32 +36,32 @@ Highest ensemble win rates:
 
 Lowest ensemble win rates:
 - housing_prices: 44.17%
-- heart_disease: 53.89%
 - abalone: 56.5%
-- breast_cancer: 64%
-- german_credit: 73.56%
+- heart_disease: 62.5%
+- breast_cancer: 72.36%
+- german_credit: 75.92%
 
 ## Metrics That Stand Out
 
 Highest ensemble win rates:
 - logloss: 93.61%
-- roc_auc: 90.95%
-- r2: 88.15%
+- roc_auc: 92.18%
+- accuracy: 90.48%
 
 Lowest ensemble win rates:
-- recall: 73.82%
-- precision: 80.91%
+- recall: 79.58%
 - mape: 82.44%
+- precision: 83.73%
 
 ## Model Pairs That Stand Out
 
 Highest ensemble win rates:
-- decision_tree__vs__random_forest: 91.16%
+- decision_tree__vs__random_forest: 92.82%
+- naive_bayes__vs__gradient_boosting: 89.59%
 - svr__vs__gradient_boosting_regressor: 88.89%
-- naive_bayes__vs__gradient_boosting: 87.54%
 
 Lowest ensemble win rates:
-- logistic_regression__vs__gradient_boosting: 75.89%
+- logistic_regression__vs__gradient_boosting: 79.96%
 - decision_tree_regressor__vs__gradient_boosting_regressor: 82.83%
 - linear_regression__vs__gradient_boosting_regressor: 86.83%
 

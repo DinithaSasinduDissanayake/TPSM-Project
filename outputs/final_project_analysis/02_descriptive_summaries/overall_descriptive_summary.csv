@@ -1,2 +1,2 @@
-"row_count","dataset_count","task_count","metric_count","model_pair_count","comparison_count","ensemble_wins","single_wins","ties","ensemble_win_rate","mean_difference","median_difference","sd_difference","min_difference","max_difference"
-13950,19,2,10,6,13950,11910,1779,261,0.8538,566.112149,0.116074,6337.128333,-8825.57045,104668.683603
+"row_count","dataset_count","task_count","metric_count","model_pair_count","comparison_count","ensemble_wins","single_wins","ties","non_tie_comparison_count","ensemble_win_rate_all_rows","ensemble_win_rate_excluding_ties","mean_difference","median_difference","sd_difference","min_difference","max_difference"
+13950,19,2,10,6,13950,11910,1779,261,13689,0.8538,0.87,566.112149,0.116074,6337.128333,-8825.57045,104668.683603

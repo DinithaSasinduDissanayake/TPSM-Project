@@ -5,10 +5,10 @@ Main input CSV: outputs/archive/legacy/py_full_no_timeseries_probe/20260421T2319
 
 ## Plots Created
 
-- `01_win_rate_by_task_type.png`: compares ensemble win rate for classification and regression.
-- `02_win_rate_by_dataset.png`: compares ensemble win rate across datasets.
-- `03_win_rate_by_metric.png`: compares ensemble win rate across metrics; MAPE is shown in a caution color.
-- `04_win_rate_by_model_pair.png`: compares ensemble win rate across model pairs.
+- `01_win_rate_by_task_type.png`: compares ensemble win rate excluding ties for classification and regression.
+- `02_win_rate_by_dataset.png`: compares ensemble win rate excluding ties across datasets.
+- `03_win_rate_by_metric.png`: compares ensemble win rate excluding ties across metrics; MAPE is shown in a caution color.
+- `04_win_rate_by_model_pair.png`: compares ensemble win rate excluding ties across model pairs.
 - `05_histogram_difference_value.png`: zoomed raw histogram. Keep for internal checking only; not recommended for presentation.
 - `06_boxplot_difference_by_metric.png`: limited boxplot by metric. Values are clipped within each metric's 5th to 95th percentile for readability.
 - `07_faceted_histogram_difference_by_metric.png`: shows separate metric-wise distributions with free x-axis scales.
@@ -21,13 +21,13 @@ The raw `difference_value` column mixes metrics with very different scales. Clas
 
 ## Plain-Language Observations
 
-- The task-type plot shows the strongest task type is `regression` with a win rate of 86.2%.
+- The task-type plot shows the strongest task type is `classification` with a non-tie win rate of 87.5%.
 - Several datasets have very high ensemble win rates, including airfoil, ccpp, concrete_strength, letter_recognition, magic_gamma.
-- The lowest dataset win rates are seen in housing_prices, heart_disease, abalone, breast_cancer, german_credit.
-- The highest metric win rates are logloss, roc_auc, r2.
-- The lowest metric win rates are recall, precision, mape.
-- The strongest model-pair win-rate plot is `decision_tree__vs__random_forest` at 91.2%.
-- The weakest model-pair win-rate plot is `logistic_regression__vs__gradient_boosting` at 75.9%.
+- The lowest dataset win rates are seen in housing_prices, abalone, heart_disease, breast_cancer, german_credit.
+- The highest metric win rates are logloss, roc_auc, accuracy.
+- The lowest metric win rates are recall, mape, precision.
+- The strongest model-pair win-rate plot is `decision_tree__vs__random_forest` at 92.8%.
+- The weakest model-pair win-rate plot is `logistic_regression__vs__gradient_boosting` at 80%.
 - The faceted histogram is the clearest plot for explaining `difference_value` shape by metric.
 - The task-type histogram shows why classification and regression should not be forced onto one raw x-axis.
 - The win/loss/tie chart is the simplest presentation plot for showing how often ensembles perform better.
@@ -36,7 +36,7 @@ The raw `difference_value` column mixes metrics with very different scales. Clas
 
 - These plots are descriptive only. They do not test statistical significance.
 - The 50% reference line is visual guidance only, not a hypothesis test.
-- Ties are not counted as ensemble wins.
+- Ties are counted separately and excluded from plotted win-rate denominators.
 - MAPE is included but visually flagged because the generator warnings identified low-target MAPE risk.
 - `05_histogram_difference_value.png` is not recommended for presentation because it still mixes metric scales.
 - `06_boxplot_difference_by_metric.png` clips values within each metric for readability, so it should not be used to discuss extreme values.

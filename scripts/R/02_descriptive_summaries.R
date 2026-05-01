@@ -81,12 +81,23 @@ df$win_status <- ifelse(
 )
 
 summarise_block <- function(data) {
+  ensemble_wins <- sum(data$win_status == "ensemble_win", na.rm = TRUE)
+  single_wins <- sum(data$win_status == "single_win", na.rm = TRUE)
+  ties <- sum(data$win_status == "tie", na.rm = TRUE)
+  non_tie_count <- ensemble_wins + single_wins
+
   data.frame(
     comparison_count = nrow(data),
-    ensemble_wins = sum(data$win_status == "ensemble_win", na.rm = TRUE),
-    single_wins = sum(data$win_status == "single_win", na.rm = TRUE),
-    ties = sum(data$win_status == "tie", na.rm = TRUE),
-    ensemble_win_rate = round(mean(data$win_status == "ensemble_win", na.rm = TRUE), 4),
+    ensemble_wins = ensemble_wins,
+    single_wins = single_wins,
+    ties = ties,
+    non_tie_comparison_count = non_tie_count,
+    ensemble_win_rate_all_rows = round(ensemble_wins / nrow(data), 4),
+    ensemble_win_rate_excluding_ties = ifelse(
+      non_tie_count > 0,
+      round(ensemble_wins / non_tie_count, 4),
+      NA_real_
+    ),
     mean_difference = round(mean(data$difference_value, na.rm = TRUE), 6),
     median_difference = round(median(data$difference_value, na.rm = TRUE), 6),
     sd_difference = round(sd(data$difference_value, na.rm = TRUE), 6),
@@ -103,7 +114,7 @@ write_group_summary <- function(data, group_columns, output_file) {
     cbind(group_values, summarise_block(group_data), row.names = NULL)
   })
   out <- do.call(rbind, rows)
-  out <- out[order(out$ensemble_win_rate, decreasing = TRUE), ]
+  out <- out[order(out$ensemble_win_rate_excluding_ties, decreasing = TRUE), ]
   write.csv(out, file.path(OUTPUT_DIR, output_file), row.names = FALSE)
   out
 }
@@ -161,11 +172,11 @@ summary_by_task_and_metric <- write_group_summary(
 )
 
 top_datasets <- head(summary_by_dataset, 5)
-bottom_datasets <- head(summary_by_dataset[order(summary_by_dataset$ensemble_win_rate), ], 5)
+bottom_datasets <- head(summary_by_dataset[order(summary_by_dataset$ensemble_win_rate_excluding_ties), ], 5)
 top_metrics <- head(summary_by_metric, 3)
-bottom_metrics <- head(summary_by_metric[order(summary_by_metric$ensemble_win_rate), ], 3)
+bottom_metrics <- head(summary_by_metric[order(summary_by_metric$ensemble_win_rate_excluding_ties), ], 3)
 top_pairs <- head(summary_by_model_pair, 3)
-bottom_pairs <- head(summary_by_model_pair[order(summary_by_model_pair$ensemble_win_rate), ], 3)
+bottom_pairs <- head(summary_by_model_pair[order(summary_by_model_pair$ensemble_win_rate_excluding_ties), ], 3)
 
 mape_row <- summary_by_metric[summary_by_metric$metric_name == "mape", ]
 tie_count <- overall$ties[1]
@@ -188,7 +199,8 @@ notes <- c(
   paste("- Ensemble wins:", overall$ensemble_wins[1]),
   paste("- Single-model wins:", overall$single_wins[1]),
   paste("- Ties:", tie_count),
-  paste("- Ensemble win rate:", paste0(round(overall$ensemble_win_rate[1] * 100, 2), "%")),
+  paste("- Ensemble win rate, all rows:", paste0(round(overall$ensemble_win_rate_all_rows[1] * 100, 2), "%")),
+  paste("- Ensemble win rate, excluding ties:", paste0(round(overall$ensemble_win_rate_excluding_ties[1] * 100, 2), "%")),
   paste("- Mean difference_value:", overall$mean_difference[1]),
   paste("- Median difference_value:", overall$median_difference[1]),
   "",
@@ -201,7 +213,7 @@ notes <- c(
       paste0(
         "- ", row[["task_type"]], ": ",
         row[["comparison_count"]], " comparisons, ",
-        round(as.numeric(row[["ensemble_win_rate"]]) * 100, 2), "% ensemble win rate"
+        round(as.numeric(row[["ensemble_win_rate_excluding_ties"]]) * 100, 2), "% ensemble win rate excluding ties"
       )
     }),
     collapse = "\n"
@@ -212,7 +224,7 @@ notes <- c(
   "Highest ensemble win rates:",
   paste(
     apply(top_datasets, 1, function(row) {
-      paste0("- ", row[["dataset_id"]], ": ", round(as.numeric(row[["ensemble_win_rate"]]) * 100, 2), "%")
+      paste0("- ", row[["dataset_id"]], ": ", round(as.numeric(row[["ensemble_win_rate_excluding_ties"]]) * 100, 2), "%")
     }),
     collapse = "\n"
   ),
@@ -220,7 +232,7 @@ notes <- c(
   "Lowest ensemble win rates:",
   paste(
     apply(bottom_datasets, 1, function(row) {
-      paste0("- ", row[["dataset_id"]], ": ", round(as.numeric(row[["ensemble_win_rate"]]) * 100, 2), "%")
+      paste0("- ", row[["dataset_id"]], ": ", round(as.numeric(row[["ensemble_win_rate_excluding_ties"]]) * 100, 2), "%")
     }),
     collapse = "\n"
   ),
@@ -230,7 +242,7 @@ notes <- c(
   "Highest ensemble win rates:",
   paste(
     apply(top_metrics, 1, function(row) {
-      paste0("- ", row[["metric_name"]], ": ", round(as.numeric(row[["ensemble_win_rate"]]) * 100, 2), "%")
+      paste0("- ", row[["metric_name"]], ": ", round(as.numeric(row[["ensemble_win_rate_excluding_ties"]]) * 100, 2), "%")
     }),
     collapse = "\n"
   ),
@@ -238,7 +250,7 @@ notes <- c(
   "Lowest ensemble win rates:",
   paste(
     apply(bottom_metrics, 1, function(row) {
-      paste0("- ", row[["metric_name"]], ": ", round(as.numeric(row[["ensemble_win_rate"]]) * 100, 2), "%")
+      paste0("- ", row[["metric_name"]], ": ", round(as.numeric(row[["ensemble_win_rate_excluding_ties"]]) * 100, 2), "%")
     }),
     collapse = "\n"
   ),
@@ -248,7 +260,7 @@ notes <- c(
   "Highest ensemble win rates:",
   paste(
     apply(top_pairs, 1, function(row) {
-      paste0("- ", row[["model_pair"]], ": ", round(as.numeric(row[["ensemble_win_rate"]]) * 100, 2), "%")
+      paste0("- ", row[["model_pair"]], ": ", round(as.numeric(row[["ensemble_win_rate_excluding_ties"]]) * 100, 2), "%")
     }),
     collapse = "\n"
   ),
@@ -256,7 +268,7 @@ notes <- c(
   "Lowest ensemble win rates:",
   paste(
     apply(bottom_pairs, 1, function(row) {
-      paste0("- ", row[["model_pair"]], ": ", round(as.numeric(row[["ensemble_win_rate"]]) * 100, 2), "%")
+      paste0("- ", row[["model_pair"]], ": ", round(as.numeric(row[["ensemble_win_rate_excluding_ties"]]) * 100, 2), "%")
     }),
     collapse = "\n"
   ),

@@ -1,0 +1,7 @@
+"analysis_item","output_file","description"
+"Main headline test","headline_win_rate_tests.csv","Exact binomial test of ensemble wins vs single-model wins, excluding MAPE."
+"Sensitivity test","headline_win_rate_tests.csv","Same exact binomial test with MAPE included."
+"Task-level tests","task_level_win_rate_tests_excluding_mape.csv","Exact binomial tests by task type, excluding MAPE."
+"Metric-level tests","metric_level_win_rate_tests.csv","Exact binomial tests by metric. MAPE is included here but should be interpreted with caution."
+"Difference-value tests","difference_tests_by_metric.csv","Secondary one-sample t-tests on difference_value within each metric."
+"Analysis method decisions","analysis_method_decisions.csv","Course-method decision table for included and excluded statistical methods."
