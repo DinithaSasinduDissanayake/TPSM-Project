@@ -357,12 +357,56 @@ function App() {
           </NotesBlock>
         </section>
 
-        {/* 5 — Model pairs split by task type */}
+        {/* 5 — Designed for breadth (NEW) */}
+        <section>
+          <SlideShell
+            kicker="Scientific design"
+            title="Designed for breadth — one statement, five axes of variation"
+            slideNumber={5}
+            concepts="Why this design beats a one-dataset answer: the claim is broad, so the evidence has to vary on every axis the claim touches."
+          >
+            <div className="flex h-full flex-col gap-6">
+              <p className="max-w-[58rem] text-base leading-relaxed text-muted-foreground md:text-lg">
+                The statement covers “many prediction tasks”, so a result from one dataset, one model pair, or one metric cannot
+                settle it. We deliberately varied every axis the claim touches, then aggregated.
+              </p>
+              <div className="grid gap-4 md:grid-cols-5 md:gap-4">
+                {[
+                  { k: "Datasets", v: finalNumbers.datasets, n: "Different domains and shapes" },
+                  { k: "Task types", v: finalNumbers.taskTypes, n: "Classification + regression" },
+                  { k: "Model pairs", v: finalNumbers.modelPairs, n: "Three per task type, fixed up front" },
+                  { k: "Metrics", v: finalNumbers.metrics, n: "Each metric stresses a different failure mode" },
+                  { k: "Splits", v: "Many", n: "Folds × repeats per pair × dataset" },
+                ].map(({ k, v, n }) => (
+                  <div key={k} className="rounded-lg border border-border bg-muted/20 px-4 py-4">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-primary md:text-sm">{k}</p>
+                    <p className="mt-1 text-3xl font-semibold leading-none text-foreground md:text-4xl">{v}</p>
+                    <p className="mt-2 text-xs leading-snug text-muted-foreground md:text-sm">{n}</p>
+                  </div>
+                ))}
+              </div>
+              <div className="rounded-xl border border-primary/25 bg-primary/5 px-5 py-4 md:px-6 md:py-5">
+                <p className="text-base leading-relaxed text-foreground md:text-lg">
+                  Multiplied together, those axes produce <span className="font-semibold">{finalNumbers.rows}</span> paired
+                  comparisons. A single dataset or single metric could mislead; a result that survives this much variation is harder
+                  to dismiss.
+                </p>
+              </div>
+            </div>
+          </SlideShell>
+          <NotesBlock>
+            This is the “why our method matches the claim” slide. Stress that the breadth is not decoration — it is what allows the
+            conclusion to talk about “many prediction tasks” instead of one lucky example. Mention briefly that classification and
+            regression each get their own three pairs (next slide).
+          </NotesBlock>
+        </section>
+
+        {/* 6 — Model pairs split by task type */}
         <section>
           <SlideShell
             kicker="Model design"
             title="Six predefined model pairings — three per task type"
-            slideNumber={5}
+            slideNumber={6}
             concepts="Continues the methodology: same fixed pairings drive every row in the comparison table."
           >
             <div className="flex h-full flex-col gap-5">
@@ -401,7 +445,7 @@ function App() {
           <SlideShell
             kicker="Repeated evaluations"
             title="Why folds and repeats reduce reliance on one lucky split"
-            slideNumber={6}
+            slideNumber={7}
             concepts="Folds and repeats: each pair is re-evaluated under many split contexts so the evidence is not a single roll of the dice."
           >
             <div className="grid h-full items-center gap-10 lg:grid-cols-[0.9fr_1.1fr] lg:gap-14">
@@ -432,7 +476,7 @@ function App() {
           <SlideShell
             kicker="Paired comparison"
             title="What a single row represents"
-            slideNumber={7}
+            slideNumber={8}
             concepts="Paired comparison: both models see the same context before we read off who won."
           >
             <div className="grid h-full items-center gap-10 md:grid-cols-2 md:gap-14">
@@ -474,7 +518,7 @@ function App() {
           <SlideShell
             kicker="Analysis readiness"
             title="The evidence base before descriptive analysis"
-            slideNumber={8}
+            slideNumber={9}
             concepts="Pre-descriptive checkpoint: how much comparison data we have, and that it is structurally clean."
           >
             <div className="grid h-full items-start gap-10 lg:grid-cols-[0.85fr_1.15fr] lg:gap-12">
@@ -516,7 +560,7 @@ function App() {
           <SlideShell
             kicker="Descriptive analysis"
             title="Wins, losses, and ties across all paired rows"
-            slideNumber={9}
+            slideNumber={10}
             concepts="Descriptive analysis: count outcomes before any hypothesis test."
           >
             <div className="grid h-full min-h-0 items-center gap-8 lg:grid-cols-[1.25fr_0.75fr] lg:gap-10">
@@ -545,7 +589,7 @@ function App() {
           <SlideShell
             kicker="Descriptive analysis"
             title="Why we report two win rates — and which one the test uses"
-            slideNumber={10}
+            slideNumber={11}
             concepts="Denominator choice: ties stay in the descriptive view but leave the hypothesis-test denominator."
           >
             <div className="flex h-full flex-col gap-6">
@@ -596,7 +640,7 @@ function App() {
           <SlideShell
             kicker="Descriptive analysis"
             title="Both task types lean ensemble"
-            slideNumber={11}
+            slideNumber={12}
             concepts="Descriptive analysis split by task type; still pre-inferential."
           >
             <div className="grid h-full items-center gap-8 lg:grid-cols-[1.12fr_0.88fr] lg:gap-10">
@@ -617,7 +661,7 @@ function App() {
           <SlideShell
             kicker="Descriptive analysis"
             title="Metric-level win rates tell a similar story with nuance"
-            slideNumber={12}
+            slideNumber={13}
             concepts="Descriptive analysis by metric; highlights why proportions beat mixing raw score units."
           >
             <div className="grid h-full items-start gap-6 lg:grid-cols-[1.2fr_0.8fr] lg:gap-8">
@@ -640,7 +684,7 @@ function App() {
           <SlideShell
             kicker="Descriptive analysis"
             title="Model-pair variation keeps the story honest"
-            slideNumber={13}
+            slideNumber={14}
             concepts="Descriptive analysis across the six fixed pairings; reinforces that support is strong but not uniform."
           >
             <div className="grid h-full min-h-0 items-center gap-6 lg:grid-cols-[1.35fr_0.65fr] lg:gap-8">
@@ -670,7 +714,7 @@ function App() {
           <SlideShell
             kicker="Statistical inference"
             title="From many rows to a disciplined population statement"
-            slideNumber={14}
+            slideNumber={15}
             concepts="Statistical inference: use sample evidence to judge a broader win-rate pattern."
           >
             <div className="flex h-full flex-col justify-center gap-10">
@@ -698,89 +742,173 @@ function App() {
           </NotesBlock>
         </section>
 
-        {/* 15 */}
+        {/* 16 — H0 / H1 with proper notation */}
         <section>
           <SlideShell
             kicker="Hypothesis testing"
-            title="Hypotheses, denominator, and headline test framing"
-            slideNumber={15}
-            concepts="Hypothesis testing on a population proportion; ties handled separately; MAPE excluded from the headline test."
+            title="Stating the hypotheses precisely"
+            slideNumber={16}
+            concepts="Hypothesis testing: parameter π (ensemble win proportion among non-tied rows), null and alternative, significance level α."
           >
-            <div className="grid h-full gap-8 lg:grid-cols-2 lg:gap-10">
-              <div className="flex flex-col gap-6 rounded-xl border border-border p-6 md:p-8">
-                <div>
-                  <p className="text-sm font-semibold uppercase tracking-wide text-primary">Null hypothesis</p>
-                  <p className="mt-2 text-2xl font-semibold leading-snug md:text-3xl">Ensemble win proportion = 0.50</p>
-                  <p className="mt-2 text-muted-foreground">No systematic advantage in win frequency.</p>
+            <div className="flex h-full flex-col gap-6">
+              <div className="rounded-xl border border-border bg-muted/15 px-6 py-4 md:px-8 md:py-5">
+                <p className="text-sm leading-relaxed text-muted-foreground md:text-base">
+                  Let{" "}
+                  <span className="font-mono text-foreground">π</span>{" "}
+                  = the population proportion of non-tied paired comparisons in which the ensemble wins. We are asking whether{" "}
+                  <span className="font-mono text-foreground">π</span> is meaningfully above one-half.
+                </p>
+              </div>
+              <div className="grid gap-5 md:grid-cols-2 md:gap-7">
+                <div className="rounded-xl border border-border p-5 md:p-6">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-primary md:text-sm">Null hypothesis</p>
+                  <p className="mt-2 font-mono text-2xl font-semibold leading-snug text-foreground md:text-3xl">H₀ : π = 0.50</p>
+                  <p className="mt-2 text-sm leading-snug text-muted-foreground md:text-base">
+                    Ensembles and single models win equally often — no systematic advantage.
+                  </p>
                 </div>
-                <Divider />
-                <div>
-                  <p className="text-sm font-semibold uppercase tracking-wide text-primary">Alternative hypothesis</p>
-                  <p className="mt-2 text-2xl font-semibold leading-snug md:text-3xl">Ensemble win proportion &gt; 0.50</p>
-                  <p className="mt-2 text-muted-foreground">Matches the direction of the project statement.</p>
+                <div className="rounded-xl border border-primary/30 bg-primary/5 p-5 md:p-6">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-primary md:text-sm">Alternative hypothesis</p>
+                  <p className="mt-2 font-mono text-2xl font-semibold leading-snug text-foreground md:text-3xl">H₁ : π &gt; 0.50</p>
+                  <p className="mt-2 text-sm leading-snug text-muted-foreground md:text-base">
+                    Directional, matching the project statement: ensembles win more than half the time.
+                  </p>
                 </div>
               </div>
-              <div className="flex flex-col justify-center space-y-5 rounded-xl border border-border bg-muted/15 p-6 text-lg leading-relaxed md:p-8 md:text-xl">
-                <p>
-                  <span className="font-semibold text-foreground">Population proportion setup:</span> each non-tied row is a Bernoulli
-                  trial—success if the ensemble wins, failure if the single model wins.
-                </p>
-                <p>
-                  <span className="font-semibold text-foreground">Ties:</span> counted and reported, but excluded from the test denominator.
-                </p>
-                <p>
-                  <span className="font-semibold text-foreground">MAPE:</span> excluded from the headline test because it can explode when
-                  targets approach zero; sensitivity including MAPE is shown next to the headline result.
-                </p>
-                <p>
-                  <span className="font-semibold text-foreground">Decision rule:</span> one-sided exact binomial test at α = 0.05.
-                </p>
+              <div className="grid gap-4 md:grid-cols-3 md:gap-5">
+                <div className="rounded-lg border border-border bg-muted/20 p-4">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground md:text-sm">Significance level</p>
+                  <p className="mt-1 font-mono text-xl font-semibold text-foreground md:text-2xl">α = 0.05</p>
+                </div>
+                <div className="rounded-lg border border-border bg-muted/20 p-4">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground md:text-sm">Trial unit</p>
+                  <p className="mt-1 text-sm leading-snug text-foreground md:text-base">One non-tied paired comparison row</p>
+                </div>
+                <div className="rounded-lg border border-border bg-muted/20 p-4">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground md:text-sm">Outcome coding</p>
+                  <p className="mt-1 text-sm leading-snug text-foreground md:text-base">Success = ensemble wins; failure = single wins</p>
+                </div>
               </div>
             </div>
           </SlideShell>
           <NotesBlock>
-            If asked about notation, say π or “win probability” for the population parameter—avoid confusing it with the p-value on the
-                    next slide.
+            Read π as “the long-run share of non-tied comparisons the ensemble would win in this benchmark setup.” H₀ pins it at 0.5;
+            H₁ is one-sided because the project statement only matters if ensembles are the winners. α = 0.05 is the textbook default
+            we agreed on up front.
           </NotesBlock>
         </section>
 
-        {/* 16 */}
+        {/* 17 — Test choice & assumptions */}
         <section>
           <SlideShell
             kicker="Hypothesis testing"
-            title="Headline result: ensemble wins far more than half the non-tied comparisons"
-            slideNumber={16}
-            concepts="Hypothesis testing outcome with confidence interval for the ensemble win proportion."
+            title="Test choice and assumptions"
+            slideNumber={17}
+            concepts="Why a one-sided exact binomial test on π is the right tool for this paired win/loss question."
           >
-            <div className="grid h-full items-center gap-10 lg:grid-cols-[1fr_0.95fr] lg:gap-12">
-              <SimpleBars data={headlineComparison} height={360} percent />
-              <div className="flex flex-col gap-6">
+            <div className="flex h-full flex-col gap-5">
+              <div className="rounded-xl border border-primary/25 bg-primary/5 px-5 py-4 md:px-6 md:py-5">
+                <p className="text-base leading-relaxed text-foreground md:text-lg">
+                  Each non-tied row is a Bernoulli trial (ensemble win or loss). The natural test for{" "}
+                  <span className="font-mono">π &gt; 0.5</span> on a sum of Bernoulli trials is the{" "}
+                  <span className="font-semibold">one-sided exact binomial test</span>.
+                </p>
+              </div>
+              <div className="grid gap-4 md:grid-cols-2 md:gap-5">
+                <div className="rounded-lg border border-border bg-muted/15 p-4 md:p-5">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-primary md:text-sm">Why this test</p>
+                  <ul className="mt-2 space-y-1.5 text-sm leading-snug text-muted-foreground md:text-base">
+                    <li>• Outcome is binary on each row — proportion is the right parameter.</li>
+                    <li>• Exact binomial avoids large-sample approximations near boundaries.</li>
+                    <li>• Matches the descriptive non-tie win-rate framing the audience already saw.</li>
+                  </ul>
+                </div>
+                <div className="rounded-lg border border-border bg-muted/15 p-4 md:p-5">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-primary md:text-sm">Why not a means-based test</p>
+                  <ul className="mt-2 space-y-1.5 text-sm leading-snug text-muted-foreground md:text-base">
+                    <li>• Metric units differ (accuracy, RMSE, MAPE…), so averaging raw differences across metrics is not meaningful.</li>
+                    <li>• Win/loss is metric-scale-free and survives the mixed-metric design.</li>
+                  </ul>
+                </div>
+              </div>
+              <div className="rounded-lg border border-border p-4 md:p-5">
+                <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground md:text-sm">Assumptions and how we handled them</p>
+                <ul className="mt-2 space-y-1.5 text-sm leading-snug text-muted-foreground md:text-base">
+                  <li>
+                    <span className="font-medium text-foreground">Ties.</span> A tie is neither a success nor a failure, so the 261
+                    tied rows are excluded from the test denominator (counted and reported separately).
+                  </li>
+                  <li>
+                    <span className="font-medium text-foreground">MAPE stability.</span> MAPE rows are excluded from the headline test
+                    because MAPE can explode when targets are near zero; we still report a sensitivity test that includes them.
+                  </li>
+                  <li>
+                    <span className="font-medium text-foreground">Independence.</span> Rows share datasets, splits, and pairs, so
+                    independence is approximate. The binomial test is a course-appropriate, conservative approximation to that
+                    structure — flagged again in limitations.
+                  </li>
+                </ul>
+              </div>
+            </div>
+          </SlideShell>
+          <NotesBlock>
+            Anchor the test choice in two ideas: (1) outcome is binary, so a proportion test is the right tool; (2) metric units
+            differ, so a means-based test would mix incompatible scales. Be honest that independence is approximate — that is exactly
+            why we revisit it in the limitations slide rather than overclaiming.
+          </NotesBlock>
+        </section>
+
+        {/* 18 — Headline result + p-value + CI interpretation */}
+        <section>
+          <SlideShell
+            kicker="Hypothesis testing"
+            title="Headline result — and how to read it"
+            slideNumber={18}
+            concepts="p-value interpretation against α; confidence interval for π; decision rule applied to the headline test."
+          >
+            <div className="grid h-full min-h-0 items-center gap-8 lg:grid-cols-[1fr_1.05fr] lg:gap-10">
+              <SimpleBars data={headlineComparison} height={340} percent />
+              <div className="flex min-w-0 flex-col gap-4">
                 <BigNumber
+                  compact
                   label="Headline ensemble win rate"
                   value={finalNumbers.headlineWinRate}
-                  detail="excluding MAPE and test-denominator ties"
+                  detail="Non-tied non-MAPE rows (10,797 wins / 12,339 trials)"
                 />
-                <p className="text-xl font-medium leading-snug md:text-2xl">
-                  95% confidence interval (ensemble win proportion): {finalNumbers.confidenceInterval}
-                </p>
-                <p className="text-xl font-medium leading-snug md:text-2xl">
-                  p-value {finalNumbers.pValue}; decision: {finalNumbers.decision}
-                </p>
+                <div className="rounded-lg border border-border bg-muted/15 p-3 md:p-4">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-primary md:text-sm">95% confidence interval for π</p>
+                  <p className="mt-1 font-mono text-base leading-snug text-foreground md:text-lg">
+                    {finalNumbers.confidenceInterval}
+                  </p>
+                  <p className="mt-1 text-xs leading-snug text-muted-foreground md:text-sm">
+                    Even the lower bound is far above 0.50, which is consistent with rejecting H₀.
+                  </p>
+                </div>
+                <div className="rounded-lg border border-primary/30 bg-primary/5 p-3 md:p-4">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-primary md:text-sm">p-value vs α</p>
+                  <p className="mt-1 font-mono text-base leading-snug text-foreground md:text-lg">
+                    p-value {finalNumbers.pValue} &nbsp;&lt;&nbsp; α = 0.05
+                  </p>
+                  <p className="mt-1 text-xs leading-snug text-muted-foreground md:text-sm">
+                    Decision rule: reject H₀ in favour of H₁. Result: <span className="font-medium text-foreground">{finalNumbers.decision}</span>.
+                  </p>
+                </div>
               </div>
             </div>
           </SlideShell>
           <NotesBlock>
-            Slow down on the confidence interval: it estimates the long-run win proportion for this benchmark-style sampling story, not
-                    every future dataset.
+            Read the p-value as “if H₀ were true, the chance of seeing 10,797-or-more ensemble wins in 12,339 trials is essentially
+            zero.” Read the CI as a plausible range for the true win proportion π in this benchmark — and note both endpoints lie far
+            above 0.5, which is the same evidence the p-value summarises.
           </NotesBlock>
         </section>
 
-        {/* 17 */}
+        {/* 19 — MAPE sensitivity */}
         <section>
           <SlideShell
             kicker="Robustness"
             title="MAPE sensitivity check alongside the headline test"
-            slideNumber={17}
+            slideNumber={19}
             concepts="Same hypothesis-testing idea with MAPE included for comparison; headline test still excludes MAPE."
           >
             <div className="grid h-full items-center gap-10 lg:grid-cols-[0.95fr_1.05fr] lg:gap-12">
@@ -807,7 +935,7 @@ function App() {
           <SlideShell
             kicker="Decision"
             title="What we conclude from the evidence"
-            slideNumber={18}
+            slideNumber={20}
             concepts="Hypothesis testing decision paired with plain-language support for the project statement."
           >
             <div className="flex h-full flex-col justify-center gap-8">
@@ -834,7 +962,7 @@ function App() {
           <SlideShell
             kicker="Limitations & takeaway"
             title="Where the result holds—and what we still owe the audience"
-            slideNumber={19}
+            slideNumber={21}
             concepts="Honest scope: benchmark design, dependence between rows, fixed modelling choices."
           >
             <div className="flex h-full flex-col justify-center gap-8">
