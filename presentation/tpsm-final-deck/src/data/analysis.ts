@@ -38,11 +38,15 @@ export const headlineComparison = [
   { name: "Observed", value: 87.5 },
 ]
 
-export const modelPairExamples = [
-  "Decision Tree vs Random Forest",
-  "Logistic Regression vs Gradient Boosting",
-  "Linear Regression vs Gradient Boosting Regressor",
-]
+/** Six predefined single vs ensemble pairings (same ordering as modelPairRates). */
+export const modelPairTable = [
+  { single: "Decision Tree", ensemble: "Random Forest" },
+  { single: "Naive Bayes", ensemble: "Gradient Boosting (classifier)" },
+  { single: "SVR", ensemble: "Gradient Boosting Regressor" },
+  { single: "Linear Regression", ensemble: "Gradient Boosting Regressor" },
+  { single: "Decision Tree Regressor", ensemble: "Gradient Boosting Regressor" },
+  { single: "Logistic Regression", ensemble: "Gradient Boosting (classifier)" },
+] as const
 
 export const modelPairRates = [
   { name: "Decision Tree / Random Forest", value: 92.82 },
@@ -73,8 +77,7 @@ export const datasetVariation = [
 ]
 
 export const readinessRows = [
-  ["No time-series rows", "Confirmed"],
-  ["All rows valid paired rows", "Confirmed"],
+  ["Paired row structure", "Valid across all rows"],
   ["Required analysis columns", "Present"],
   ["Numeric metric columns", "Usable"],
   ["Tie rule", "difference_value == 0"],
