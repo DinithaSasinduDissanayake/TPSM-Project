@@ -174,36 +174,112 @@ function PairList({
   )
 }
 
-/** Tiny inline diagram of 5-fold cross-validation: 5 columns × 5 rows where the diagonal is the test fold. */
+/** Tiny inline diagram of k-fold cross-validation with a "× repeats" indicator beside it. */
 function FoldsDiagram() {
   const folds = [0, 1, 2, 3, 4]
   return (
-    <div className="flex flex-col gap-2" aria-label="Five-fold cross-validation diagram">
-      <div className="flex items-center gap-2 text-xs text-muted-foreground md:text-sm">
-        <span className="inline-block h-3 w-3 rounded-sm border border-border bg-muted" /> train
-        <span className="ml-3 inline-block h-3 w-3 rounded-sm border border-primary bg-primary/70" /> test
+    <div className="flex flex-col gap-3" aria-label="Five-fold cross-validation diagram with repeats indicator">
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground md:text-sm">
+        <span className="flex items-center gap-1.5">
+          <span className="inline-block h-3 w-3 rounded-sm border border-border bg-muted" /> train
+        </span>
+        <span className="flex items-center gap-1.5">
+          <span className="inline-block h-3 w-3 rounded-sm border border-primary bg-primary/70" /> test
+        </span>
       </div>
-      <div className="flex flex-col gap-1.5">
-        {folds.map((row) => (
-          <div key={row} className="flex items-center gap-2">
-            <span className="w-12 shrink-0 text-xs text-muted-foreground md:text-sm">Run {row + 1}</span>
-            <div className="flex flex-1 gap-1">
-              {folds.map((col) => (
-                <div
-                  key={col}
-                  className={
-                    "h-5 flex-1 rounded-sm border md:h-6 " +
-                    (col === row ? "border-primary bg-primary/70" : "border-border bg-muted")
-                  }
-                />
-              ))}
+      <div className="flex items-stretch gap-3">
+        <div className="flex flex-1 flex-col gap-1.5">
+          {folds.map((row) => (
+            <div key={row} className="flex items-center gap-2">
+              <span className="w-12 shrink-0 text-xs text-muted-foreground md:text-sm">Fold {row + 1}</span>
+              <div className="flex flex-1 gap-1">
+                {folds.map((col) => (
+                  <div
+                    key={col}
+                    className={
+                      "h-5 flex-1 rounded-sm border md:h-6 " +
+                      (col === row ? "border-primary bg-primary/70" : "border-border bg-muted")
+                    }
+                  />
+                ))}
+              </div>
             </div>
-          </div>
-        ))}
+          ))}
+        </div>
+        <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-primary/40 bg-primary/5 px-3 py-2 text-center">
+          <span className="text-xs font-semibold uppercase tracking-wide text-primary md:text-sm">× repeats</span>
+          <span className="mt-1 text-3xl font-light leading-none text-primary md:text-4xl">↻</span>
+          <span className="mt-1 max-w-[7rem] text-[0.65rem] leading-snug text-muted-foreground md:text-xs">
+            reshuffle, run all folds again
+          </span>
+        </div>
       </div>
-      <p className="mt-1 text-xs leading-snug text-muted-foreground md:text-sm">
-        The test slice rotates each run, then the whole cycle repeats — so every pair contributes many comparison rows.
+      <p className="text-xs leading-snug text-muted-foreground md:text-sm">
+        Each fold yields one comparison row per metric; repeats reshuffle and do it all again, so the table accumulates many
+        comparison rows per pair × dataset.
       </p>
+    </div>
+  )
+}
+
+/** Visual recipe for one paired comparison row. */
+function PairedRowSchematic() {
+  return (
+    <div
+      className="flex flex-col gap-3 rounded-xl border border-border bg-muted/15 p-5 md:p-6"
+      aria-label="Paired comparison row schematic"
+    >
+      <p className="text-xs font-semibold uppercase tracking-wide text-primary md:text-sm">How one row resolves</p>
+
+      <div className="rounded-lg border border-border bg-background/60 px-4 py-3">
+        <p className="text-[0.65rem] font-semibold uppercase tracking-wide text-muted-foreground md:text-xs">Shared context</p>
+        <p className="mt-1 text-sm leading-snug text-foreground md:text-base">
+          dataset · split · pair · metric
+        </p>
+      </div>
+
+      <div className="flex justify-center text-2xl leading-none text-muted-foreground" aria-hidden>
+        ↓
+      </div>
+
+      <div className="grid grid-cols-2 gap-3">
+        <div className="rounded-lg border border-border px-3 py-2.5">
+          <p className="text-[0.65rem] font-semibold uppercase tracking-wide text-muted-foreground md:text-xs">Single model</p>
+          <p className="mt-1 font-mono text-base leading-tight text-foreground md:text-lg">score<sub>S</sub></p>
+        </div>
+        <div className="rounded-lg border border-primary/40 bg-primary/5 px-3 py-2.5">
+          <p className="text-[0.65rem] font-semibold uppercase tracking-wide text-primary md:text-xs">Ensemble model</p>
+          <p className="mt-1 font-mono text-base leading-tight text-foreground md:text-lg">score<sub>E</sub></p>
+        </div>
+      </div>
+
+      <div className="flex justify-center text-2xl leading-none text-muted-foreground" aria-hidden>
+        ↓
+      </div>
+
+      <div className="rounded-lg border border-border bg-background/60 px-4 py-3">
+        <p className="text-[0.65rem] font-semibold uppercase tracking-wide text-muted-foreground md:text-xs">
+          Difference value (sign chooses the winner)
+        </p>
+        <p className="mt-1 font-mono text-sm leading-snug text-foreground md:text-base">
+          difference = score<sub>E</sub> − score<sub>S</sub>{" "}
+          <span className="text-muted-foreground">(direction-adjusted per metric)</span>
+        </p>
+        <ul className="mt-2 space-y-1 text-sm leading-snug md:text-base">
+          <li>
+            <span className="font-semibold text-emerald-700 dark:text-emerald-400">+</span>
+            <span className="text-muted-foreground"> ensemble wins</span>
+          </li>
+          <li>
+            <span className="font-semibold text-amber-800 dark:text-amber-300">−</span>
+            <span className="text-muted-foreground"> single model wins</span>
+          </li>
+          <li>
+            <span className="font-semibold text-foreground">0</span>
+            <span className="text-muted-foreground"> tie</span>
+          </li>
+        </ul>
+      </div>
     </div>
   )
 }
@@ -491,32 +567,22 @@ function App() {
             concepts="Paired comparison: both models see the same context before we read off who won."
             tags={["Paired comparison", "Difference value"]}
           >
-            <div className="grid h-full items-center gap-10 md:grid-cols-2 md:gap-14">
-              <ul className="space-y-3 text-lg leading-relaxed text-muted-foreground md:text-xl">
-                <li>One task type and dataset</li>
-                <li>One fold or repeat (same split context)</li>
-                <li>One metric and one of the six predefined pairings</li>
-                <li>
-                  A stored <span className="font-medium text-foreground">difference_value</span> captures who won on that row
-                </li>
-              </ul>
-              <div className="space-y-4 rounded-xl border border-border bg-muted/20 p-6 md:p-7">
-                <p className="text-sm font-semibold uppercase tracking-wide text-primary">Reading the sign</p>
-                <ul className="space-y-3 text-lg leading-relaxed md:text-xl">
+            <div className="grid h-full items-center gap-10 lg:grid-cols-[0.9fr_1.1fr] lg:gap-12">
+              <div className="flex min-w-0 flex-col gap-4">
+                <ul className="space-y-3 text-base leading-relaxed text-muted-foreground md:text-lg">
+                  <li>One task type and one dataset</li>
+                  <li>One fold of one repeat (same split context for both models)</li>
+                  <li>One metric and one of the six predefined pairings</li>
                   <li>
-                    <span className="font-semibold text-emerald-700 dark:text-emerald-400">Positive</span>
-                    <span className="text-muted-foreground"> — ensemble wins the row</span>
-                  </li>
-                  <li>
-                    <span className="font-semibold text-amber-800 dark:text-amber-300">Negative</span>
-                    <span className="text-muted-foreground"> — single model wins the row</span>
-                  </li>
-                  <li>
-                    <span className="font-semibold text-foreground">Zero</span>
-                    <span className="text-muted-foreground"> — tie</span>
+                    A stored <span className="font-medium text-foreground">difference_value</span> captures who won on that row
                   </li>
                 </ul>
+                <p className="text-sm leading-relaxed text-muted-foreground md:text-base">
+                  Because every row pins all four context items, the comparison is paired and fair — never an apples-to-oranges
+                  match-up across different setups.
+                </p>
               </div>
+              <PairedRowSchematic />
             </div>
           </SlideShell>
           <NotesBlock>
@@ -907,6 +973,10 @@ function App() {
             <div className="grid h-full min-h-0 items-center gap-8 lg:grid-cols-[1fr_1.05fr] lg:gap-10">
               <SimpleBars data={headlineComparison} height={340} percent />
               <div className="flex min-w-0 flex-col gap-4">
+                <p className="rounded-lg border border-primary/30 bg-primary/5 px-4 py-3 text-base leading-snug text-foreground md:text-lg">
+                  In plain English: the data give very strong evidence that ensembles win clearly more than half of the meaningful
+                  comparisons in this benchmark.
+                </p>
                 <BigNumber
                   compact
                   label="Headline ensemble win rate"
@@ -1023,6 +1093,49 @@ function App() {
           <NotesBlock>
             Close calmly: celebrate the strong evidence, restate scope once more in speech if helpful, and invite questions about design
                     trade-offs rather than sounding apologetic.
+          </NotesBlock>
+        </section>
+
+        {/* 22 — Module-concept recap */}
+        <section>
+          <SlideShell
+            kicker="Module concepts in this project"
+            title="Where each lecture concept showed up"
+            slideNumber={22}
+            concepts="A quick map between module concepts and the slides where we used them."
+            tags={["Recap"]}
+          >
+            <div className="flex h-full flex-col gap-4">
+              <p className="max-w-[58rem] text-base leading-relaxed text-muted-foreground md:text-lg">
+                Every concept tag you saw at the bottom of a slide ties back to lectures and labs. Together they cover the full
+                analytical loop: design, describe, infer, decide, qualify.
+              </p>
+              <div className="grid gap-3 md:grid-cols-2 md:gap-4">
+                {[
+                  { c: "Research design & paired comparison", s: "Slides 3 – 8" },
+                  { c: "Resampling (folds & repeats)", s: "Slide 7" },
+                  { c: "Descriptive analysis & denominator choice", s: "Slides 10 – 14" },
+                  { c: "Statistical inference (sample → population)", s: "Slide 15" },
+                  { c: "Hypothesis testing on a population proportion (π, α)", s: "Slides 16 – 17" },
+                  { c: "p-value, confidence interval, decision rule", s: "Slide 18" },
+                  { c: "Sensitivity / robustness check", s: "Slide 19" },
+                  { c: "Interpretation & limitations", s: "Slides 20 – 21" },
+                ].map(({ c, s }) => (
+                  <div key={c} className="flex items-start justify-between gap-4 rounded-lg border border-border bg-muted/15 px-4 py-3">
+                    <span className="text-sm leading-snug text-foreground md:text-base">{c}</span>
+                    <span className="shrink-0 text-xs font-semibold uppercase tracking-wide text-primary md:text-sm">{s}</span>
+                  </div>
+                ))}
+              </div>
+              <p className="text-sm leading-snug text-muted-foreground md:text-base">
+                The thread running through all of these: a broad statement needs broad, paired evidence — then a disciplined
+                inferential step turns that evidence into a defensible conclusion.
+              </p>
+            </div>
+          </SlideShell>
+          <NotesBlock>
+            Closing slide: use it as a quick walk-back so the audience leaves with both the result and the methodology vocabulary.
+            Skip it if time is short — the per-slide tags already carry the same information.
           </NotesBlock>
         </section>
       </div>
