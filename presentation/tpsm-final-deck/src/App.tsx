@@ -405,12 +405,45 @@ function App() {
           </NotesBlock>
         </section>
 
-        {/* 3 */}
+        {/* 3 — Objectives */}
+        <section>
+          <SlideShell
+            kicker="Objectives"
+            title="What the analysis needed to achieve"
+            slideNumber={3}
+            concepts="Assignment alignment: objectives connect the problem statement to predictive modelling, descriptive analysis, and hypothesis testing."
+            tags={["Objectives", "Research design"]}
+          >
+            <div className="grid h-full items-center gap-6 md:grid-cols-[1fr_1fr] md:gap-8">
+              <div className="space-y-4">
+                <p className="text-xl font-medium leading-snug text-foreground md:text-2xl">
+                  The goal was not just to produce prediction scores; it was to interpret whether the pattern supports the project statement.
+                </p>
+                <p className="text-base leading-relaxed text-muted-foreground md:text-lg">
+                  That required predictive modelling first, then descriptive and inferential analysis on the model-comparison evidence.
+                </p>
+              </div>
+              <ul className="space-y-3 text-base leading-snug text-muted-foreground md:text-lg">
+                <li className="rounded-lg border border-border bg-muted/15 px-4 py-3">Evaluate single vs ensemble predictive models.</li>
+                <li className="rounded-lg border border-border bg-muted/15 px-4 py-3">Generate paired comparison evidence.</li>
+                <li className="rounded-lg border border-border bg-muted/15 px-4 py-3">Summarize outcomes using descriptive analysis.</li>
+                <li className="rounded-lg border border-border bg-muted/15 px-4 py-3">Test whether the ensemble win proportion is above 0.50.</li>
+                <li className="rounded-lg border border-border bg-muted/15 px-4 py-3">Interpret the result with limitations.</li>
+              </ul>
+            </div>
+          </SlideShell>
+          <NotesBlock>
+            This slide makes the assignment objectives explicit. It also prevents the presentation from sounding like a pure prediction
+            exercise or a pure hypothesis test: the predictive model outputs become evidence, then the statistics interpret that evidence.
+          </NotesBlock>
+        </section>
+
+        {/* 4 */}
         <section>
           <SlideShell
             kicker="Motivation"
             title="Why a single headline score is a weak answer"
-            slideNumber={3}
+            slideNumber={4}
             concepts="Motivates the methodology: we need many fair, repeated comparisons before we can summarize or test anything."
             tags={["Research design"]}
           >
@@ -430,12 +463,12 @@ function App() {
           </NotesBlock>
         </section>
 
-        {/* 4 */}
+        {/* 5 */}
         <section>
           <SlideShell
             kicker="Method"
             title="How we turned the claim into something measurable"
-            slideNumber={4}
+            slideNumber={5}
             concepts="Links predictive modelling outputs to the statistical story: first describe wins, then infer a population proportion."
             tags={["Research design", "Paired comparison"]}
           >
@@ -445,9 +478,9 @@ function App() {
               </p>
               <div className="fragment grid gap-4 md:grid-cols-4 md:gap-3">
                 {[
-                  { step: "1", label: "Benchmark tasks", detail: "Classification and regression datasets" },
+                  { step: "1", label: "Prepare data", detail: "Secondary benchmark datasets made modelling-ready" },
                   { step: "2", label: "Train & score", detail: "Predictive models under the same setup" },
-                  { step: "3", label: "One row per comparison", detail: "Same split, pair, and metric" },
+                  { step: "3", label: "Compare rows", detail: "Same split, pair, and metric" },
                   { step: "4", label: "Summarize & test", detail: "Descriptive analysis, then hypothesis testing" },
                 ].map(({ step, label, detail }) => (
                   <div key={step} className="rounded-lg border border-border bg-muted/30 px-4 py-4 md:py-5">
@@ -473,12 +506,57 @@ function App() {
           </NotesBlock>
         </section>
 
-        {/* 5 — Predictive modelling stage */}
+        {/* 6 — Data collection and preprocessing */}
+        <section>
+          <SlideShell
+            kicker="Data collection & preprocessing"
+            title="Preparing benchmark data for fair model comparison"
+            slideNumber={6}
+            concepts="Data collection and preprocessing: secondary benchmark datasets were prepared for repeated predictive model evaluation."
+            tags={["Data collection", "Data preprocessing"]}
+          >
+            <div className="grid h-full items-center gap-6 lg:grid-cols-[0.9fr_1.1fr] lg:gap-8">
+              <div className="rounded-xl border border-primary/25 bg-primary/5 px-5 py-5 md:px-6 md:py-6">
+                <p className="text-4xl font-semibold leading-none text-foreground md:text-5xl">{finalNumbers.datasets}</p>
+                <p className="mt-2 text-base leading-snug text-muted-foreground md:text-lg">
+                  secondary benchmark datasets covering classification and regression tasks
+                </p>
+                <Divider />
+                <p className="text-sm leading-relaxed text-muted-foreground md:text-base">
+                  The output of preparation was not a single prediction table; it was a modelling-ready setup that could produce paired
+                  comparison rows consistently across datasets, metrics, model pairs, and splits.
+                </p>
+              </div>
+              <div className="grid gap-3 md:grid-cols-2">
+                {[
+                  ["Data source", "Secondary benchmark datasets were used rather than newly collected primary survey data."],
+                  ["Task coverage", "Datasets covered both classification and regression benchmark tasks."],
+                  ["Preparation", "Datasets were prepared into modelling-ready tables before training and evaluation."],
+                  ["Resampling setup", "Train/test splits were generated through repeated folds."],
+                  ["Readiness checks", "Missing, invalid, duplicate, and required-column checks were performed where relevant."],
+                  ["Evidence format", "Final model outputs were stored as paired comparison rows."],
+                ].map(([label, detail]) => (
+                  <div key={label} className="rounded-lg border border-border bg-muted/15 px-4 py-3">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-primary">{label}</p>
+                    <p className="mt-1 text-sm leading-snug text-muted-foreground md:text-base">{detail}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </SlideShell>
+          <NotesBlock>
+            Keep this compact. We are not inventing new preprocessing details; we are making the template section visible. Say these
+            were secondary benchmark datasets, prepared for modelling, checked for readiness where relevant, then evaluated through
+            repeated split-level comparisons.
+          </NotesBlock>
+        </section>
+
+        {/* 7 — Predictive modelling stage */}
         <section>
           <SlideShell
             kicker="Predictive modelling"
             title="Predictive modelling generated the evidence"
-            slideNumber={5}
+            slideNumber={7}
             concepts="Predictive modelling phase: train models, generate predictions and metric scores, then convert those scores into paired comparison rows."
             tags={["Predictive modelling", "Model evaluation"]}
           >
@@ -520,12 +598,12 @@ function App() {
           </NotesBlock>
         </section>
 
-        {/* 6 — Designed for breadth (NEW) */}
+        {/* 8 — Designed for breadth (NEW) */}
         <section>
           <SlideShell
             kicker="Scientific design"
             title="Designed for breadth — one statement, five axes of variation"
-            slideNumber={6}
+            slideNumber={8}
             concepts="Why this design beats a one-dataset answer: the claim is broad, so the evidence has to vary on every axis the claim touches."
             tags={["Research design", "Scientific breadth"]}
           >
@@ -563,12 +641,12 @@ function App() {
           </NotesBlock>
         </section>
 
-        {/* 7 — Row generation formula */}
+        {/* 9 — Row generation formula */}
         <section>
           <SlideShell
             kicker="Evidence base"
             title="How the 13,950 comparison rows were generated"
-            slideNumber={7}
+            slideNumber={9}
             concepts="Each evidence row is one dataset × model-pair × metric × split comparison; task-specific totals are summed."
             tags={["Research design", "Data readiness"]}
           >
@@ -621,12 +699,12 @@ function App() {
           </NotesBlock>
         </section>
 
-        {/* 8 — Model pairs split by task type */}
+        {/* 10 — Model pairs split by task type */}
         <section>
           <SlideShell
             kicker="Model design"
             title="Six predefined model pairings — three per task type"
-            slideNumber={8}
+            slideNumber={10}
             concepts="Continues the methodology: same fixed pairings drive every row in the comparison table."
             tags={["Predictive modelling", "Paired comparison"]}
           >
@@ -658,12 +736,12 @@ function App() {
           </NotesBlock>
         </section>
 
-        {/* 9 — Folds & repeats with diagram */}
+        {/* 11 — Folds & repeats with diagram */}
         <section>
           <SlideShell
             kicker="Repeated evaluations"
             title="Why folds and repeats reduce reliance on one lucky split"
-            slideNumber={9}
+            slideNumber={11}
             concepts="Folds and repeats: each pair is re-evaluated under many split contexts so the evidence is not a single roll of the dice."
             tags={["Resampling", "Folds & repeats"]}
           >
@@ -690,12 +768,12 @@ function App() {
           </NotesBlock>
         </section>
 
-        {/* 10 — One row meaning (moved after pairs+folds) */}
+        {/* 12 — One row meaning (moved after pairs+folds) */}
         <section>
           <SlideShell
             kicker="Paired comparison"
             title="What a single row represents"
-            slideNumber={10}
+            slideNumber={12}
             concepts="Paired comparison: both models see the same context before we read off who won."
             tags={["Paired comparison", "Difference value"]}
           >
@@ -723,12 +801,12 @@ function App() {
           </NotesBlock>
         </section>
 
-        {/* 11 — Readiness check + scale (compact numbers to avoid overlap) */}
+        {/* 13 — Readiness check + scale (compact numbers to avoid overlap) */}
         <section>
           <SlideShell
             kicker="Analysis readiness"
             title="The evidence base before descriptive analysis"
-            slideNumber={11}
+            slideNumber={13}
             concepts="Pre-descriptive checkpoint: how much comparison data we have, and that it is structurally clean."
             tags={["Data readiness"]}
           >
@@ -766,12 +844,12 @@ function App() {
           </NotesBlock>
         </section>
 
-        {/* 12 */}
+        {/* 14 */}
         <section>
           <SlideShell
             kicker="Descriptive analysis"
             title="Wins, losses, and ties across all paired rows"
-            slideNumber={12}
+            slideNumber={14}
             concepts="Descriptive analysis: count outcomes before any hypothesis test."
             tags={["Descriptive analysis"]}
           >
@@ -796,12 +874,12 @@ function App() {
           </NotesBlock>
         </section>
 
-        {/* 13 — Denominator made explicit */}
+        {/* 15 — Denominator made explicit */}
         <section>
           <SlideShell
             kicker="Descriptive analysis"
             title="Why we report two win rates — and which one the test uses"
-            slideNumber={13}
+            slideNumber={15}
             concepts="Denominator choice: ties stay in the descriptive view but leave the hypothesis-test denominator."
             tags={["Descriptive analysis", "Denominator"]}
           >
@@ -848,12 +926,12 @@ function App() {
           </NotesBlock>
         </section>
 
-        {/* 14 */}
+        {/* 16 */}
         <section>
           <SlideShell
             kicker="Descriptive analysis"
             title="Both task types lean ensemble"
-            slideNumber={14}
+            slideNumber={16}
             concepts="Descriptive analysis split by task type; still pre-inferential."
             tags={["Descriptive analysis"]}
           >
@@ -876,12 +954,12 @@ function App() {
           </NotesBlock>
         </section>
 
-        {/* 15 */}
+        {/* 17 */}
         <section>
           <SlideShell
             kicker="Descriptive analysis"
             title="Metric-level win rates tell a similar story with nuance"
-            slideNumber={15}
+            slideNumber={17}
             concepts="Descriptive analysis by metric; highlights why proportions beat mixing raw score units."
             tags={["Descriptive analysis"]}
           >
@@ -903,17 +981,17 @@ function App() {
             </div>
           </SlideShell>
           <NotesBlock>
-            Keep MAPE light here; slide 20 handles the headline exclusion. Mention recall/precision dips if the audience cares about
+            Keep MAPE light here; slide 22 handles the headline exclusion. Mention recall/precision dips if the audience cares about
                     trade-offs.
           </NotesBlock>
         </section>
 
-        {/* 16 */}
+        {/* 18 */}
         <section>
           <SlideShell
             kicker="Descriptive analysis"
             title="Model-pair variation keeps the story honest"
-            slideNumber={16}
+            slideNumber={18}
             concepts="Descriptive analysis across the six fixed pairings; reinforces that support is strong but not uniform."
             tags={["Descriptive analysis"]}
           >
@@ -934,17 +1012,17 @@ function App() {
             </div>
           </SlideShell>
           <NotesBlock>
-            Connect back to slide 8: these are the same six predefined comparisons, now summarized. Useful if examiners ask about
+            Connect back to slide 10: these are the same six predefined comparisons, now summarized. Useful if examiners ask about
             weaker pairs.
           </NotesBlock>
         </section>
 
-        {/* 17 */}
+        {/* 19 */}
         <section>
           <SlideShell
             kicker="Statistical inference"
             title="From many rows to a disciplined population statement"
-            slideNumber={17}
+            slideNumber={19}
             concepts="Statistical inference: use sample evidence to judge a broader win-rate pattern."
             tags={["Statistical inference"]}
           >
@@ -975,12 +1053,12 @@ function App() {
           </NotesBlock>
         </section>
 
-        {/* 18 — H0 / H1 with proper notation */}
+        {/* 20 — H0 / H1 with proper notation */}
         <section>
           <SlideShell
             kicker="Hypothesis testing"
             title="Stating the hypotheses precisely"
-            slideNumber={18}
+            slideNumber={20}
             concepts="Hypothesis testing: parameter π (ensemble win proportion among non-tied rows), null and alternative, significance level α."
             tags={["Hypothesis testing", "Population proportion", "α-level"]}
           >
@@ -1032,12 +1110,12 @@ function App() {
           </NotesBlock>
         </section>
 
-        {/* 19 — Test choice & assumptions */}
+        {/* 21 — Test choice & assumptions */}
         <section>
           <SlideShell
             kicker="Hypothesis testing"
             title="Test choice and assumptions"
-            slideNumber={19}
+            slideNumber={21}
             concepts="Why a one-sided exact binomial test on π is the right tool for this paired win/loss question."
             tags={["Hypothesis testing", "Test choice", "Assumptions"]}
           >
@@ -1101,12 +1179,12 @@ function App() {
           </NotesBlock>
         </section>
 
-        {/* 20 — Headline result + p-value + CI interpretation */}
+        {/* 22 — Headline result + p-value + CI interpretation */}
         <section>
           <SlideShell
             kicker="Hypothesis testing"
             title="Headline result — and how to read it"
-            slideNumber={20}
+            slideNumber={22}
             concepts="p-value interpretation against α; confidence interval for π; decision rule applied to the headline test."
             tags={["p-value", "Confidence interval", "Decision rule"]}
           >
@@ -1152,12 +1230,12 @@ function App() {
           </NotesBlock>
         </section>
 
-        {/* 21 — MAPE sensitivity */}
+        {/* 23 — MAPE sensitivity */}
         <section>
           <SlideShell
             kicker="Robustness"
             title="MAPE sensitivity check alongside the headline test"
-            slideNumber={21}
+            slideNumber={23}
             concepts="Same hypothesis-testing idea with MAPE included for comparison; headline test still excludes MAPE."
             tags={["Sensitivity analysis"]}
           >
@@ -1180,12 +1258,12 @@ function App() {
           </NotesBlock>
         </section>
 
-        {/* 22 */}
+        {/* 24 */}
         <section>
           <SlideShell
             kicker="Decision"
             title="What we conclude from the evidence"
-            slideNumber={22}
+            slideNumber={24}
             concepts="Hypothesis testing decision paired with plain-language support for the project statement."
             tags={["Decision", "Interpretation"]}
           >
@@ -1208,12 +1286,12 @@ function App() {
           </NotesBlock>
         </section>
 
-        {/* 23 */}
+        {/* 25 */}
         <section>
           <SlideShell
             kicker="Limitations & takeaway"
             title="Where the result holds—and what we still owe the audience"
-            slideNumber={23}
+            slideNumber={25}
             concepts="Honest scope: benchmark design, dependence between rows, fixed modelling choices."
             tags={["Limitations"]}
           >
@@ -1237,12 +1315,12 @@ function App() {
           </NotesBlock>
         </section>
 
-        {/* 24 — Module-concept recap */}
+        {/* 26 — Module-concept recap */}
         <section>
           <SlideShell
             kicker="Module concepts in this project"
             title="Where each lecture concept showed up"
-            slideNumber={24}
+            slideNumber={26}
             concepts="A quick map between module concepts and the slides where we used them."
             tags={["Recap"]}
           >
@@ -1253,15 +1331,17 @@ function App() {
               </p>
               <div className="grid gap-3 md:grid-cols-2 md:gap-4">
                 {[
-                  { c: "Predictive modelling", s: "Slides 5, 8 – 10" },
-                  { c: "Research design & paired comparison", s: "Slides 3 – 10" },
-                  { c: "Resampling (folds & repeats)", s: "Slide 9" },
-                  { c: "Descriptive analysis & denominator choice", s: "Slides 12 – 16" },
-                  { c: "Statistical inference (sample → population)", s: "Slide 17" },
-                  { c: "Hypothesis testing on a population proportion (π, α)", s: "Slides 18 – 19" },
-                  { c: "p-value, confidence interval, decision rule", s: "Slide 20" },
-                  { c: "Sensitivity / robustness check", s: "Slide 21" },
-                  { c: "Interpretation & limitations", s: "Slides 22 – 23" },
+                  { c: "Problem statement & objectives", s: "Slides 1 – 3" },
+                  { c: "Data collection & preprocessing", s: "Slide 6" },
+                  { c: "Predictive modelling", s: "Slides 7, 10 – 12" },
+                  { c: "Research design & paired comparison", s: "Slides 4 – 13" },
+                  { c: "Resampling (folds & repeats)", s: "Slide 11" },
+                  { c: "Descriptive analysis & denominator choice", s: "Slides 14 – 18" },
+                  { c: "Statistical inference (sample → population)", s: "Slide 19" },
+                  { c: "Hypothesis testing on a population proportion (π, α)", s: "Slides 20 – 21" },
+                  { c: "p-value, confidence interval, decision rule", s: "Slide 22" },
+                  { c: "Sensitivity / robustness check", s: "Slide 23" },
+                  { c: "Interpretation & limitations", s: "Slides 24 – 25" },
                 ].map(({ c, s }) => (
                   <div key={c} className="flex items-start justify-between gap-4 rounded-lg border border-border bg-muted/15 px-4 py-3">
                     <span className="text-sm leading-snug text-foreground md:text-base">{c}</span>

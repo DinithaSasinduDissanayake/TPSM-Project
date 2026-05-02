@@ -42,6 +42,22 @@ npm run lint
 npm run build
 ```
 
+## Export Slide Images
+
+```bash
+npm run export:images
+```
+
+The export script starts a local Vite server, captures one final-state PNG per slide at 1920 × 1080, and writes the images to:
+
+```text
+../slides as images/latest/
+```
+
+If a previous `latest/` export exists, it is moved to `../slides as images/archive/<timestamp>/` before the new export is created.
+The script also writes a `manifest.json` with slide count, image size, command, deck path, and fragment handling details. Archives are
+not deleted automatically.
+
 ## Notes
 
 - This is a first review draft.
