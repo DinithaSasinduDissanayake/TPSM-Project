@@ -233,7 +233,12 @@ function App() {
       <div className="slides">
         {/* 1 */}
         <section>
-          <SlideShell kicker="TPSM — research question" title="Do ensembles outperform single models across many comparisons?" slideNumber={1}>
+          <SlideShell
+            kicker="TPSM — research question"
+            title="Do ensembles outperform single models across many comparisons?"
+            slideNumber={1}
+            tags={["Research question"]}
+          >
             <div className="flex h-full flex-col justify-center gap-8">
               <Statement>
                 We stress-tested a common machine-learning claim with descriptive summaries and a formal hypothesis test.
@@ -256,6 +261,7 @@ function App() {
             title="What we set out to assess"
             slideNumber={2}
             concepts="Frames the claim before we build the methodology that will produce comparable evidence."
+            tags={["Research question", "Operationalization"]}
           >
             <div className="flex h-full flex-col gap-8">
               <blockquote className="border-l-4 border-primary pl-6 text-2xl font-medium leading-snug text-foreground md:text-3xl">
@@ -300,6 +306,7 @@ function App() {
             title="Why a single headline score is a weak answer"
             slideNumber={3}
             concepts="Motivates the methodology: we need many fair, repeated comparisons before we can summarize or test anything."
+            tags={["Research design"]}
           >
             <div className="flex h-full flex-col justify-center gap-6 text-2xl font-medium leading-snug text-foreground md:gap-8 md:text-3xl">
               <p className="fragment">Performance swings with the dataset you happened to choose.</p>
@@ -324,6 +331,7 @@ function App() {
             title="How we turned the claim into something measurable"
             slideNumber={4}
             concepts="Links predictive modelling outputs to the statistical story: first describe wins, then infer a population proportion."
+            tags={["Research design", "Paired comparison"]}
           >
             <div className="flex h-full flex-col justify-center gap-8">
               <p className="text-xl leading-relaxed text-muted-foreground md:text-2xl">
@@ -364,6 +372,7 @@ function App() {
             title="Designed for breadth — one statement, five axes of variation"
             slideNumber={5}
             concepts="Why this design beats a one-dataset answer: the claim is broad, so the evidence has to vary on every axis the claim touches."
+            tags={["Research design", "Scientific breadth"]}
           >
             <div className="flex h-full flex-col gap-6">
               <p className="max-w-[58rem] text-base leading-relaxed text-muted-foreground md:text-lg">
@@ -408,6 +417,7 @@ function App() {
             title="Six predefined model pairings — three per task type"
             slideNumber={6}
             concepts="Continues the methodology: same fixed pairings drive every row in the comparison table."
+            tags={["Predictive modelling", "Paired comparison"]}
           >
             <div className="flex h-full flex-col gap-5">
               <p className="max-w-[58rem] text-base leading-relaxed text-muted-foreground md:text-lg">
@@ -447,6 +457,7 @@ function App() {
             title="Why folds and repeats reduce reliance on one lucky split"
             slideNumber={7}
             concepts="Folds and repeats: each pair is re-evaluated under many split contexts so the evidence is not a single roll of the dice."
+            tags={["Resampling", "Folds & repeats"]}
           >
             <div className="grid h-full items-center gap-10 lg:grid-cols-[0.9fr_1.1fr] lg:gap-14">
               <FoldsDiagram />
@@ -478,6 +489,7 @@ function App() {
             title="What a single row represents"
             slideNumber={8}
             concepts="Paired comparison: both models see the same context before we read off who won."
+            tags={["Paired comparison", "Difference value"]}
           >
             <div className="grid h-full items-center gap-10 md:grid-cols-2 md:gap-14">
               <ul className="space-y-3 text-lg leading-relaxed text-muted-foreground md:text-xl">
@@ -520,6 +532,7 @@ function App() {
             title="The evidence base before descriptive analysis"
             slideNumber={9}
             concepts="Pre-descriptive checkpoint: how much comparison data we have, and that it is structurally clean."
+            tags={["Data readiness"]}
           >
             <div className="grid h-full items-start gap-10 lg:grid-cols-[0.85fr_1.15fr] lg:gap-12">
               <div className="grid grid-cols-2 gap-x-10 gap-y-7">
@@ -562,6 +575,7 @@ function App() {
             title="Wins, losses, and ties across all paired rows"
             slideNumber={10}
             concepts="Descriptive analysis: count outcomes before any hypothesis test."
+            tags={["Descriptive analysis"]}
           >
             <div className="grid h-full min-h-0 items-center gap-8 lg:grid-cols-[1.25fr_0.75fr] lg:gap-10">
               <SimpleBars data={descriptiveCounts} height={360} />
@@ -591,6 +605,7 @@ function App() {
             title="Why we report two win rates — and which one the test uses"
             slideNumber={11}
             concepts="Denominator choice: ties stay in the descriptive view but leave the hypothesis-test denominator."
+            tags={["Descriptive analysis", "Denominator"]}
           >
             <div className="flex h-full flex-col gap-6">
               <div className="grid gap-5 md:grid-cols-2 md:gap-7">
@@ -642,13 +657,20 @@ function App() {
             title="Both task types lean ensemble"
             slideNumber={12}
             concepts="Descriptive analysis split by task type; still pre-inferential."
+            tags={["Descriptive analysis"]}
           >
             <div className="grid h-full items-center gap-8 lg:grid-cols-[1.12fr_0.88fr] lg:gap-10">
-              <SimpleBars data={taskWinRates} height={380} percent />
-              <p className="text-2xl font-medium leading-snug md:text-3xl">
-                Each bar is the ensemble win rate among non-tied rows for that task family—well above the 50% reference line shown on
-                the chart.
-              </p>
+              <SimpleBars data={taskWinRates} height={360} percent />
+              <div className="flex flex-col gap-3 text-base leading-relaxed md:text-lg">
+                <p className="text-xl font-semibold leading-snug text-foreground md:text-2xl">
+                  Both task families lean the same direction.
+                </p>
+                <p className="text-muted-foreground">
+                  Classification and regression were the two halves of the project scope. If only one half supported ensembles, we
+                  would not be able to talk about “many prediction tasks”. Both sit far above 50%, so the headline result is not
+                  driven by a single task family.
+                </p>
+              </div>
             </div>
           </SlideShell>
           <NotesBlock>
@@ -663,13 +685,22 @@ function App() {
             title="Metric-level win rates tell a similar story with nuance"
             slideNumber={13}
             concepts="Descriptive analysis by metric; highlights why proportions beat mixing raw score units."
+            tags={["Descriptive analysis"]}
           >
-            <div className="grid h-full items-start gap-6 lg:grid-cols-[1.2fr_0.8fr] lg:gap-8">
+            <div className="grid h-full min-h-0 items-center gap-6 lg:grid-cols-[1.35fr_0.65fr] lg:gap-8">
               <HorizontalRates data={metricWinRates} chartHeight={400} />
-              <div className="space-y-4 text-lg leading-relaxed text-muted-foreground md:text-xl">
-                <p>Most metrics sit above 50%, showing the ensemble edge is broad.</p>
-                <p>MAPE is useful contextually but noisy when targets are near zero—called out again when we discuss the headline test.</p>
-                <p>Because units differ, we emphasize win proportions rather than averaging raw differences across metrics.</p>
+              <div className="flex min-w-0 flex-col gap-3 text-base leading-relaxed md:text-lg">
+                <p className="text-xl font-semibold leading-snug text-foreground md:text-2xl">
+                  Different metrics, same direction.
+                </p>
+                <p className="text-muted-foreground">
+                  Each metric stresses a different failure mode (calibration, ranking, error magnitude). All ten still favour
+                  ensembles — strong evidence the win pattern is not a metric-choice artefact.
+                </p>
+                <p className="text-muted-foreground">
+                  Mixing raw differences across metrics is meaningless because units differ; that is why win proportions are the
+                  right summary, and exactly the framing the test inherits.
+                </p>
               </div>
             </div>
           </SlideShell>
@@ -686,6 +717,7 @@ function App() {
             title="Model-pair variation keeps the story honest"
             slideNumber={14}
             concepts="Descriptive analysis across the six fixed pairings; reinforces that support is strong but not uniform."
+            tags={["Descriptive analysis"]}
           >
             <div className="grid h-full min-h-0 items-center gap-6 lg:grid-cols-[1.35fr_0.65fr] lg:gap-8">
               <HorizontalRates data={modelPairRates} chartHeight={400} />
@@ -716,6 +748,7 @@ function App() {
             title="From many rows to a disciplined population statement"
             slideNumber={15}
             concepts="Statistical inference: use sample evidence to judge a broader win-rate pattern."
+            tags={["Statistical inference"]}
           >
             <div className="flex h-full flex-col justify-center gap-10">
               <div className="grid gap-8 md:grid-cols-[1fr_auto_1fr] md:items-center">
@@ -731,8 +764,10 @@ function App() {
                 </div>
               </div>
               <p className="fragment max-w-[52rem] text-lg leading-relaxed text-muted-foreground md:text-xl">
-                Hypothesis testing gives a structured way to answer that with a population proportion, a confidence interval, and a
-                decision rule—while keeping the interpretation tied to this benchmark.
+                Next we name the parameter — call it{" "}
+                <span className="font-mono text-foreground">π</span>, the population win proportion among non-tied rows — and test
+                whether <span className="font-mono text-foreground">π &gt; 0.50</span> using a confidence interval, a p-value, and a
+                pre-set decision rule.
               </p>
             </div>
           </SlideShell>
@@ -749,6 +784,7 @@ function App() {
             title="Stating the hypotheses precisely"
             slideNumber={16}
             concepts="Hypothesis testing: parameter π (ensemble win proportion among non-tied rows), null and alternative, significance level α."
+            tags={["Hypothesis testing", "Population proportion", "α-level"]}
           >
             <div className="flex h-full flex-col gap-6">
               <div className="rounded-xl border border-border bg-muted/15 px-6 py-4 md:px-8 md:py-5">
@@ -805,6 +841,7 @@ function App() {
             title="Test choice and assumptions"
             slideNumber={17}
             concepts="Why a one-sided exact binomial test on π is the right tool for this paired win/loss question."
+            tags={["Hypothesis testing", "Test choice", "Assumptions"]}
           >
             <div className="flex h-full flex-col gap-5">
               <div className="rounded-xl border border-primary/25 bg-primary/5 px-5 py-4 md:px-6 md:py-5">
@@ -865,6 +902,7 @@ function App() {
             title="Headline result — and how to read it"
             slideNumber={18}
             concepts="p-value interpretation against α; confidence interval for π; decision rule applied to the headline test."
+            tags={["p-value", "Confidence interval", "Decision rule"]}
           >
             <div className="grid h-full min-h-0 items-center gap-8 lg:grid-cols-[1fr_1.05fr] lg:gap-10">
               <SimpleBars data={headlineComparison} height={340} percent />
@@ -910,6 +948,7 @@ function App() {
             title="MAPE sensitivity check alongside the headline test"
             slideNumber={19}
             concepts="Same hypothesis-testing idea with MAPE included for comparison; headline test still excludes MAPE."
+            tags={["Sensitivity analysis"]}
           >
             <div className="grid h-full items-center gap-10 lg:grid-cols-[0.95fr_1.05fr] lg:gap-12">
               <BigNumber label="Non-tie win rate with MAPE included" value="87.00%" detail="Sensitivity check on all metrics" />
@@ -937,6 +976,7 @@ function App() {
             title="What we conclude from the evidence"
             slideNumber={20}
             concepts="Hypothesis testing decision paired with plain-language support for the project statement."
+            tags={["Decision", "Interpretation"]}
           >
             <div className="flex h-full flex-col justify-center gap-8">
               <Statement>
@@ -964,6 +1004,7 @@ function App() {
             title="Where the result holds—and what we still owe the audience"
             slideNumber={21}
             concepts="Honest scope: benchmark design, dependence between rows, fixed modelling choices."
+            tags={["Limitations"]}
           >
             <div className="flex h-full flex-col justify-center gap-8">
               <ul className="max-w-[52rem] list-disc space-y-4 pl-6 text-lg leading-relaxed text-muted-foreground marker:text-primary md:text-xl">

@@ -1,5 +1,6 @@
 import type { ReactNode } from "react"
 import { Separator } from "@/components/ui/separator"
+import { Badge } from "@/components/ui/badge"
 
 type SlideShellProps = {
   title: string
@@ -8,9 +9,11 @@ type SlideShellProps = {
   kicker?: string
   /** Optional one-line lecture vocabulary for this slide */
   concepts?: string
+  /** Short module-concept tags shown in the slide footer (e.g. "Hypothesis testing", "Population proportion"). */
+  tags?: ReadonlyArray<string>
 }
 
-export function SlideShell({ title, slideNumber, children, kicker, concepts }: SlideShellProps) {
+export function SlideShell({ title, slideNumber, children, kicker, concepts, tags }: SlideShellProps) {
   return (
     <div className="mx-auto flex h-full max-w-[1120px] flex-col px-10 py-8 text-left md:px-12 md:py-9">
       <header className="flex shrink-0 items-start justify-between gap-6">
@@ -35,6 +38,18 @@ export function SlideShell({ title, slideNumber, children, kicker, concepts }: S
       </header>
       <Separator className="my-5 shrink-0" />
       <main className="min-h-0 flex-1 overflow-hidden">{children}</main>
+      {tags && tags.length > 0 ? (
+        <footer className="mt-4 flex shrink-0 flex-wrap items-center gap-2 border-t border-border/60 pt-3">
+          <span className="text-[0.65rem] font-semibold uppercase tracking-[0.14em] text-muted-foreground md:text-xs">
+            Module concepts
+          </span>
+          {tags.map((tag) => (
+            <Badge key={tag} variant="secondary" className="font-normal">
+              {tag}
+            </Badge>
+          ))}
+        </footer>
+      ) : null}
     </div>
   )
 }
