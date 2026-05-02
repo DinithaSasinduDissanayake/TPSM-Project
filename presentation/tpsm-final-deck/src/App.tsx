@@ -284,6 +284,36 @@ function PairedRowSchematic() {
   )
 }
 
+function PredictiveModellingFlow() {
+  const steps = [
+    { label: "Datasets", detail: "Classification + regression benchmarks" },
+    { label: "Same train/test split", detail: "Both models evaluated under identical split context" },
+    { label: "Train models", detail: "Single model and ensemble model fitted for the same task" },
+    { label: "Predictions + metrics", detail: "Task-appropriate metric scores calculated from predictions" },
+    { label: "Paired row", detail: "Scores converted into one model-pair comparison row" },
+  ]
+
+  return (
+    <div className="grid gap-2 md:grid-cols-[1fr_auto_1fr_auto_1fr_auto_1fr_auto_1fr] md:items-stretch">
+      {steps.map((step, index) => (
+        <div key={step.label} className="contents">
+          <div className="flex min-h-[8.5rem] flex-col justify-between rounded-lg border border-border bg-muted/20 px-3 py-3">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wide text-primary">{step.label}</p>
+              <p className="mt-2 text-sm leading-snug text-muted-foreground md:text-base">{step.detail}</p>
+            </div>
+          </div>
+          {index < steps.length - 1 ? (
+            <div className="hidden items-center justify-center px-1 text-2xl font-light text-muted-foreground md:flex" aria-hidden>
+              →
+            </div>
+          ) : null}
+        </div>
+      ))}
+    </div>
+  )
+}
+
 function App() {
   useEffect(() => {
     const revealElement = document.querySelector(".reveal")
@@ -411,12 +441,12 @@ function App() {
           >
             <div className="flex h-full flex-col justify-center gap-8">
               <p className="text-xl leading-relaxed text-muted-foreground md:text-2xl">
-                Model evaluations produced the comparison data. Statistical analysis tested the overall pattern.
+                Predictive model evaluations produced the comparison data. Statistical analysis tested the overall pattern.
               </p>
               <div className="fragment grid gap-4 md:grid-cols-4 md:gap-3">
                 {[
-                  { step: "1", label: "Benchmark tasks", detail: "Many datasets and metrics" },
-                  { step: "2", label: "Train & score", detail: "Single vs ensemble under the same setup" },
+                  { step: "1", label: "Benchmark tasks", detail: "Classification and regression datasets" },
+                  { step: "2", label: "Train & score", detail: "Predictive models under the same setup" },
                   { step: "3", label: "One row per comparison", detail: "Same split, pair, and metric" },
                   { step: "4", label: "Summarize & test", detail: "Descriptive analysis, then hypothesis testing" },
                 ].map(({ step, label, detail }) => (
@@ -437,16 +467,65 @@ function App() {
             </div>
           </SlideShell>
           <NotesBlock>
-            Avoid file paths. Stress the repeated yes/no comparison encoded in difference_value, then aggregated into win rates.
+            Make the assignment structure explicit: predictive modelling comes first, then descriptive analysis, then hypothesis
+            testing. Avoid file paths. Stress the repeated yes/no comparison encoded in difference_value, then aggregated into win
+            rates.
           </NotesBlock>
         </section>
 
-        {/* 5 — Designed for breadth (NEW) */}
+        {/* 5 — Predictive modelling stage */}
+        <section>
+          <SlideShell
+            kicker="Predictive modelling"
+            title="Predictive modelling generated the evidence"
+            slideNumber={5}
+            concepts="Predictive modelling phase: train models, generate predictions and metric scores, then convert those scores into paired comparison rows."
+            tags={["Predictive modelling", "Model evaluation"]}
+          >
+            <div className="flex min-h-0 flex-1 flex-col justify-center gap-5">
+              <p className="max-w-[60rem] text-lg leading-relaxed text-muted-foreground md:text-xl">
+                Before descriptive analysis or hypothesis testing, we trained and evaluated predictive models. Their metric scores
+                became the paired comparison rows used later for statistical analysis.
+              </p>
+
+              <PredictiveModellingFlow />
+
+              <div className="grid gap-3 md:grid-cols-3">
+                <div className="rounded-lg border border-border bg-muted/15 px-4 py-3">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-primary">Predictive scope</p>
+                  <p className="mt-1 text-sm leading-snug text-muted-foreground md:text-base">
+                    Models were trained on classification and regression benchmark datasets.
+                  </p>
+                </div>
+                <div className="rounded-lg border border-border bg-muted/15 px-4 py-3">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-primary">Fair evaluation</p>
+                  <p className="mt-1 text-sm leading-snug text-muted-foreground md:text-base">
+                    Single and ensemble models were scored on the same split with task-appropriate metrics.
+                  </p>
+                </div>
+                <div className="rounded-lg border border-primary/30 bg-primary/5 px-4 py-3">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-primary">Statistical role</p>
+                  <p className="mt-1 text-sm leading-snug text-muted-foreground md:text-base">
+                    Descriptive and inferential analysis interpreted those predictive model results.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </SlideShell>
+          <NotesBlock>
+            This is the predictive analytics part of the assignment. We trained single and ensemble models on the same classification
+            or regression split, generated predictions, calculated task-appropriate scores, and converted those scores into paired
+            comparison rows. The later descriptive and hypothesis-testing slides interpret these predictive model results rather than
+            replacing the modelling step.
+          </NotesBlock>
+        </section>
+
+        {/* 6 — Designed for breadth (NEW) */}
         <section>
           <SlideShell
             kicker="Scientific design"
             title="Designed for breadth — one statement, five axes of variation"
-            slideNumber={5}
+            slideNumber={6}
             concepts="Why this design beats a one-dataset answer: the claim is broad, so the evidence has to vary on every axis the claim touches."
             tags={["Research design", "Scientific breadth"]}
           >
@@ -484,12 +563,12 @@ function App() {
           </NotesBlock>
         </section>
 
-        {/* 6 — Row generation formula */}
+        {/* 7 — Row generation formula */}
         <section>
           <SlideShell
             kicker="Evidence base"
             title="How the 13,950 comparison rows were generated"
-            slideNumber={6}
+            slideNumber={7}
             concepts="Each evidence row is one dataset × model-pair × metric × split comparison; task-specific totals are summed."
             tags={["Research design", "Data readiness"]}
           >
@@ -542,12 +621,12 @@ function App() {
           </NotesBlock>
         </section>
 
-        {/* 7 — Model pairs split by task type */}
+        {/* 8 — Model pairs split by task type */}
         <section>
           <SlideShell
             kicker="Model design"
             title="Six predefined model pairings — three per task type"
-            slideNumber={7}
+            slideNumber={8}
             concepts="Continues the methodology: same fixed pairings drive every row in the comparison table."
             tags={["Predictive modelling", "Paired comparison"]}
           >
@@ -579,12 +658,12 @@ function App() {
           </NotesBlock>
         </section>
 
-        {/* 8 — Folds & repeats with diagram */}
+        {/* 9 — Folds & repeats with diagram */}
         <section>
           <SlideShell
             kicker="Repeated evaluations"
             title="Why folds and repeats reduce reliance on one lucky split"
-            slideNumber={8}
+            slideNumber={9}
             concepts="Folds and repeats: each pair is re-evaluated under many split contexts so the evidence is not a single roll of the dice."
             tags={["Resampling", "Folds & repeats"]}
           >
@@ -611,12 +690,12 @@ function App() {
           </NotesBlock>
         </section>
 
-        {/* 9 — One row meaning (moved after pairs+folds) */}
+        {/* 10 — One row meaning (moved after pairs+folds) */}
         <section>
           <SlideShell
             kicker="Paired comparison"
             title="What a single row represents"
-            slideNumber={9}
+            slideNumber={10}
             concepts="Paired comparison: both models see the same context before we read off who won."
             tags={["Paired comparison", "Difference value"]}
           >
@@ -644,12 +723,12 @@ function App() {
           </NotesBlock>
         </section>
 
-        {/* 10 — Readiness check + scale (compact numbers to avoid overlap) */}
+        {/* 11 — Readiness check + scale (compact numbers to avoid overlap) */}
         <section>
           <SlideShell
             kicker="Analysis readiness"
             title="The evidence base before descriptive analysis"
-            slideNumber={10}
+            slideNumber={11}
             concepts="Pre-descriptive checkpoint: how much comparison data we have, and that it is structurally clean."
             tags={["Data readiness"]}
           >
@@ -687,12 +766,12 @@ function App() {
           </NotesBlock>
         </section>
 
-        {/* 11 */}
+        {/* 12 */}
         <section>
           <SlideShell
             kicker="Descriptive analysis"
             title="Wins, losses, and ties across all paired rows"
-            slideNumber={11}
+            slideNumber={12}
             concepts="Descriptive analysis: count outcomes before any hypothesis test."
             tags={["Descriptive analysis"]}
           >
@@ -717,12 +796,12 @@ function App() {
           </NotesBlock>
         </section>
 
-        {/* 12 — Denominator made explicit */}
+        {/* 13 — Denominator made explicit */}
         <section>
           <SlideShell
             kicker="Descriptive analysis"
             title="Why we report two win rates — and which one the test uses"
-            slideNumber={12}
+            slideNumber={13}
             concepts="Denominator choice: ties stay in the descriptive view but leave the hypothesis-test denominator."
             tags={["Descriptive analysis", "Denominator"]}
           >
@@ -769,12 +848,12 @@ function App() {
           </NotesBlock>
         </section>
 
-        {/* 13 */}
+        {/* 14 */}
         <section>
           <SlideShell
             kicker="Descriptive analysis"
             title="Both task types lean ensemble"
-            slideNumber={13}
+            slideNumber={14}
             concepts="Descriptive analysis split by task type; still pre-inferential."
             tags={["Descriptive analysis"]}
           >
@@ -797,12 +876,12 @@ function App() {
           </NotesBlock>
         </section>
 
-        {/* 14 */}
+        {/* 15 */}
         <section>
           <SlideShell
             kicker="Descriptive analysis"
             title="Metric-level win rates tell a similar story with nuance"
-            slideNumber={14}
+            slideNumber={15}
             concepts="Descriptive analysis by metric; highlights why proportions beat mixing raw score units."
             tags={["Descriptive analysis"]}
           >
@@ -824,17 +903,17 @@ function App() {
             </div>
           </SlideShell>
           <NotesBlock>
-            Keep MAPE light here; slide 19 handles the headline exclusion. Mention recall/precision dips if the audience cares about
+            Keep MAPE light here; slide 20 handles the headline exclusion. Mention recall/precision dips if the audience cares about
                     trade-offs.
           </NotesBlock>
         </section>
 
-        {/* 15 */}
+        {/* 16 */}
         <section>
           <SlideShell
             kicker="Descriptive analysis"
             title="Model-pair variation keeps the story honest"
-            slideNumber={15}
+            slideNumber={16}
             concepts="Descriptive analysis across the six fixed pairings; reinforces that support is strong but not uniform."
             tags={["Descriptive analysis"]}
           >
@@ -855,17 +934,17 @@ function App() {
             </div>
           </SlideShell>
           <NotesBlock>
-            Connect back to slide 6: these are the same six predefined comparisons, now summarized. Useful if examiners ask about
+            Connect back to slide 8: these are the same six predefined comparisons, now summarized. Useful if examiners ask about
             weaker pairs.
           </NotesBlock>
         </section>
 
-        {/* 16 */}
+        {/* 17 */}
         <section>
           <SlideShell
             kicker="Statistical inference"
             title="From many rows to a disciplined population statement"
-            slideNumber={16}
+            slideNumber={17}
             concepts="Statistical inference: use sample evidence to judge a broader win-rate pattern."
             tags={["Statistical inference"]}
           >
@@ -896,12 +975,12 @@ function App() {
           </NotesBlock>
         </section>
 
-        {/* 17 — H0 / H1 with proper notation */}
+        {/* 18 — H0 / H1 with proper notation */}
         <section>
           <SlideShell
             kicker="Hypothesis testing"
             title="Stating the hypotheses precisely"
-            slideNumber={17}
+            slideNumber={18}
             concepts="Hypothesis testing: parameter π (ensemble win proportion among non-tied rows), null and alternative, significance level α."
             tags={["Hypothesis testing", "Population proportion", "α-level"]}
           >
@@ -953,12 +1032,12 @@ function App() {
           </NotesBlock>
         </section>
 
-        {/* 18 — Test choice & assumptions */}
+        {/* 19 — Test choice & assumptions */}
         <section>
           <SlideShell
             kicker="Hypothesis testing"
             title="Test choice and assumptions"
-            slideNumber={18}
+            slideNumber={19}
             concepts="Why a one-sided exact binomial test on π is the right tool for this paired win/loss question."
             tags={["Hypothesis testing", "Test choice", "Assumptions"]}
           >
@@ -1022,12 +1101,12 @@ function App() {
           </NotesBlock>
         </section>
 
-        {/* 19 — Headline result + p-value + CI interpretation */}
+        {/* 20 — Headline result + p-value + CI interpretation */}
         <section>
           <SlideShell
             kicker="Hypothesis testing"
             title="Headline result — and how to read it"
-            slideNumber={19}
+            slideNumber={20}
             concepts="p-value interpretation against α; confidence interval for π; decision rule applied to the headline test."
             tags={["p-value", "Confidence interval", "Decision rule"]}
           >
@@ -1073,12 +1152,12 @@ function App() {
           </NotesBlock>
         </section>
 
-        {/* 20 — MAPE sensitivity */}
+        {/* 21 — MAPE sensitivity */}
         <section>
           <SlideShell
             kicker="Robustness"
             title="MAPE sensitivity check alongside the headline test"
-            slideNumber={20}
+            slideNumber={21}
             concepts="Same hypothesis-testing idea with MAPE included for comparison; headline test still excludes MAPE."
             tags={["Sensitivity analysis"]}
           >
@@ -1101,12 +1180,12 @@ function App() {
           </NotesBlock>
         </section>
 
-        {/* 21 */}
+        {/* 22 */}
         <section>
           <SlideShell
             kicker="Decision"
             title="What we conclude from the evidence"
-            slideNumber={21}
+            slideNumber={22}
             concepts="Hypothesis testing decision paired with plain-language support for the project statement."
             tags={["Decision", "Interpretation"]}
           >
@@ -1129,12 +1208,12 @@ function App() {
           </NotesBlock>
         </section>
 
-        {/* 22 */}
+        {/* 23 */}
         <section>
           <SlideShell
             kicker="Limitations & takeaway"
             title="Where the result holds—and what we still owe the audience"
-            slideNumber={22}
+            slideNumber={23}
             concepts="Honest scope: benchmark design, dependence between rows, fixed modelling choices."
             tags={["Limitations"]}
           >
@@ -1158,12 +1237,12 @@ function App() {
           </NotesBlock>
         </section>
 
-        {/* 23 — Module-concept recap */}
+        {/* 24 — Module-concept recap */}
         <section>
           <SlideShell
             kicker="Module concepts in this project"
             title="Where each lecture concept showed up"
-            slideNumber={23}
+            slideNumber={24}
             concepts="A quick map between module concepts and the slides where we used them."
             tags={["Recap"]}
           >
@@ -1174,14 +1253,15 @@ function App() {
               </p>
               <div className="grid gap-3 md:grid-cols-2 md:gap-4">
                 {[
-                  { c: "Research design & paired comparison", s: "Slides 3 – 9" },
-                  { c: "Resampling (folds & repeats)", s: "Slide 8" },
-                  { c: "Descriptive analysis & denominator choice", s: "Slides 11 – 15" },
-                  { c: "Statistical inference (sample → population)", s: "Slide 16" },
-                  { c: "Hypothesis testing on a population proportion (π, α)", s: "Slides 17 – 18" },
-                  { c: "p-value, confidence interval, decision rule", s: "Slide 19" },
-                  { c: "Sensitivity / robustness check", s: "Slide 20" },
-                  { c: "Interpretation & limitations", s: "Slides 21 – 22" },
+                  { c: "Predictive modelling", s: "Slides 5, 8 – 10" },
+                  { c: "Research design & paired comparison", s: "Slides 3 – 10" },
+                  { c: "Resampling (folds & repeats)", s: "Slide 9" },
+                  { c: "Descriptive analysis & denominator choice", s: "Slides 12 – 16" },
+                  { c: "Statistical inference (sample → population)", s: "Slide 17" },
+                  { c: "Hypothesis testing on a population proportion (π, α)", s: "Slides 18 – 19" },
+                  { c: "p-value, confidence interval, decision rule", s: "Slide 20" },
+                  { c: "Sensitivity / robustness check", s: "Slide 21" },
+                  { c: "Interpretation & limitations", s: "Slides 22 – 23" },
                 ].map(({ c, s }) => (
                   <div key={c} className="flex items-start justify-between gap-4 rounded-lg border border-border bg-muted/15 px-4 py-3">
                     <span className="text-sm leading-snug text-foreground md:text-base">{c}</span>
@@ -1190,8 +1270,8 @@ function App() {
                 ))}
               </div>
               <p className="text-sm leading-snug text-muted-foreground md:text-base">
-                The thread running through all of these: a broad statement needs broad, paired evidence — then a disciplined
-                inferential step turns that evidence into a defensible conclusion.
+                The thread running through all of these: predictive modelling generated the evidence, descriptive analysis summarized
+                it, and hypothesis testing evaluated the overall pattern.
               </p>
             </div>
           </SlideShell>
