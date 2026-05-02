@@ -153,12 +153,12 @@ function PairList({
   pairs: ReadonlyArray<ModelPairRow>
 }) {
   return (
-    <div className="flex min-w-0 flex-col gap-3 rounded-xl border border-border bg-muted/15 p-5 md:p-6">
+    <div className="flex h-full min-h-0 max-h-full flex-col gap-2 rounded-xl border border-border bg-muted/15 p-4 md:p-5">
       <div>
         <p className="text-xs font-semibold uppercase tracking-wide text-primary md:text-sm">{title}</p>
         <p className="mt-1 text-sm leading-snug text-muted-foreground md:text-base">{caption}</p>
       </div>
-      <ul className="space-y-2.5">
+      <ul className="min-h-0 flex-1 space-y-2 overflow-y-auto pr-1">
         {pairs.map((p) => (
           <li key={`${p.single}-${p.ensemble}`} className="flex flex-col gap-0.5">
             <span className="text-base leading-tight md:text-lg">
@@ -226,46 +226,46 @@ function FoldsDiagram() {
 function PairedRowSchematic() {
   return (
     <div
-      className="flex flex-col gap-3 rounded-xl border border-border bg-muted/15 p-5 md:p-6"
+      className="flex min-h-0 max-h-full flex-col gap-2 overflow-y-auto rounded-xl border border-border bg-muted/15 p-4"
       aria-label="Paired comparison row schematic"
     >
-      <p className="text-xs font-semibold uppercase tracking-wide text-primary md:text-sm">How one row resolves</p>
+      <p className="shrink-0 text-xs font-semibold uppercase tracking-wide text-primary">How one row resolves</p>
 
-      <div className="rounded-lg border border-border bg-background/60 px-4 py-3">
-        <p className="text-[0.65rem] font-semibold uppercase tracking-wide text-muted-foreground md:text-xs">Shared context</p>
-        <p className="mt-1 text-sm leading-snug text-foreground md:text-base">
+      <div className="shrink-0 rounded-lg border border-border bg-background/60 px-3 py-2">
+        <p className="text-[0.65rem] font-semibold uppercase tracking-wide text-muted-foreground">Shared context</p>
+        <p className="mt-0.5 text-xs leading-snug text-foreground md:text-sm">
           dataset · split · pair · metric
         </p>
       </div>
 
-      <div className="flex justify-center text-2xl leading-none text-muted-foreground" aria-hidden>
+      <div className="flex shrink-0 justify-center text-xl leading-none text-muted-foreground" aria-hidden>
         ↓
       </div>
 
-      <div className="grid grid-cols-2 gap-3">
-        <div className="rounded-lg border border-border px-3 py-2.5">
-          <p className="text-[0.65rem] font-semibold uppercase tracking-wide text-muted-foreground md:text-xs">Single model</p>
-          <p className="mt-1 font-mono text-base leading-tight text-foreground md:text-lg">score<sub>S</sub></p>
+      <div className="grid shrink-0 grid-cols-2 gap-2">
+        <div className="rounded-lg border border-border px-2 py-2">
+          <p className="text-[0.65rem] font-semibold uppercase tracking-wide text-muted-foreground">Single model</p>
+          <p className="mt-0.5 font-mono text-sm leading-tight text-foreground md:text-base">score<sub>S</sub></p>
         </div>
-        <div className="rounded-lg border border-primary/40 bg-primary/5 px-3 py-2.5">
-          <p className="text-[0.65rem] font-semibold uppercase tracking-wide text-primary md:text-xs">Ensemble model</p>
-          <p className="mt-1 font-mono text-base leading-tight text-foreground md:text-lg">score<sub>E</sub></p>
+        <div className="rounded-lg border border-primary/40 bg-primary/5 px-2 py-2">
+          <p className="text-[0.65rem] font-semibold uppercase tracking-wide text-primary">Ensemble model</p>
+          <p className="mt-0.5 font-mono text-sm leading-tight text-foreground md:text-base">score<sub>E</sub></p>
         </div>
       </div>
 
-      <div className="flex justify-center text-2xl leading-none text-muted-foreground" aria-hidden>
+      <div className="flex shrink-0 justify-center text-xl leading-none text-muted-foreground" aria-hidden>
         ↓
       </div>
 
-      <div className="rounded-lg border border-border bg-background/60 px-4 py-3">
-        <p className="text-[0.65rem] font-semibold uppercase tracking-wide text-muted-foreground md:text-xs">
-          Difference value (sign chooses the winner)
+      <div className="shrink-0 rounded-lg border border-border bg-background/60 px-3 py-2">
+        <p className="text-[0.65rem] font-semibold uppercase tracking-wide text-muted-foreground">
+          Difference value (sign picks the winner)
         </p>
-        <p className="mt-1 font-mono text-sm leading-snug text-foreground md:text-base">
+        <p className="mt-1 font-mono text-xs leading-snug text-foreground md:text-sm">
           difference = score<sub>E</sub> − score<sub>S</sub>{" "}
-          <span className="text-muted-foreground">(direction-adjusted per metric)</span>
+          <span className="text-muted-foreground">(direction per metric)</span>
         </p>
-        <ul className="mt-2 space-y-1 text-sm leading-snug md:text-base">
+        <ul className="mt-1.5 space-y-0.5 text-xs leading-snug md:text-sm">
           <li>
             <span className="font-semibold text-emerald-700 dark:text-emerald-400">+</span>
             <span className="text-muted-foreground"> ensemble wins</span>
@@ -384,12 +384,12 @@ function App() {
             concepts="Motivates the methodology: we need many fair, repeated comparisons before we can summarize or test anything."
             tags={["Research design"]}
           >
-            <div className="flex h-full flex-col justify-center gap-6 text-2xl font-medium leading-snug text-foreground md:gap-8 md:text-3xl">
+            <div className="flex min-h-0 flex-1 flex-col justify-start gap-4 overflow-y-auto py-1 text-lg font-medium leading-snug text-foreground md:gap-5 md:text-xl">
               <p className="fragment">Performance swings with the dataset you happened to choose.</p>
               <p className="fragment">One train–test split can look lucky or harsh.</p>
               <p className="fragment">One metric can look good while another tells a different story.</p>
               <Divider />
-              <p className="fragment text-balance text-2xl text-muted-foreground md:text-3xl">
+              <p className="fragment text-balance text-base text-muted-foreground md:text-lg">
                 A claim about “many prediction tasks” needs many fair, repeated comparisons—not one isolated accuracy number.
               </p>
             </div>
@@ -472,36 +472,93 @@ function App() {
               </div>
               <div className="rounded-xl border border-primary/25 bg-primary/5 px-5 py-4 md:px-6 md:py-5">
                 <p className="text-base leading-relaxed text-foreground md:text-lg">
-                  Multiplied together, those axes produce <span className="font-semibold">{finalNumbers.rows}</span> paired
-                  comparisons. A single dataset or single metric could mislead; a result that survives this much variation is harder
-                  to dismiss.
+                  Together, those axes create a large paired-comparison evidence base. A single dataset or single metric could
+                  mislead; a result that survives this much variation is harder to dismiss.
                 </p>
               </div>
             </div>
           </SlideShell>
           <NotesBlock>
             This is the “why our method matches the claim” slide. Stress that the breadth is not decoration — it is what allows the
-            conclusion to talk about “many prediction tasks” instead of one lucky example. Mention briefly that classification and
-            regression each get their own three pairs (next slide).
+            conclusion to talk about “many prediction tasks” instead of one lucky example. The exact row-count arithmetic comes next.
           </NotesBlock>
         </section>
 
-        {/* 6 — Model pairs split by task type */}
+        {/* 6 — Row generation formula */}
+        <section>
+          <SlideShell
+            kicker="Evidence base"
+            title="How the 13,950 comparison rows were generated"
+            slideNumber={6}
+            concepts="Each evidence row is one dataset × model-pair × metric × split comparison; task-specific totals are summed."
+            tags={["Research design", "Data readiness"]}
+          >
+            <div className="flex min-h-0 flex-1 flex-col gap-5 overflow-y-auto">
+              <div className="rounded-xl border border-primary/25 bg-primary/5 px-5 py-4 md:px-6 md:py-5">
+                <p className="font-mono text-lg font-semibold leading-relaxed text-foreground md:text-xl">
+                  13,950 paired rows = (9 × 3 × 4 × 50) + (9 × 3 × 6 × 50) + (1 × 3 × 6 × 25)
+                </p>
+                <p className="mt-2 font-mono text-base leading-snug text-muted-foreground md:text-lg">
+                  = 5,400 + 8,100 + 450
+                </p>
+              </div>
+
+              <Table>
+                <TableHeader>
+                  <TableRow className="hover:bg-transparent">
+                    <TableHead className="text-base font-semibold">Task group</TableHead>
+                    <TableHead className="text-base font-semibold">Row calculation</TableHead>
+                    <TableHead className="text-right text-base font-semibold">Rows</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {[
+                    ["Regression", "9 datasets × 3 pairs × 4 metrics × 50 splits", "5,400"],
+                    ["Classification", "9 datasets × 3 pairs × 6 metrics × 50 splits", "8,100"],
+                    ["Classification, 25 splits", "1 dataset × 3 pairs × 6 metrics × 25 splits", "450"],
+                    ["Total", "", finalNumbers.rows],
+                  ].map(([group, calculation, rows]) => (
+                    <TableRow key={group} className="text-base md:text-lg">
+                      <TableCell className={group === "Total" ? "py-3 font-semibold text-foreground" : "py-3 text-foreground"}>
+                        {group}
+                      </TableCell>
+                      <TableCell className="py-3 font-mono text-sm text-muted-foreground md:text-base">{calculation}</TableCell>
+                      <TableCell className="py-3 text-right font-semibold tabular-nums text-foreground">{rows}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+
+              <p className="rounded-lg border border-border bg-muted/20 px-4 py-3 text-sm leading-relaxed text-muted-foreground md:text-base">
+                Each row is one dataset × model-pair × metric × split comparison. The total is summed across task groups, not
+                multiplied by task type again.
+              </p>
+            </div>
+          </SlideShell>
+          <NotesBlock>
+            The 19 datasets are already divided into classification and regression tasks, so we do not multiply by task type again.
+            Regression has 9 datasets, 3 model pairs, 4 metrics, and 50 splits. Classification mostly has 9 datasets, 3 model pairs,
+            6 metrics, and 50 splits, plus one classification dataset contributing 25 splits. Adding these gives 13,950 rows.
+          </NotesBlock>
+        </section>
+
+        {/* 7 — Model pairs split by task type */}
         <section>
           <SlideShell
             kicker="Model design"
             title="Six predefined model pairings — three per task type"
-            slideNumber={6}
+            slideNumber={7}
             concepts="Continues the methodology: same fixed pairings drive every row in the comparison table."
             tags={["Predictive modelling", "Paired comparison"]}
           >
-            <div className="flex h-full flex-col gap-5">
-              <p className="max-w-[58rem] text-base leading-relaxed text-muted-foreground md:text-lg">
+            <div className="flex min-h-0 flex-1 flex-col gap-3">
+              <p className="shrink-0 text-sm leading-snug text-muted-foreground md:text-base">
                 The same three classification pairings are applied to every classification dataset, and the same three regression
                 pairings to every regression dataset. Pairings were chosen up front, so each row is a like-for-like comparison rather
-                than a hand-picked win.
+                than a hand-picked win. Each row needs both models judged on identical inputs — same dataset, same split, same metric —
+                so the ensemble vs single comparison is paired and fair, not opportunistic.
               </p>
-              <div className="grid min-h-0 gap-5 md:grid-cols-2 md:gap-6">
+              <div className="grid min-h-0 flex-1 gap-3 md:grid-cols-2 md:gap-4">
                 <PairList
                   title="Classification pairings"
                   caption="Same three pairs run on every classification dataset."
@@ -513,10 +570,6 @@ function App() {
                   pairs={regressionPairs}
                 />
               </div>
-              <p className="text-sm leading-snug text-muted-foreground md:text-base">
-                Why predefined pairs? Each row needs both models judged on identical inputs — same dataset, same split, same metric —
-                so the ensemble vs single comparison is paired and fair, not opportunistic.
-              </p>
             </div>
           </SlideShell>
           <NotesBlock>
@@ -526,12 +579,12 @@ function App() {
           </NotesBlock>
         </section>
 
-        {/* 6 — Folds & repeats with diagram */}
+        {/* 8 — Folds & repeats with diagram */}
         <section>
           <SlideShell
             kicker="Repeated evaluations"
             title="Why folds and repeats reduce reliance on one lucky split"
-            slideNumber={7}
+            slideNumber={8}
             concepts="Folds and repeats: each pair is re-evaluated under many split contexts so the evidence is not a single roll of the dice."
             tags={["Resampling", "Folds & repeats"]}
           >
@@ -558,18 +611,18 @@ function App() {
           </NotesBlock>
         </section>
 
-        {/* 7 — One row meaning (moved after pairs+folds) */}
+        {/* 9 — One row meaning (moved after pairs+folds) */}
         <section>
           <SlideShell
             kicker="Paired comparison"
             title="What a single row represents"
-            slideNumber={8}
+            slideNumber={9}
             concepts="Paired comparison: both models see the same context before we read off who won."
             tags={["Paired comparison", "Difference value"]}
           >
-            <div className="grid h-full items-center gap-10 lg:grid-cols-[0.9fr_1.1fr] lg:gap-12">
-              <div className="flex min-w-0 flex-col gap-4">
-                <ul className="space-y-3 text-base leading-relaxed text-muted-foreground md:text-lg">
+            <div className="grid min-h-0 flex-1 items-start gap-6 lg:grid-cols-[0.9fr_1.1fr] lg:gap-8">
+              <div className="min-h-0 max-h-full overflow-y-auto pr-1">
+                <ul className="space-y-2 text-sm leading-relaxed text-muted-foreground md:text-base">
                   <li>One task type and one dataset</li>
                   <li>One fold of one repeat (same split context for both models)</li>
                   <li>One metric and one of the six predefined pairings</li>
@@ -577,7 +630,7 @@ function App() {
                     A stored <span className="font-medium text-foreground">difference_value</span> captures who won on that row
                   </li>
                 </ul>
-                <p className="text-sm leading-relaxed text-muted-foreground md:text-base">
+                <p className="mt-3 text-xs leading-snug text-muted-foreground md:text-sm">
                   Because every row pins all four context items, the comparison is paired and fair — never an apples-to-oranges
                   match-up across different setups.
                 </p>
@@ -591,12 +644,12 @@ function App() {
           </NotesBlock>
         </section>
 
-        {/* 8 — Readiness check + scale (compact numbers to avoid overlap) */}
+        {/* 10 — Readiness check + scale (compact numbers to avoid overlap) */}
         <section>
           <SlideShell
             kicker="Analysis readiness"
             title="The evidence base before descriptive analysis"
-            slideNumber={9}
+            slideNumber={10}
             concepts="Pre-descriptive checkpoint: how much comparison data we have, and that it is structurally clean."
             tags={["Data readiness"]}
           >
@@ -634,25 +687,25 @@ function App() {
           </NotesBlock>
         </section>
 
-        {/* 9 */}
+        {/* 11 */}
         <section>
           <SlideShell
             kicker="Descriptive analysis"
             title="Wins, losses, and ties across all paired rows"
-            slideNumber={10}
+            slideNumber={11}
             concepts="Descriptive analysis: count outcomes before any hypothesis test."
             tags={["Descriptive analysis"]}
           >
-            <div className="grid h-full min-h-0 items-center gap-8 lg:grid-cols-[1.25fr_0.75fr] lg:gap-10">
-              <SimpleBars data={descriptiveCounts} height={360} />
-              <div className="flex min-w-0 flex-col gap-5">
+            <div className="grid min-h-0 flex-1 items-center gap-6 lg:grid-cols-[1.25fr_0.75fr] lg:gap-8">
+              <SimpleBars data={descriptiveCounts} height={300} />
+              <div className="flex min-h-0 max-h-full min-w-0 flex-col gap-3 overflow-y-auto self-start pr-1">
                 <BigNumber
                   compact
                   label="Ensemble wins"
                   value={finalNumbers.ensembleWins.toLocaleString()}
                   detail={`Out of ${finalNumbers.rows} paired rows (${finalNumbers.singleWins.toLocaleString()} single-model wins, ${finalNumbers.ties} ties).`}
                 />
-                <p className="text-base leading-relaxed text-muted-foreground md:text-lg">
+                <p className="text-sm leading-relaxed text-muted-foreground md:text-base">
                   Descriptive analysis just tallies outcomes — no p-values yet — so the raw dominance pattern is visible before we
                   test it.
                 </p>
@@ -664,17 +717,17 @@ function App() {
           </NotesBlock>
         </section>
 
-        {/* 10 — Denominator made explicit */}
+        {/* 12 — Denominator made explicit */}
         <section>
           <SlideShell
             kicker="Descriptive analysis"
             title="Why we report two win rates — and which one the test uses"
-            slideNumber={11}
+            slideNumber={12}
             concepts="Denominator choice: ties stay in the descriptive view but leave the hypothesis-test denominator."
             tags={["Descriptive analysis", "Denominator"]}
           >
-            <div className="flex h-full flex-col gap-6">
-              <div className="grid gap-5 md:grid-cols-2 md:gap-7">
+            <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto">
+              <div className="grid shrink-0 gap-4 md:grid-cols-2 md:gap-6">
                 <div className="rounded-xl border border-border p-5 md:p-6">
                   <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground md:text-sm">
                     Descriptive (all rows)
@@ -700,8 +753,8 @@ function App() {
                   </p>
                 </div>
               </div>
-              <div className="rounded-lg border border-border bg-muted/20 p-4 text-sm leading-snug text-muted-foreground md:p-5 md:text-base">
-                <p>
+              <div className="shrink-0 rounded-lg border border-border bg-muted/20 p-4 text-sm leading-snug text-foreground md:p-5 md:text-base">
+                <p className="text-muted-foreground">
                   The headline test goes one step further and removes MAPE rows for stability — that is why the headline win rate (
                   <span className="font-medium text-foreground">{finalNumbers.headlineWinRate}</span>) sits a little above the
                   descriptive non-tie rate.
@@ -716,12 +769,12 @@ function App() {
           </NotesBlock>
         </section>
 
-        {/* 11 */}
+        {/* 13 */}
         <section>
           <SlideShell
             kicker="Descriptive analysis"
             title="Both task types lean ensemble"
-            slideNumber={12}
+            slideNumber={13}
             concepts="Descriptive analysis split by task type; still pre-inferential."
             tags={["Descriptive analysis"]}
           >
@@ -744,19 +797,19 @@ function App() {
           </NotesBlock>
         </section>
 
-        {/* 12 */}
+        {/* 14 */}
         <section>
           <SlideShell
             kicker="Descriptive analysis"
             title="Metric-level win rates tell a similar story with nuance"
-            slideNumber={13}
+            slideNumber={14}
             concepts="Descriptive analysis by metric; highlights why proportions beat mixing raw score units."
             tags={["Descriptive analysis"]}
           >
-            <div className="grid h-full min-h-0 items-center gap-6 lg:grid-cols-[1.35fr_0.65fr] lg:gap-8">
-              <HorizontalRates data={metricWinRates} chartHeight={400} />
-              <div className="flex min-w-0 flex-col gap-3 text-base leading-relaxed md:text-lg">
-                <p className="text-xl font-semibold leading-snug text-foreground md:text-2xl">
+            <div className="grid min-h-0 flex-1 items-start gap-5 lg:grid-cols-[1.35fr_0.65fr] lg:gap-6">
+              <HorizontalRates data={metricWinRates} chartHeight={340} />
+              <div className="flex min-h-0 max-h-full min-w-0 flex-col gap-2 overflow-y-auto self-start pr-1 text-sm leading-snug text-foreground md:text-base">
+                <p className="text-lg font-semibold leading-snug md:text-xl">
                   Different metrics, same direction.
                 </p>
                 <p className="text-muted-foreground">
@@ -771,17 +824,17 @@ function App() {
             </div>
           </SlideShell>
           <NotesBlock>
-            Keep MAPE light here; slide 17 handles the headline exclusion. Mention recall/precision dips if the audience cares about
+            Keep MAPE light here; slide 19 handles the headline exclusion. Mention recall/precision dips if the audience cares about
                     trade-offs.
           </NotesBlock>
         </section>
 
-        {/* 13 */}
+        {/* 15 */}
         <section>
           <SlideShell
             kicker="Descriptive analysis"
             title="Model-pair variation keeps the story honest"
-            slideNumber={14}
+            slideNumber={15}
             concepts="Descriptive analysis across the six fixed pairings; reinforces that support is strong but not uniform."
             tags={["Descriptive analysis"]}
           >
@@ -802,17 +855,17 @@ function App() {
             </div>
           </SlideShell>
           <NotesBlock>
-            Connect back to slide 5: these are the same six predefined comparisons, now summarized. Useful if examiners ask about
+            Connect back to slide 6: these are the same six predefined comparisons, now summarized. Useful if examiners ask about
             weaker pairs.
           </NotesBlock>
         </section>
 
-        {/* 14 */}
+        {/* 16 */}
         <section>
           <SlideShell
             kicker="Statistical inference"
             title="From many rows to a disciplined population statement"
-            slideNumber={15}
+            slideNumber={16}
             concepts="Statistical inference: use sample evidence to judge a broader win-rate pattern."
             tags={["Statistical inference"]}
           >
@@ -843,12 +896,12 @@ function App() {
           </NotesBlock>
         </section>
 
-        {/* 16 — H0 / H1 with proper notation */}
+        {/* 17 — H0 / H1 with proper notation */}
         <section>
           <SlideShell
             kicker="Hypothesis testing"
             title="Stating the hypotheses precisely"
-            slideNumber={16}
+            slideNumber={17}
             concepts="Hypothesis testing: parameter π (ensemble win proportion among non-tied rows), null and alternative, significance level α."
             tags={["Hypothesis testing", "Population proportion", "α-level"]}
           >
@@ -900,55 +953,63 @@ function App() {
           </NotesBlock>
         </section>
 
-        {/* 17 — Test choice & assumptions */}
+        {/* 18 — Test choice & assumptions */}
         <section>
           <SlideShell
             kicker="Hypothesis testing"
             title="Test choice and assumptions"
-            slideNumber={17}
+            slideNumber={18}
             concepts="Why a one-sided exact binomial test on π is the right tool for this paired win/loss question."
             tags={["Hypothesis testing", "Test choice", "Assumptions"]}
           >
-            <div className="flex h-full flex-col gap-5">
-              <div className="rounded-xl border border-primary/25 bg-primary/5 px-5 py-4 md:px-6 md:py-5">
-                <p className="text-base leading-relaxed text-foreground md:text-lg">
+            <div className="flex min-h-0 flex-1 flex-col gap-3">
+              <div className="shrink-0 rounded-xl border border-primary/25 bg-primary/5 px-4 py-3 md:px-5 md:py-4">
+                <p className="text-sm leading-relaxed text-foreground md:text-base">
                   Each non-tied row is a Bernoulli trial (ensemble win or loss). The natural test for{" "}
                   <span className="font-mono">π &gt; 0.5</span> on a sum of Bernoulli trials is the{" "}
                   <span className="font-semibold">one-sided exact binomial test</span>.
                 </p>
               </div>
-              <div className="grid gap-4 md:grid-cols-2 md:gap-5">
-                <div className="rounded-lg border border-border bg-muted/15 p-4 md:p-5">
-                  <p className="text-xs font-semibold uppercase tracking-wide text-primary md:text-sm">Why this test</p>
-                  <ul className="mt-2 space-y-1.5 text-sm leading-snug text-muted-foreground md:text-base">
+              <div className="grid shrink-0 gap-3 md:grid-cols-2 md:gap-4">
+                <div className="rounded-lg border border-border bg-muted/15 p-3 md:p-4">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-primary">Why this test</p>
+                  <ul className="mt-1.5 space-y-1 text-xs leading-snug text-muted-foreground md:text-sm">
                     <li>• Outcome is binary on each row — proportion is the right parameter.</li>
                     <li>• Exact binomial avoids large-sample approximations near boundaries.</li>
                     <li>• Matches the descriptive non-tie win-rate framing the audience already saw.</li>
                   </ul>
                 </div>
-                <div className="rounded-lg border border-border bg-muted/15 p-4 md:p-5">
-                  <p className="text-xs font-semibold uppercase tracking-wide text-primary md:text-sm">Why not a means-based test</p>
-                  <ul className="mt-2 space-y-1.5 text-sm leading-snug text-muted-foreground md:text-base">
+                <div className="rounded-lg border border-border bg-muted/15 p-3 md:p-4">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-primary">Why not a means-based test</p>
+                  <ul className="mt-1.5 space-y-1 text-xs leading-snug text-muted-foreground md:text-sm">
                     <li>• Metric units differ (accuracy, RMSE, MAPE…), so averaging raw differences across metrics is not meaningful.</li>
                     <li>• Win/loss is metric-scale-free and survives the mixed-metric design.</li>
                   </ul>
                 </div>
               </div>
-              <div className="rounded-lg border border-border p-4 md:p-5">
-                <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground md:text-sm">Assumptions and how we handled them</p>
-                <ul className="mt-2 space-y-1.5 text-sm leading-snug text-muted-foreground md:text-base">
+              <div className="min-h-0 flex-1 overflow-y-auto rounded-lg border border-border p-3 md:p-4">
+                <p className="text-xs font-semibold uppercase tracking-wide text-foreground">Assumptions and how we handled them</p>
+                <ul className="mt-2 space-y-2 text-xs leading-snug text-foreground md:text-sm">
                   <li>
-                    <span className="font-medium text-foreground">Ties.</span> A tie is neither a success nor a failure, so the 261
-                    tied rows are excluded from the test denominator (counted and reported separately).
+                    <span className="font-semibold">Ties.</span>{" "}
+                    <span className="text-muted-foreground">
+                      A tie is neither a success nor a failure, so the 261 tied rows are excluded from the test denominator (counted
+                      and reported separately).
+                    </span>
                   </li>
                   <li>
-                    <span className="font-medium text-foreground">MAPE stability.</span> MAPE rows are excluded from the headline test
-                    because MAPE can explode when targets are near zero; we still report a sensitivity test that includes them.
+                    <span className="font-semibold">MAPE stability.</span>{" "}
+                    <span className="text-muted-foreground">
+                      MAPE rows are excluded from the headline test because MAPE can explode when targets are near zero; we still
+                      report a sensitivity test that includes them.
+                    </span>
                   </li>
                   <li>
-                    <span className="font-medium text-foreground">Independence.</span> Rows share datasets, splits, and pairs, so
-                    independence is approximate. The binomial test is a course-appropriate, conservative approximation to that
-                    structure — flagged again in limitations.
+                    <span className="font-semibold">Independence.</span>{" "}
+                    <span className="text-muted-foreground">
+                      Rows share datasets, splits, and pairs, so independence is approximate. The binomial test is a
+                      course-appropriate, conservative approximation to that structure — flagged again in limitations.
+                    </span>
                   </li>
                 </ul>
               </div>
@@ -961,19 +1022,19 @@ function App() {
           </NotesBlock>
         </section>
 
-        {/* 18 — Headline result + p-value + CI interpretation */}
+        {/* 19 — Headline result + p-value + CI interpretation */}
         <section>
           <SlideShell
             kicker="Hypothesis testing"
             title="Headline result — and how to read it"
-            slideNumber={18}
+            slideNumber={19}
             concepts="p-value interpretation against α; confidence interval for π; decision rule applied to the headline test."
             tags={["p-value", "Confidence interval", "Decision rule"]}
           >
-            <div className="grid h-full min-h-0 items-center gap-8 lg:grid-cols-[1fr_1.05fr] lg:gap-10">
-              <SimpleBars data={headlineComparison} height={340} percent />
-              <div className="flex min-w-0 flex-col gap-4">
-                <p className="rounded-lg border border-primary/30 bg-primary/5 px-4 py-3 text-base leading-snug text-foreground md:text-lg">
+            <div className="grid min-h-0 flex-1 items-start gap-6 lg:grid-cols-[1fr_1.05fr] lg:gap-8">
+              <SimpleBars data={headlineComparison} height={280} percent />
+              <div className="flex min-h-0 max-h-full min-w-0 flex-col gap-2 overflow-y-auto self-start pr-1">
+                <p className="rounded-lg border border-primary/30 bg-primary/5 px-3 py-2 text-sm leading-snug text-foreground md:text-base">
                   In plain English: the data give very strong evidence that ensembles win clearly more than half of the meaningful
                   comparisons in this benchmark.
                 </p>
@@ -983,22 +1044,23 @@ function App() {
                   value={finalNumbers.headlineWinRate}
                   detail="Non-tied non-MAPE rows (10,797 wins / 12,339 trials)"
                 />
-                <div className="rounded-lg border border-border bg-muted/15 p-3 md:p-4">
-                  <p className="text-xs font-semibold uppercase tracking-wide text-primary md:text-sm">95% confidence interval for π</p>
-                  <p className="mt-1 font-mono text-base leading-snug text-foreground md:text-lg">
+                <div className="rounded-lg border border-border bg-muted/15 p-3">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-primary">95% confidence interval for π</p>
+                  <p className="mt-1 font-mono text-sm leading-snug text-foreground md:text-base">
                     {finalNumbers.confidenceInterval}
                   </p>
-                  <p className="mt-1 text-xs leading-snug text-muted-foreground md:text-sm">
+                  <p className="mt-1 text-xs leading-snug text-foreground md:text-sm">
                     Even the lower bound is far above 0.50, which is consistent with rejecting H₀.
                   </p>
                 </div>
-                <div className="rounded-lg border border-primary/30 bg-primary/5 p-3 md:p-4">
-                  <p className="text-xs font-semibold uppercase tracking-wide text-primary md:text-sm">p-value vs α</p>
-                  <p className="mt-1 font-mono text-base leading-snug text-foreground md:text-lg">
+                <div className="rounded-lg border border-primary/30 bg-primary/5 p-3">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-primary">p-value vs α</p>
+                  <p className="mt-1 font-mono text-sm leading-snug text-foreground md:text-base">
                     p-value {finalNumbers.pValue} &nbsp;&lt;&nbsp; α = 0.05
                   </p>
-                  <p className="mt-1 text-xs leading-snug text-muted-foreground md:text-sm">
-                    Decision rule: reject H₀ in favour of H₁. Result: <span className="font-medium text-foreground">{finalNumbers.decision}</span>.
+                  <p className="mt-1 text-xs leading-snug text-foreground md:text-sm">
+                    Decision rule: reject H₀ in favour of H₁. Result:{" "}
+                    <span className="font-semibold">{finalNumbers.decision}</span>.
                   </p>
                 </div>
               </div>
@@ -1011,12 +1073,12 @@ function App() {
           </NotesBlock>
         </section>
 
-        {/* 19 — MAPE sensitivity */}
+        {/* 20 — MAPE sensitivity */}
         <section>
           <SlideShell
             kicker="Robustness"
             title="MAPE sensitivity check alongside the headline test"
-            slideNumber={19}
+            slideNumber={20}
             concepts="Same hypothesis-testing idea with MAPE included for comparison; headline test still excludes MAPE."
             tags={["Sensitivity analysis"]}
           >
@@ -1039,12 +1101,12 @@ function App() {
           </NotesBlock>
         </section>
 
-        {/* 18 */}
+        {/* 21 */}
         <section>
           <SlideShell
             kicker="Decision"
             title="What we conclude from the evidence"
-            slideNumber={20}
+            slideNumber={21}
             concepts="Hypothesis testing decision paired with plain-language support for the project statement."
             tags={["Decision", "Interpretation"]}
           >
@@ -1067,24 +1129,24 @@ function App() {
           </NotesBlock>
         </section>
 
-        {/* 19 */}
+        {/* 22 */}
         <section>
           <SlideShell
             kicker="Limitations & takeaway"
             title="Where the result holds—and what we still owe the audience"
-            slideNumber={21}
+            slideNumber={22}
             concepts="Honest scope: benchmark design, dependence between rows, fixed modelling choices."
             tags={["Limitations"]}
           >
-            <div className="flex h-full flex-col justify-center gap-8">
-              <ul className="max-w-[52rem] list-disc space-y-4 pl-6 text-lg leading-relaxed text-muted-foreground marker:text-primary md:text-xl">
+            <div className="flex min-h-0 flex-1 flex-col justify-start gap-5 overflow-y-auto py-1">
+              <ul className="max-w-[52rem] list-disc space-y-3 pl-6 text-base leading-relaxed text-muted-foreground marker:text-primary md:text-lg">
                 <li>Results ride on the chosen datasets, metrics, folds, repeats, and the six fixed pairings.</li>
                 <li>Rows share structure (datasets, splits, metrics), so independence is approximate even though the binomial test is clear.</li>
                 <li>Models used fixed configurations; teams that tune aggressively could see different pairwise outcomes.</li>
                 <li>Single models can still win on cost, latency, interpretability, or deployment simplicity.</li>
               </ul>
               <Divider />
-              <p className="max-w-[54rem] text-xl font-medium leading-snug text-foreground md:text-2xl">
+              <p className="max-w-[54rem] text-pretty text-lg font-medium leading-snug text-foreground md:text-xl">
                 Takeaway: the benchmarked classification and regression comparisons overwhelmingly favor ensembles, and the formal test
                 backs that pattern—but it is evidence for this scope, not a universal guarantee.
               </p>
@@ -1096,30 +1158,30 @@ function App() {
           </NotesBlock>
         </section>
 
-        {/* 22 — Module-concept recap */}
+        {/* 23 — Module-concept recap */}
         <section>
           <SlideShell
             kicker="Module concepts in this project"
             title="Where each lecture concept showed up"
-            slideNumber={22}
+            slideNumber={23}
             concepts="A quick map between module concepts and the slides where we used them."
             tags={["Recap"]}
           >
-            <div className="flex h-full flex-col gap-4">
+            <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto">
               <p className="max-w-[58rem] text-base leading-relaxed text-muted-foreground md:text-lg">
                 Every concept tag you saw at the bottom of a slide ties back to lectures and labs. Together they cover the full
                 analytical loop: design, describe, infer, decide, qualify.
               </p>
               <div className="grid gap-3 md:grid-cols-2 md:gap-4">
                 {[
-                  { c: "Research design & paired comparison", s: "Slides 3 – 8" },
-                  { c: "Resampling (folds & repeats)", s: "Slide 7" },
-                  { c: "Descriptive analysis & denominator choice", s: "Slides 10 – 14" },
-                  { c: "Statistical inference (sample → population)", s: "Slide 15" },
-                  { c: "Hypothesis testing on a population proportion (π, α)", s: "Slides 16 – 17" },
-                  { c: "p-value, confidence interval, decision rule", s: "Slide 18" },
-                  { c: "Sensitivity / robustness check", s: "Slide 19" },
-                  { c: "Interpretation & limitations", s: "Slides 20 – 21" },
+                  { c: "Research design & paired comparison", s: "Slides 3 – 9" },
+                  { c: "Resampling (folds & repeats)", s: "Slide 8" },
+                  { c: "Descriptive analysis & denominator choice", s: "Slides 11 – 15" },
+                  { c: "Statistical inference (sample → population)", s: "Slide 16" },
+                  { c: "Hypothesis testing on a population proportion (π, α)", s: "Slides 17 – 18" },
+                  { c: "p-value, confidence interval, decision rule", s: "Slide 19" },
+                  { c: "Sensitivity / robustness check", s: "Slide 20" },
+                  { c: "Interpretation & limitations", s: "Slides 21 – 22" },
                 ].map(({ c, s }) => (
                   <div key={c} className="flex items-start justify-between gap-4 rounded-lg border border-border bg-muted/15 px-4 py-3">
                     <span className="text-sm leading-snug text-foreground md:text-base">{c}</span>
