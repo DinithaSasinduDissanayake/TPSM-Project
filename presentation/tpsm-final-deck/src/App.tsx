@@ -27,15 +27,22 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import {
+  classificationPairs,
   descriptiveCounts,
   finalNumbers,
   headlineComparison,
   metricWinRates,
   modelPairRates,
-  modelPairTable,
   readinessRows,
+  regressionPairs,
   taskWinRates,
 } from "@/data/analysis"
+
+type ModelPairRow = {
+  single: string
+  ensemble: string
+  rationale: string
+}
 
 const rateConfig = {
   value: { label: "Win rate", color: "var(--chart-3)" },
@@ -134,6 +141,71 @@ function HorizontalRates({ data, chartHeight = 390 }: { data: Array<{ name: stri
 
 function Divider() {
   return <div className="my-6 h-px w-full bg-border" aria-hidden />
+}
+
+function PairList({
+  title,
+  caption,
+  pairs,
+}: {
+  title: string
+  caption: string
+  pairs: ReadonlyArray<ModelPairRow>
+}) {
+  return (
+    <div className="flex min-w-0 flex-col gap-3 rounded-xl border border-border bg-muted/15 p-5 md:p-6">
+      <div>
+        <p className="text-xs font-semibold uppercase tracking-wide text-primary md:text-sm">{title}</p>
+        <p className="mt-1 text-sm leading-snug text-muted-foreground md:text-base">{caption}</p>
+      </div>
+      <ul className="space-y-2.5">
+        {pairs.map((p) => (
+          <li key={`${p.single}-${p.ensemble}`} className="flex flex-col gap-0.5">
+            <span className="text-base leading-tight md:text-lg">
+              <span className="font-medium text-foreground">{p.single}</span>
+              <span className="px-2 text-muted-foreground">vs</span>
+              <span className="font-medium text-foreground">{p.ensemble}</span>
+            </span>
+            <span className="text-xs leading-snug text-muted-foreground md:text-sm">{p.rationale}</span>
+          </li>
+        ))}
+      </ul>
+    </div>
+  )
+}
+
+/** Tiny inline diagram of 5-fold cross-validation: 5 columns × 5 rows where the diagonal is the test fold. */
+function FoldsDiagram() {
+  const folds = [0, 1, 2, 3, 4]
+  return (
+    <div className="flex flex-col gap-2" aria-label="Five-fold cross-validation diagram">
+      <div className="flex items-center gap-2 text-xs text-muted-foreground md:text-sm">
+        <span className="inline-block h-3 w-3 rounded-sm border border-border bg-muted" /> train
+        <span className="ml-3 inline-block h-3 w-3 rounded-sm border border-primary bg-primary/70" /> test
+      </div>
+      <div className="flex flex-col gap-1.5">
+        {folds.map((row) => (
+          <div key={row} className="flex items-center gap-2">
+            <span className="w-12 shrink-0 text-xs text-muted-foreground md:text-sm">Run {row + 1}</span>
+            <div className="flex flex-1 gap-1">
+              {folds.map((col) => (
+                <div
+                  key={col}
+                  className={
+                    "h-5 flex-1 rounded-sm border md:h-6 " +
+                    (col === row ? "border-primary bg-primary/70" : "border-border bg-muted")
+                  }
+                />
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+      <p className="mt-1 text-xs leading-snug text-muted-foreground md:text-sm">
+        The test slice rotates each run, then the whole cycle repeats — so every pair contributes many comparison rows.
+      </p>
+    </div>
+  )
 }
 
 function App() {
@@ -285,78 +357,73 @@ function App() {
           </NotesBlock>
         </section>
 
-        {/* 5 — Model pairs (moved earlier, into the methodology phase) */}
+        {/* 5 — Model pairs split by task type */}
         <section>
           <SlideShell
             kicker="Model design"
-            title="The six predefined single vs ensemble pairings"
+            title="Six predefined model pairings — three per task type"
             slideNumber={5}
-            concepts="Methodology continues: which models are compared on every row of the generated table."
+            concepts="Continues the methodology: same fixed pairings drive every row in the comparison table."
           >
-            <div className="flex h-full flex-col">
-              <p className="mb-4 max-w-[54rem] text-lg leading-relaxed text-muted-foreground md:text-xl">
-                Before any results were inspected, we fixed six single vs ensemble pairings. Every comparison row uses one of these
-                pairs.
+            <div className="flex h-full flex-col gap-5">
+              <p className="max-w-[58rem] text-base leading-relaxed text-muted-foreground md:text-lg">
+                The same three classification pairings are applied to every classification dataset, and the same three regression
+                pairings to every regression dataset. Pairings were chosen up front, so each row is a like-for-like comparison rather
+                than a hand-picked win.
               </p>
-              <Table>
-                <TableHeader>
-                  <TableRow className="hover:bg-transparent">
-                    <TableHead className="w-[40%] text-base font-semibold">Single model</TableHead>
-                    <TableHead className="text-base font-semibold">Ensemble model</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {modelPairTable.map((row) => (
-                    <TableRow key={row.single} className="text-base md:text-lg">
-                      <TableCell className="py-3 font-medium text-foreground">{row.single}</TableCell>
-                      <TableCell className="py-3 text-muted-foreground">{row.ensemble}</TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+              <div className="grid min-h-0 gap-5 md:grid-cols-2 md:gap-6">
+                <PairList
+                  title="Classification pairings"
+                  caption="Same three pairs run on every classification dataset."
+                  pairs={classificationPairs}
+                />
+                <PairList
+                  title="Regression pairings"
+                  caption="Same three pairs run on every regression dataset."
+                  pairs={regressionPairs}
+                />
+              </div>
+              <p className="text-sm leading-snug text-muted-foreground md:text-base">
+                Why predefined pairs? Each row needs both models judged on identical inputs — same dataset, same split, same metric —
+                so the ensemble vs single comparison is paired and fair, not opportunistic.
+              </p>
             </div>
           </SlideShell>
           <NotesBlock>
-            Name all six pairs clearly. They mix easier analogues (tree vs forest) with tougher contrasts (linear vs boosting). Pairs
-            were fixed first, so the benchmark stays transparent.
+            Make three points: (1) three classification pairs and three regression pairs, (2) every dataset of that task type runs the
+            same pairs, (3) fixing pairs in advance is what makes each row a fair paired comparison instead of cherry-picking. The
+            three classification + three regression pairings cover both task families inside the 19-dataset benchmark.
           </NotesBlock>
         </section>
 
-        {/* 6 — Repeated evaluations (folds & repeats) with a small visual */}
+        {/* 6 — Folds & repeats with diagram */}
         <section>
           <SlideShell
             kicker="Repeated evaluations"
-            title="Each pairing is re-run across many splits"
+            title="Why folds and repeats reduce reliance on one lucky split"
             slideNumber={6}
-            concepts="Folds and repeats: the same comparison is repeated under different split contexts to stabilise the evidence."
+            concepts="Folds and repeats: each pair is re-evaluated under many split contexts so the evidence is not a single roll of the dice."
           >
-            <div className="flex h-full flex-col justify-center gap-8">
-              <div className="grid gap-4 md:grid-cols-[1fr_auto_1.4fr] md:items-stretch md:gap-6">
-                <div className="rounded-lg border border-border bg-muted/20 px-5 py-5">
-                  <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">One split only</p>
-                  <p className="mt-2 text-lg font-semibold text-foreground md:text-xl">Risky single answer</p>
-                  <p className="mt-2 text-sm leading-snug text-muted-foreground md:text-base">
-                    Result depends heavily on which rows happened to land in train vs test.
-                  </p>
-                </div>
-                <p className="hidden self-center text-3xl font-light text-muted-foreground md:block">→</p>
-                <div className="rounded-lg border border-primary/30 bg-primary/5 px-5 py-5">
-                  <p className="text-xs font-semibold uppercase tracking-wide text-primary">Folds × repeats</p>
-                  <p className="mt-2 text-lg font-semibold text-foreground md:text-xl">Many comparison rows per pairing</p>
-                  <p className="mt-2 text-sm leading-snug text-muted-foreground md:text-base">
-                    The same pair is re-evaluated across multiple split contexts, so each pairing contributes many rows to the
-                    table.
-                  </p>
-                </div>
+            <div className="grid h-full items-center gap-10 lg:grid-cols-[0.9fr_1.1fr] lg:gap-14">
+              <FoldsDiagram />
+              <div className="space-y-4 text-base leading-relaxed text-muted-foreground md:text-lg">
+                <p>
+                  A single train–test split can flatter or punish either model just because of where the cut happens to land.
+                </p>
+                <p>
+                  Cross-validation rotates the test slice across folds; <span className="font-medium text-foreground">repeats</span> rerun
+                  the whole cycle with a different shuffle. Every fold of every repeat produces one new comparison row per metric.
+                </p>
+                <p>
+                  Those rows accumulate into the 13,950-row table, so the win rate we read later reflects many split contexts — not a
+                  single experiment.
+                </p>
               </div>
-              <p className="fragment max-w-[54rem] text-base leading-relaxed text-muted-foreground md:text-lg">
-                One row per (dataset, split, pair, metric) — repeated evaluations simply add more rows, never new metrics.
-              </p>
             </div>
           </SlideShell>
           <NotesBlock>
-            Stay high level: you are explaining design motivation, not new statistics. Transition: now zoom in on what one of those
-            rows actually means.
+            Walk through the diagram: each row is one run, the highlighted square is the test fold; rotating it gives multiple paired
+            comparisons; repeats reshuffle and do it again. Stress: this is design motivation, no new statistics here.
           </NotesBlock>
         </section>
 
@@ -452,12 +519,18 @@ function App() {
             slideNumber={9}
             concepts="Descriptive analysis: count outcomes before any hypothesis test."
           >
-            <div className="grid h-full items-center gap-8 lg:grid-cols-[1.1fr_0.9fr] lg:gap-10">
-              <SimpleBars data={descriptiveCounts} height={380} />
-              <div className="flex flex-col gap-6">
-                <BigNumber label="Ensemble wins" value={finalNumbers.ensembleWins.toLocaleString()} detail="Across every row in the table" />
-                <p className="text-lg leading-relaxed text-muted-foreground md:text-xl">
-                  Descriptive analysis simply totals what happened—no p-values yet—so the audience sees the raw dominance pattern first.
+            <div className="grid h-full min-h-0 items-center gap-8 lg:grid-cols-[1.25fr_0.75fr] lg:gap-10">
+              <SimpleBars data={descriptiveCounts} height={360} />
+              <div className="flex min-w-0 flex-col gap-5">
+                <BigNumber
+                  compact
+                  label="Ensemble wins"
+                  value={finalNumbers.ensembleWins.toLocaleString()}
+                  detail={`Out of ${finalNumbers.rows} paired rows (${finalNumbers.singleWins.toLocaleString()} single-model wins, ${finalNumbers.ties} ties).`}
+                />
+                <p className="text-base leading-relaxed text-muted-foreground md:text-lg">
+                  Descriptive analysis just tallies outcomes — no p-values yet — so the raw dominance pattern is visible before we
+                  test it.
                 </p>
               </div>
             </div>
@@ -467,29 +540,54 @@ function App() {
           </NotesBlock>
         </section>
 
-        {/* 10 */}
+        {/* 10 — Denominator made explicit */}
         <section>
           <SlideShell
             kicker="Descriptive analysis"
-            title="Two useful ways to express the ensemble win rate"
+            title="Why we report two win rates — and which one the test uses"
             slideNumber={10}
-            concepts="Denominator choices preview how hypothesis testing will treat ties."
+            concepts="Denominator choice: ties stay in the descriptive view but leave the hypothesis-test denominator."
           >
-            <div className="flex h-full flex-col justify-center gap-10 md:flex-row md:items-stretch md:gap-12">
-              <div className="fragment flex-1 border-b border-border pb-8 md:border-b-0 md:border-r md:pb-0 md:pr-10">
-                <BigNumber label="All-row win rate" value={finalNumbers.allRowWinRate} detail="Ties sit in the denominator here" />
+            <div className="flex h-full flex-col gap-6">
+              <div className="grid gap-5 md:grid-cols-2 md:gap-7">
+                <div className="rounded-xl border border-border p-5 md:p-6">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground md:text-sm">
+                    Descriptive (all rows)
+                  </p>
+                  <p className="mt-2 text-4xl font-semibold tracking-tight text-foreground md:text-5xl">
+                    {finalNumbers.allRowWinRate}
+                  </p>
+                  <p className="mt-3 text-sm leading-snug text-muted-foreground md:text-base">
+                    11,910 ensemble wins ÷ <span className="font-medium text-foreground">13,950</span> rows.
+                    Ties (261) stay in the denominator, so this rate slightly understates the head-to-head win frequency.
+                  </p>
+                </div>
+                <div className="rounded-xl border border-primary/30 bg-primary/5 p-5 md:p-6">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-primary md:text-sm">
+                    Non-tie (used in the test)
+                  </p>
+                  <p className="mt-2 text-4xl font-semibold tracking-tight text-foreground md:text-5xl">
+                    {finalNumbers.nonTieWinRate}
+                  </p>
+                  <p className="mt-3 text-sm leading-snug text-muted-foreground md:text-base">
+                    11,910 ensemble wins ÷ <span className="font-medium text-foreground">13,689</span> non-tied rows. Ties drop out
+                    because the hypothesis is win-vs-loss; a tie is neither.
+                  </p>
+                </div>
               </div>
-              <div className="fragment flex-1 md:pl-2">
-                <BigNumber label="Non-tie win rate" value={finalNumbers.nonTieWinRate} detail="Ties removed from the denominator" />
+              <div className="rounded-lg border border-border bg-muted/20 p-4 text-sm leading-snug text-muted-foreground md:p-5 md:text-base">
+                <p>
+                  The headline test goes one step further and removes MAPE rows for stability — that is why the headline win rate (
+                  <span className="font-medium text-foreground">{finalNumbers.headlineWinRate}</span>) sits a little above the
+                  descriptive non-tie rate.
+                </p>
               </div>
             </div>
-            <p className="fragment mt-8 max-w-[52rem] text-lg leading-relaxed text-muted-foreground md:text-xl">
-              The non-tie view mirrors how we later treat wins versus losses when we formalize the population proportion test.
-            </p>
           </SlideShell>
           <NotesBlock>
-            Explain both percentages slowly. This slide bridges descriptive summaries to the hypothesis-testing denominator without
-                    jumping to p-values.
+            Spell it out: descriptive uses 13,950 in the denominator (ties counted but not as wins). The hypothesis test asks a
+            yes/no question, so ties cannot be a success or a failure and are removed — denominator becomes 13,689. The headline test
+            additionally drops MAPE rows, which nudges the rate up to 87.50%.
           </NotesBlock>
         </section>
 
@@ -545,13 +643,18 @@ function App() {
             slideNumber={13}
             concepts="Descriptive analysis across the six fixed pairings; reinforces that support is strong but not uniform."
           >
-            <div className="grid h-full items-start gap-6 lg:grid-cols-[1.22fr_0.78fr] lg:gap-8">
-              <HorizontalRates data={modelPairRates} chartHeight={420} />
-              <div className="space-y-4 text-lg leading-relaxed md:text-xl">
-                <p className="text-2xl font-medium leading-snug text-foreground md:text-3xl">Same six pairings, different win-rate heights.</p>
+            <div className="grid h-full min-h-0 items-center gap-6 lg:grid-cols-[1.35fr_0.65fr] lg:gap-8">
+              <HorizontalRates data={modelPairRates} chartHeight={400} />
+              <div className="flex min-w-0 flex-col gap-3 text-base leading-relaxed md:text-lg">
+                <p className="text-xl font-semibold leading-snug text-foreground md:text-2xl">
+                  Same six pairings, different heights.
+                </p>
                 <p className="text-muted-foreground">
-                  The overall pattern still favors ensembles, but the spread is why we phrase the conclusion as strong support inside
-                  this benchmark—not a universal law for every future pairing.
+                  Every pair still sits well above 50%, but the spread (≈80% → ≈93%) shows the ensemble edge is stronger for some
+                  contrasts than others.
+                </p>
+                <p className="text-muted-foreground">
+                  This is why the conclusion is phrased as strong support inside this benchmark, not a universal law.
                 </p>
               </div>
             </div>

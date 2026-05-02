@@ -40,13 +40,46 @@ export const headlineComparison = [
 
 /** Six predefined single vs ensemble pairings (same ordering as modelPairRates). */
 export const modelPairTable = [
-  { single: "Decision Tree", ensemble: "Random Forest" },
-  { single: "Naive Bayes", ensemble: "Gradient Boosting (classifier)" },
-  { single: "SVR", ensemble: "Gradient Boosting Regressor" },
-  { single: "Linear Regression", ensemble: "Gradient Boosting Regressor" },
-  { single: "Decision Tree Regressor", ensemble: "Gradient Boosting Regressor" },
-  { single: "Logistic Regression", ensemble: "Gradient Boosting (classifier)" },
+  {
+    task: "classification",
+    single: "Decision Tree",
+    ensemble: "Random Forest",
+    rationale: "Same base learner, with vs without bagging",
+  },
+  {
+    task: "classification",
+    single: "Naive Bayes",
+    ensemble: "Gradient Boosting (classifier)",
+    rationale: "Simple probabilistic baseline vs boosted ensemble",
+  },
+  {
+    task: "classification",
+    single: "Logistic Regression",
+    ensemble: "Gradient Boosting (classifier)",
+    rationale: "Linear baseline vs boosted ensemble",
+  },
+  {
+    task: "regression",
+    single: "Decision Tree Regressor",
+    ensemble: "Gradient Boosting Regressor",
+    rationale: "Single tree vs boosted trees",
+  },
+  {
+    task: "regression",
+    single: "Linear Regression",
+    ensemble: "Gradient Boosting Regressor",
+    rationale: "Linear baseline vs boosted ensemble",
+  },
+  {
+    task: "regression",
+    single: "SVR",
+    ensemble: "Gradient Boosting Regressor",
+    rationale: "Kernel baseline vs boosted ensemble",
+  },
 ] as const
+
+export const classificationPairs = modelPairTable.filter((p) => p.task === "classification")
+export const regressionPairs = modelPairTable.filter((p) => p.task === "regression")
 
 export const modelPairRates = [
   { name: "Decision Tree / Random Forest", value: 92.82 },
